@@ -16,14 +16,14 @@ class JobControllerTest(unittest.TestCase):
     def setUp(self, _, __):
         self.joc = JobController()
 
-    def test_on_message_calls_spawn_pod_with_message(self):
+    def test_on_message_calls_spawn_pod_with_message(self):  # pylint: disable=missing-function-docstring
         message = mock.MagicMock()
 
         self.joc.on_message(message)
 
         self.joc.k8s.spawn_pod.assert_called_once_with(message)
 
-    def test_run_class_start_consuming(self):
+    def test_run_class_start_consuming(self):  # pylint: disable=missing-function-docstring
         self.joc.run()
 
         self.joc.consumer.start_consuming.assert_called_once_with()

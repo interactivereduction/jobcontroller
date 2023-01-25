@@ -5,11 +5,16 @@ from kubernetes import client, config
 
 
 class K8sAPI:
+    """
+    This class is responsible for loading the kubernetes config and handling methods for creating new pods.
+    """
     def __init__(self):
-        self.api = client.CoreV1Api()
         config.load_kube_config()
 
     def spawn_pod(self, meta_data: dict):
+        """
+        Takes the meta_data from the kafka message and uses that dictionary for generating the deployment of the pod.
+        """
         from jobcontroller.jobcontroller import logger
 
         logger.info("Spawning pod with metadata: %s", meta_data)
@@ -34,4 +39,4 @@ class K8sAPI:
                 ],
             },
         )
-        self.api.create_namespaced_pod(namespace="ir-runs", body=pod)
+        client.CoreV1Api().create_namespaced_pod(namespace="ir-runs", body=pod)

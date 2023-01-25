@@ -9,6 +9,10 @@ from confluent_kafka import Consumer
 
 
 class TopicConsumer:
+    """
+    This class is responsible for running the listener for Kafka, and requesting the correct response from the
+    JobController
+    """
     def __init__(self, message_callback):
         from jobcontroller.jobcontroller import logger
 
@@ -19,6 +23,9 @@ class TopicConsumer:
         self.consumer.subscribe(["detected-run"])
 
     def start_consuming(self):
+        """
+        Run a while loop listening for a message
+        """
         from jobcontroller.jobcontroller import logger
 
         while True:
@@ -36,6 +43,6 @@ class TopicConsumer:
             logger.info("Received a message from the topic: %s", message_str)
             try:
                 self.message_callback(json.loads(message_str))
-            except json.JSONDecodeError as e:
-                logger.error("Error attempting to decode JSON: %s", str(e))
+            except json.JSONDecodeError as exception:
+                logger.error("Error attempting to decode JSON: %s", str(exception))
                 continue
