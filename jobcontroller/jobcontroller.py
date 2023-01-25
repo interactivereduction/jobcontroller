@@ -16,7 +16,7 @@ logging.basicConfig(handlers=[file_handler, stdout_handler],
 logger = logging.getLogger(__name__)
 
 
-class RunMaker:
+class JobController:
     def __init__(self):
         self.consumer = TopicConsumer(self.on_message)
         self.k8s = K8sAPI()
@@ -29,5 +29,5 @@ class RunMaker:
 
 
 if __name__ == '__main__':
-    run_maker = RunMaker()
-    run_maker.run()
+    job_controller = JobController()
+    job_controller.run()
