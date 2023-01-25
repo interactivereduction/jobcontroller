@@ -11,6 +11,7 @@ class JobControllerTest(unittest.TestCase):
     """
     The unittest test class
     """
+
     @mock.patch("jobcontroller.jobcontroller.K8sAPI")
     @mock.patch("jobcontroller.jobcontroller.TopicConsumer")
     def setUp(self, _, __):
