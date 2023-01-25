@@ -5,7 +5,7 @@ environment variable, the value should be the kafka broker ip address.
 import json
 import os
 
-from confluent_kafka import Consumer
+from confluent_kafka import Consumer  # type: ignore
 
 
 class TopicConsumer:
@@ -22,7 +22,7 @@ class TopicConsumer:
         logger.info("Connecting to kafka using the ip: %s", broker_ip)
         self.consumer.subscribe(["detected-run"])
 
-    def start_consuming(self):
+    def start_consuming(self) -> None:
         """
         Run a while loop listening for a message
         """

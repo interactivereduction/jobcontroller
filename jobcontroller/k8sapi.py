@@ -1,7 +1,7 @@
 """
 Communicate to a kubernetes API to spawn a pod with the metadata passed by kafka message to the RunMaker
 """
-from kubernetes import client, config
+from kubernetes import client, config  # type: ignore
 
 
 class K8sAPI:
@@ -11,7 +11,7 @@ class K8sAPI:
     def __init__(self):
         config.load_kube_config()
 
-    def spawn_pod(self, meta_data: dict):
+    def spawn_pod(self, meta_data: dict) -> None:
         """
         Takes the meta_data from the kafka message and uses that dictionary for generating the deployment of the pod.
         """

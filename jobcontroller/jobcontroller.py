@@ -27,7 +27,7 @@ class JobController:
         self.consumer = TopicConsumer(self.on_message)
         self.k8s = K8sAPI()
 
-    def on_message(self, message: dict):
+    def on_message(self, message: dict) -> None:
         """
         Request that the k8s api spawns a pod
         :param message: dict, the message is a dictionary containing the needed information for spawning a pod
@@ -35,7 +35,7 @@ class JobController:
         """
         self.k8s.spawn_pod(message)
 
-    def run(self):
+    def run(self) -> None:
         """
         This is effectively the main method of the program and starts the consumer
         """
