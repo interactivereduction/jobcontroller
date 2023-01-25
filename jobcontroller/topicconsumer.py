@@ -13,6 +13,7 @@ class TopicConsumer:
     This class is responsible for running the listener for Kafka, and requesting the correct response from the
     JobController
     """
+
     def __init__(self, message_callback):
         from jobcontroller.jobcontroller import logger
 

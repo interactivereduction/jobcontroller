@@ -23,6 +23,7 @@ class JobController:
     This is the JobController class that will communicate between the consumer and the kubernetes API, it effectively
     functions as a main class.
     """
+
     def __init__(self):
         self.consumer = TopicConsumer(self.on_message)
         self.k8s = K8sAPI()

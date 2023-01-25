@@ -8,6 +8,7 @@ class K8sAPI:
     """
     This class is responsible for loading the kubernetes config and handling methods for creating new pods.
     """
+
     def __init__(self):
         config.load_kube_config()
 
