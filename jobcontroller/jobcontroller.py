@@ -4,6 +4,7 @@ the environment as KAFKA_IP.
 """
 import logging
 import sys
+from typing import Any
 
 from jobcontroller.k8sapi import K8sAPI
 from jobcontroller.topicconsumer import TopicConsumer
@@ -24,11 +25,11 @@ class JobController:
     functions as a main class.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.consumer = TopicConsumer(self.on_message)
         self.k8s = K8sAPI()
 
-    def on_message(self, message: dict) -> None:
+    def on_message(self, message: dict[str, Any]) -> None:
         """
         Request that the k8s api spawns a pod
         :param message: dict, the message is a dictionary containing the needed information for spawning a pod

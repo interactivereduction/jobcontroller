@@ -14,7 +14,7 @@ class TopicConsumer:
     JobController
     """
 
-    def __init__(self, message_callback):
+    def __init__(self, message_callback) -> None:
         from jobcontroller.jobcontroller import logger
 
         self.message_callback = message_callback
