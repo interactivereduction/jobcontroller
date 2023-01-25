@@ -10,9 +10,11 @@ from jobcontroller.topicconsumer import TopicConsumer
 
 file_handler = logging.FileHandler(filename="run-detection.log")
 stdout_handler = logging.StreamHandler(stream=sys.stdout)
-logging.basicConfig(handlers=[file_handler, stdout_handler],
-                    format="[%(asctime)s]-%(name)s-%(levelname)s: %(message)s",
-                    level=logging.INFO)
+logging.basicConfig(
+    handlers=[file_handler, stdout_handler],
+    format="[%(asctime)s]-%(name)s-%(levelname)s: %(message)s",
+    level=logging.INFO,
+)
 logger = logging.getLogger(__name__)
 
 
@@ -28,6 +30,6 @@ class JobController:
         self.consumer.start_consuming()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     job_controller = JobController()
     job_controller.run()
