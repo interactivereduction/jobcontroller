@@ -4,6 +4,7 @@ environment variable, the value should be the kafka broker ip address.
 """
 import json
 import os
+from typing import Callable, Any
 
 from confluent_kafka import Consumer  # type: ignore
 
@@ -14,7 +15,7 @@ class TopicConsumer:
     JobController
     """
 
-    def __init__(self, message_callback) -> None:
+    def __init__(self, message_callback: Callable[[dict[str, Any]], None]) -> None:
         from jobcontroller.jobcontroller import logger
 
         self.message_callback = message_callback
