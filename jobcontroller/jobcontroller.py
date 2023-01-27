@@ -3,6 +3,7 @@ The RunMaker is responsible for creating k8s pods that perform the reduction. It
 the environment as KAFKA_IP.
 """
 import logging
+import os
 import sys
 from typing import Any
 
@@ -35,7 +36,8 @@ class JobController:
         :param message: dict, the message is a dictionary containing the needed information for spawning a pod
         :return: None
         """
-        self.k8s.spawn_pod(message)
+        filename = os.path.basename(message["filepath"])
+        self.k8s.spawn_pod(filename=filename)
 
     def run(self) -> None:
         """
