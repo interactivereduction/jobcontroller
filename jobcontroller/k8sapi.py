@@ -19,7 +19,7 @@ class K8sAPI:
         from jobcontroller.jobcontroller import logger
 
         logger.info("Spawning pod with metadata: %s", filename)
-        job_name = f'run-{filename}'
+        job_name = f"run-{filename}"
         pod = client.V1Pod(
             metadata={"name": job_name},
             spec={
@@ -27,10 +27,11 @@ class K8sAPI:
                     {
                         "name": job_name,
                         "image": "ir-mantid-runner",  # TODO update this to include a sha256
-                        "env": [{"name": "KAFKA_IP", "value": "kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local"},
-                                {"name": "RUN_FILENAME", "value": filename},
-                                {"name": "IR_API_IP", "value": "irapi.ir.svc.cluster.local"}
-                                ],
+                        "env": [
+                            {"name": "KAFKA_IP", "value": "kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local"},
+                            {"name": "RUN_FILENAME", "value": filename},
+                            {"name": "IR_API_IP", "value": "irapi.ir.svc.cluster.local"},
+                        ],
                         "volumeMounts": [
                             {"name": "archive-mount", "mountPath": "/archive"},
                             {"name": "ceph-mount", "mountPath": "/ceph"},
