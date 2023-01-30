@@ -15,11 +15,10 @@ class TopicConsumer:
     JobController
     """
 
-    def __init__(self, message_callback: Callable[[dict[str, Any]], None]) -> None:
+    def __init__(self, message_callback: Callable[[dict[str, Any]], None], broker_ip: str) -> None:
         from jobcontroller.jobcontroller import logger
 
         self.message_callback = message_callback
-        broker_ip = os.environ.get("KAFKA_IP", "broker")
         self.consumer = Consumer({"bootstrap.servers": broker_ip, "group.id": "consumer-group-name"})
         logger.info("Connecting to kafka using the ip: %s", broker_ip)
         self.consumer.subscribe(["detected-run"])

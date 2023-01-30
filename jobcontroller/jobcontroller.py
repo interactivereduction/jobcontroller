@@ -27,7 +27,8 @@ class JobController:
     """
 
     def __init__(self) -> None:
-        self.consumer = TopicConsumer(self.on_message)
+        self.kafka_ip = os.environ.get("KAFKA_IP", "broker")
+        self.consumer = TopicConsumer(self.on_message, broker_ip=self.kafka_ip)
         self.k8s = K8sAPI()
 
     def on_message(self, message: dict[str, Any]) -> None:
@@ -37,7 +38,9 @@ class JobController:
         :return: None
         """
         filename = os.path.basename(message["filepath"])
-        self.k8s.spawn_pod(filename=filename)
+        rb_number = message["exeriment_number"]
+        instrument_name = message["instrument"]
+        self.k8s.spawn_pod(filename=filename, kafka_ip=self.kafka_ip, rb_number=rb_number, instrument_name=instrument_name)
 
     def run(self) -> None:
         """
