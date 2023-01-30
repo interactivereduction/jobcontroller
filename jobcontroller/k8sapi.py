@@ -19,7 +19,7 @@ class K8sAPI:
         from jobcontroller.jobcontroller import logger
 
         logger.info("Spawning pod with metadata: %s", filename)
-        job_name = f'run-{filename}'
+        job_name = f"run-{filename}"
         pod = client.V1Pod(
             metadata={"name": job_name},
             spec={
