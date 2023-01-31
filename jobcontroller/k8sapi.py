@@ -26,7 +26,6 @@ class K8sAPI:
                 "containers": [
                     {
                         "name": job_name,
-                        # TODO  update this to include a sha256
                         "image": "ir-mantid-runner@sha256:e82d7bafaa82cd58b248086e4c161117c5aacef393058d2e03d20d85d3c74b01",
                         "env": [{"name": "KAFKA_IP", "value": kafka_ip},
                                 {"name": "RUN_FILENAME", "value": filename},

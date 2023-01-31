@@ -40,7 +40,9 @@ class JobController:
         filename = os.path.basename(message["filepath"])
         rb_number = message["exeriment_number"]
         instrument_name = message["instrument"]
-        self.k8s.spawn_pod(filename=filename, kafka_ip=self.kafka_ip, rb_number=rb_number, instrument_name=instrument_name)
+        self.k8s.spawn_pod(
+            filename=filename, kafka_ip=self.kafka_ip, rb_number=rb_number, instrument_name=instrument_name
+        )
 
     def run(self) -> None:
         """
