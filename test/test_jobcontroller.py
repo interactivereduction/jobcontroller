@@ -21,8 +21,11 @@ class JobControllerTest(unittest.TestCase):
         self.joc.on_message(message)
 
         self.joc.k8s.spawn_pod.assert_called_once_with(
-            filename=os.path.basename(message["filename"]), kafka_ip=kafka_ip,
-            rb_number=message["rb_number"], instrument_name=message["instrument_name"])
+            filename=os.path.basename(message["filename"]),
+            kafka_ip=kafka_ip,
+            rb_number=message["rb_number"],
+            instrument_name=message["instrument_name"],
+        )
 
     def test_run_class_start_consuming(self):
         self.joc.run()
