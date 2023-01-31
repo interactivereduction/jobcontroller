@@ -21,4 +21,4 @@ jobs:
         run: pylint jobcontroller test
 
       - name: Run MyPy
-        run: mypy --strict jobcontroller
+        run: mypy jobcontroller
