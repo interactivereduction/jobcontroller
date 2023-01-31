@@ -31,7 +31,7 @@ class JobController:
         self.consumer = TopicConsumer(self.on_message, broker_ip=self.kafka_ip)
         self.k8s = K8sAPI()
 
-    def on_message(self, message: dict[str, Any]) -> None:
+    def on_message(self, message: dict) -> None:
         """
         Request that the k8s api spawns a pod
         :param message: dict, the message is a dictionary containing the needed information for spawning a pod

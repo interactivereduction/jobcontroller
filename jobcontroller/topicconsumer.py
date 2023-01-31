@@ -3,7 +3,6 @@ The topic consumer connects to kafka and polls for messages from the topic. It e
 environment variable, the value should be the kafka broker ip address.
 """
 import json
-import os
 from typing import Callable, Any
 
 from confluent_kafka import Consumer  # type: ignore
@@ -15,7 +14,7 @@ class TopicConsumer:
     JobController
     """
 
-    def __init__(self, message_callback: Callable[[dict[str, Any]], None], broker_ip: str) -> None:
+    def __init__(self, message_callback: Callable, broker_ip: str) -> None:
         from jobcontroller.jobcontroller import logger
 
         self.message_callback = message_callback
@@ -23,13 +22,17 @@ class TopicConsumer:
         logger.info("Connecting to kafka using the ip: %s", broker_ip)
         self.consumer.subscribe(["detected-run"])
 
-    def start_consuming(self) -> None:
+    def start_consuming(self, run_once: bool = False) -> None:
         """
         Run a while loop listening for a message
         """
         from jobcontroller.jobcontroller import logger
 
-        while True:
+        run = True
+        while run:
+            if run_once:
+                run = False
+
             message = self.consumer.poll()
 
             if message is None:
