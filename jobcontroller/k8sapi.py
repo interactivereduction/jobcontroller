@@ -27,12 +27,13 @@ class K8sAPI:
                     {
                         "name": job_name,
                         "image": "ir-mantid-runner@sha256:e82d7bafaa82cd58b248086e4c161117c5aacef393058d2e03d20d85d3c74b01",
-                        "env": [{"name": "KAFKA_IP", "value": kafka_ip},
-                                {"name": "RUN_FILENAME", "value": filename},
-                                {"name": "IR_API_IP", "value": "irapi.ir.svc.cluster.local"},
-                                {"name": "RB_NUMBER", "value": rb_number},
-                                {"name": "INSTRUMENT_NAME", "value": instrument_name}
-                                ],
+                        "env": [
+                            {"name": "KAFKA_IP", "value": kafka_ip},
+                            {"name": "RUN_FILENAME", "value": filename},
+                            {"name": "IR_API_IP", "value": "irapi.ir.svc.cluster.local"},
+                            {"name": "RB_NUMBER", "value": rb_number},
+                            {"name": "INSTRUMENT_NAME", "value": instrument_name},
+                        ],
                         "volumeMounts": [
                             {"name": "archive-mount", "mountPath": "/archive"},
                             {"name": "ceph-mount", "mountPath": "/ceph"},
@@ -43,6 +44,6 @@ class K8sAPI:
                     {"name": "archive-mount", "hostPath": {"type": "Directory", "path": "/archive"}},
                     {"name": "ceph-mount", "hostPath": {"type": "Directory", "path": "/ceph"}},
                 ],
-            }
+            },
         )
         client.CoreV1Api().create_namespaced_pod(namespace="ir-runs", body=pod)
