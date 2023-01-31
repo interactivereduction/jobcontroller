@@ -5,7 +5,6 @@ the environment as KAFKA_IP.
 import logging
 import os
 import sys
-from typing import Any
 
 from jobcontroller.k8sapi import K8sAPI
 from jobcontroller.topicconsumer import TopicConsumer

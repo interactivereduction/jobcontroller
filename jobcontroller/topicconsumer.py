@@ -3,7 +3,7 @@ The topic consumer connects to kafka and polls for messages from the topic. It e
 environment variable, the value should be the kafka broker ip address.
 """
 import json
-from typing import Callable, Any
+from typing import Callable
 
 from confluent_kafka import Consumer  # type: ignore
 
