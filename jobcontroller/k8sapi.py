@@ -12,39 +12,35 @@ class K8sAPI:
     def __init__(self) -> None:
         config.load_incluster_config()
 
-    def spawn_pod(self, filename: str, kafka_ip: str, rb_number: str, instrument_name: str) -> None:
+    def spawn_job(self, job_name: str, script: str, ceph_path: str) -> str:
         """
         Takes the meta_data from the kafka message and uses that dictionary for generating the deployment of the pod.
         """
         from jobcontroller.jobcontroller import logger
 
-        logger.info("Spawning pod with metadata: %s", filename)
-        job_name = f"run-{filename}"
-        pod = client.V1Pod(
+        logger.info("Spawning job: %s", job_name)
+        job = client.V1Job(
+            api_version="batch/v1",
+            kind="Job",
             metadata={"name": job_name},
             spec={
                 "containers": [
                     {
                         "name": job_name,
-                        "image":
-                            "ir-mantid-runner@sha256:f67a1ec33d901744988d940f93560cbef660e3440a90b8e1d1eb35e190e745c2",
-                        "env": [
-                            {"name": "KAFKA_IP", "value": kafka_ip},
-                            {"name": "RUN_FILENAME", "value": filename},
-                            {"name": "IR_API_IP", "value": "irapi.ir.svc.cluster.local"},
-                            {"name": "RB_NUMBER", "value": rb_number},
-                            {"name": "INSTRUMENT_NAME", "value": instrument_name},
-                        ],
+                        "image": "python:3.10",
+                        "command": ["python"],
+                        "args": ["-c", script],
                         "volumeMounts": [
                             {"name": "archive-mount", "mountPath": "/archive"},
-                            {"name": "ceph-mount", "mountPath": "/ceph"},
+                            {"name": "ceph-mount", "mountPath": "/output"},
                         ],
                     }
                 ],
                 "volumes": [
                     {"name": "archive-mount", "hostPath": {"type": "Directory", "path": "/archive"}},
-                    {"name": "ceph-mount", "hostPath": {"type": "Directory", "path": "/ceph"}},
+                    {"name": "ceph-mount", "hostPath": {"type": "Directory", "path": ceph_path}},
                 ],
             },
         )
-        client.CoreV1Api().create_namespaced_pod(namespace="ir-runs", body=pod)
+        response = client.BatchV1Api().create_namespaced_job(namespace="ir-jobs", body=job)
+        return response.metadata.name
