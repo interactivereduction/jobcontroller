@@ -56,7 +56,9 @@ class JobController:
         :param pod_name:
         """
         manager = PodManager(pod_name)
-        threading.Thread(target=manager.manage, )
+        threading.Thread(
+            target=manager.manage,
+        )
         pass
 
     def run(self) -> None:
