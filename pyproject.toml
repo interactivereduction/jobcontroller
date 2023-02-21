@@ -16,7 +16,7 @@ jobcontroller = "jobcontroller.jobcontroller:main"
 [project.optional-dependencies]
 formatting = [
     "toml==0.10.2",
-    "black==23.1a1",
+    "black==23.1.0",
 ]
 
 test = [
