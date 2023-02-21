@@ -2,6 +2,9 @@
 on:
   push:
 
+permissions:
+  contents: write
+
 jobs:
   black:
     runs-on: ubuntu-latest
