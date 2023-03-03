@@ -1,46 +1,65 @@
 """
 Communicate to a kubernetes API to spawn a pod with the metadata passed by kafka message to the RunMaker
 """
-from kubernetes import client, config  # type: ignore
+from kubernetes import client  # type: ignore
+
+from jobcontroller.utils import logger, load_kubernetes_config
 
 
 class K8sAPI:
     """
     This class is responsible for loading the kubernetes config and handling methods for creating new pods.
     """
-
     def __init__(self) -> None:
-        config.load_incluster_config()
+        load_kubernetes_config()
 
-    def spawn_job(self, job_name: str, script: str, ceph_path: str) -> str:
+    @staticmethod
+    def spawn_job(job_name: str, script: str, ceph_path: str, job_namespace: str) -> str:
         """
         Takes the meta_data from the kafka message and uses that dictionary for generating the deployment of the pod.
+        :param job_name: The name that the job should be created as
+        :param script: The script that should be executed
+        :param ceph_path: The path to which that should be mounted at /output in the job, this is expected to be the
+        RBNumber folder that data will be dumped into.
+        :param job_namespace: The namespace that the job should be created inside of
+        :return: The response for the actual job's name
         """
-        from jobcontroller.jobcontroller import logger
-
         logger.info("Spawning job: %s", job_name)
         job = client.V1Job(
             api_version="batch/v1",
             kind="Job",
             metadata={"name": job_name},
             spec={
-                "containers": [
-                    {
-                        "name": job_name,
-                        "image": "python:3.10",
-                        "command": ["python"],
-                        "args": ["-c", script],
-                        "volumeMounts": [
-                            {"name": "archive-mount", "mountPath": "/archive"},
-                            {"name": "ceph-mount", "mountPath": "/output"},
+                "ttlSecondsAfterFinished": 21600,  # 6 hours
+                "template": {
+                    "spec": {
+                        "containers": [
+                                        {
+                                            "name": job_name,
+                                            "image": "python:3.10",
+                                            "command": ["python"],
+                                            "args": ["-c", script],
+                                            "volumeMounts": [
+                                                {"name": "archive-mount", "mountPath": "/archive"},
+                                                {"name": "ceph-mount", "mountPath": "/output"},
+                                            ],
+                                        }
+                                    ],
+                        "restartPolicy": "Never",
+                        "tolerations": [
+                            {
+                                "key": "queue-worker",
+                                "effect": "NoSchedule",
+                                "operator": "Exists"
+                            }
                         ],
-                    }
-                ],
-                "volumes": [
-                    {"name": "archive-mount", "hostPath": {"type": "Directory", "path": "/archive"}},
-                    {"name": "ceph-mount", "hostPath": {"type": "Directory", "path": ceph_path}},
-                ],
+                        "volumes": [
+                            {"name": "archive-mount", "hostPath": {"type": "Directory", "path": "/archive"}},
+                            {"name": "ceph-mount", "hostPath": {"type": "Directory", "path": ceph_path}},
+                        ],
+                    },
+                },
             },
         )
-        response = client.BatchV1Api().create_namespaced_job(namespace="ir-jobs", body=job)
+        response = client.BatchV1Api().create_namespaced_job(namespace=job_namespace, body=job)
         return response.metadata.name
