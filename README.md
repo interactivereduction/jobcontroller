@@ -17,3 +17,10 @@ Publish container:
 ```bash
 docker push ghcr.io/interactivereduction/jobcontroller -a
 ```
+
+Example kafka messages:
+```
+{"filepath": "/test/path/to/file.txt", "experiment_number": "RB000001", "instrument": "INTER"}
+{"filepath": "/test/path/to/anotherone.txt", "experiment_number": "RB000001", "instrument": "INTER"}
+{"filepath": "/test/path/to/MARI0.nxs", "experiment_number": "0", "instrument": "MARI"}
+```
