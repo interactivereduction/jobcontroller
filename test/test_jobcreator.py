@@ -3,13 +3,13 @@
 import unittest
 from unittest import mock
 
-from jobcontroller.k8sapi import K8sAPI
+from jobcontroller.jobcreator import JobCreator
 
 
-class K8sAPITest(unittest.TestCase):
+class JobCreatorTest(unittest.TestCase):
     @mock.patch("jobcontroller.k8sapi.load_kubernetes_config")
     def test_init_calls_load_cluster_config(self, load_kubernetes_config):
-        K8sAPI()
+        JobCreator()
 
         load_kubernetes_config.assert_called_once_with()
 
@@ -19,7 +19,7 @@ class K8sAPITest(unittest.TestCase):
         script = mock.MagicMock()
         ceph_path = mock.MagicMock()
         job_name = mock.MagicMock()
-        k8s = K8sAPI()
+        k8s = JobCreator()
 
         k8s.spawn_job(job_name=job_name, script=script, ceph_path=ceph_path)
 

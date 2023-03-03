@@ -1,11 +1,11 @@
 """
-Contains the functions for aquiring a script for the reduction workflow
+Contains the functions for acquiring a script for the reduction workflow
 """
 
 
-def aquire_script(filename: str, ir_api_ip: str) -> str:
+def acquire_script(filename: str, ir_api_ip: str) -> str:
     """
-    The aim of this function is to aquire the script from the IR-API by using the passed filename and ip. The
+    The aim of this function is to acquire the script from the IR-API by using the passed filename and ip. The
     responsibility for figuring out what script is what, and doing the substitution is on the API to figure out.
     :return: str, the script for the reduction
     """

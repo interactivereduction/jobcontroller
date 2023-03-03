@@ -6,7 +6,7 @@ from kubernetes import client  # type: ignore
 from jobcontroller.utils import logger, load_kubernetes_config
 
 
-class K8sAPI:
+class JobCreator:
     """
     This class is responsible for loading the kubernetes config and handling methods for creating new pods.
     """

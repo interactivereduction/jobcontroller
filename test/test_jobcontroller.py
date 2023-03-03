@@ -31,7 +31,7 @@ class JobControllerTest(unittest.TestCase):
 
         self.joc.on_message(message)
 
-        self.joc.k8s.spawn_job.assert_called_once_with(
+        self.joc.job_creator.spawn_job.assert_called_once_with(
             job_name=f"run-{os.path.basename(message['filepath'])}",
             script=aquire_script.return_value,
             ceph_path=create_ceph_path.return_value
@@ -71,7 +71,7 @@ class JobControllerTest(unittest.TestCase):
         self.joc.on_message(message)
 
         self.joc.create_job_watcher.assert_called_once_with(
-            self.joc.k8s.spawn_job.return_value,
+            self.joc.job_creator.spawn_job.return_value,
             create_ceph_path.return_value
         )
 
@@ -82,7 +82,7 @@ class JobControllerTest(unittest.TestCase):
 
         def exception_side_effect(*_, **__):
             raise exception
-        self.joc.k8s.spawn_job = mock.MagicMock(side_effect=exception_side_effect)
+        self.joc.job_creator.spawn_job = mock.MagicMock(side_effect=exception_side_effect)
 
         self.joc.on_message(message)
 

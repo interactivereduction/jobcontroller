@@ -7,8 +7,8 @@ import threading
 import uuid
 
 from jobcontroller.jobwatcher import JobWatcher
-from jobcontroller.k8sapi import K8sAPI
-from jobcontroller.scriptaquisition import aquire_script
+from jobcontroller.jobcreator import JobCreator
+from jobcontroller.scriptaquisition import acquire_script
 from jobcontroller.topicconsumer import TopicConsumer
 from jobcontroller.utils import create_ceph_path, logger
 
@@ -23,7 +23,7 @@ class JobController:
         self.ir_api_ip = "irapi.ir.svc.cluster.local"
         self.kafka_ip = os.environ.get("KAFKA_IP", "broker")
         self.consumer = TopicConsumer(self.on_message, broker_ip=self.kafka_ip)
-        self.k8s = K8sAPI()
+        self.job_creator = JobCreator()
         self.ir_k8s_api = "ir-jobs"
 
     def on_message(self, message: dict) -> None:
@@ -38,10 +38,10 @@ class JobController:
             instrument_name = message["instrument"]
             # Add UUID which will avoid collisions for reruns
             job_name = f"run-{filename.lower()}-{str(uuid.uuid4().hex)}"
-            script = aquire_script(filename=filename, ir_api_ip=self.ir_api_ip)
+            script = acquire_script(filename=filename, ir_api_ip=self.ir_api_ip)
             ceph_path = create_ceph_path(instrument_name=instrument_name, rb_number=rb_number)
-            job = self.k8s.spawn_job(job_name=job_name, script=script, ceph_path=ceph_path,
-                                     job_namespace=self.ir_k8s_api)
+            job = self.job_creator.spawn_job(job_name=job_name, script=script, ceph_path=ceph_path,
+                                             job_namespace=self.ir_k8s_api)
             self.create_job_watcher(job, ceph_path)
         except Exception as exception:
             logger.exception(exception)
@@ -72,7 +72,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-{"filepath": "/test/path/to/file.txt", "experiment_number": "RB000001", "instrument": "INTER"}
-{"filepath": "/test/path/to/anotherone.txt", "experiment_number": "RB000001", "instrument": "INTER"}
-{"filepath": "/test/path/to/MARI0.nxs", "experiment_number": "0", "instrument": "MARI"}
