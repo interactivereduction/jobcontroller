@@ -10,6 +10,7 @@ class K8sAPI:
     """
     This class is responsible for loading the kubernetes config and handling methods for creating new pods.
     """
+
     def __init__(self) -> None:
         load_kubernetes_config()
 
@@ -34,25 +35,19 @@ class K8sAPI:
                 "template": {
                     "spec": {
                         "containers": [
-                                        {
-                                            "name": job_name,
-                                            "image": "python:3.10",
-                                            "command": ["python"],
-                                            "args": ["-c", script],
-                                            "volumeMounts": [
-                                                {"name": "archive-mount", "mountPath": "/archive"},
-                                                {"name": "ceph-mount", "mountPath": "/output"},
-                                            ],
-                                        }
-                                    ],
-                        "restartPolicy": "Never",
-                        "tolerations": [
                             {
-                                "key": "queue-worker",
-                                "effect": "NoSchedule",
-                                "operator": "Exists"
+                                "name": job_name,
+                                "image": "python:3.10",
+                                "command": ["python"],
+                                "args": ["-c", script],
+                                "volumeMounts": [
+                                    {"name": "archive-mount", "mountPath": "/archive"},
+                                    {"name": "ceph-mount", "mountPath": "/output"},
+                                ],
                             }
                         ],
+                        "restartPolicy": "Never",
+                        "tolerations": [{"key": "queue-worker", "effect": "NoSchedule", "operator": "Exists"}],
                         "volumes": [
                             {"name": "archive-mount", "hostPath": {"type": "Directory", "path": "/archive"}},
                             {"name": "ceph-mount", "hostPath": {"type": "Directory", "path": ceph_path}},
