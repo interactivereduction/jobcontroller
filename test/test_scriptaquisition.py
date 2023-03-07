@@ -13,8 +13,10 @@ class UtilsTest(unittest.TestCase):
 
         output = acquire_script(filename, ir_api_ip)
 
-        expected_output = "output = []\nprint('Performing run for file: " + str(filename) + "...')\nimport json\n\n" \
-                          "print(json.dumps({'status': 'Successful', 'status_message': '', 'output_files': output}))\n"
+        expected_output = (
+            "output = []\nprint('Performing run for file: " + str(filename) + "...')\nimport json\n\n"
+            "print(json.dumps({'status': 'Successful', 'status_message': '', 'output_files': output}))\n"
+        )
         self.assertEqual(expected_output, output)
 
     def test_apply_json_output(self):
@@ -22,6 +24,8 @@ class UtilsTest(unittest.TestCase):
 
         output = apply_json_output(input_script)
 
-        expected_output = input_script + "\nimport json\n\nprint(json.dumps({'status': 'Successful', " \
-                                         "'status_message': '', 'output_files': output}))\n"
+        expected_output = (
+            input_script + "\nimport json\n\nprint(json.dumps({'status': 'Successful', "
+            "'status_message': '', 'output_files': output}))\n"
+        )
         self.assertEqual(expected_output, output)

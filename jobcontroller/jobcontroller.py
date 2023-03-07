@@ -40,8 +40,9 @@ class JobController:
             job_name = f"run-{filename.lower()}-{str(uuid.uuid4().hex)}"
             script = acquire_script(filename=filename, ir_api_ip=self.ir_api_ip)
             ceph_path = create_ceph_path(instrument_name=instrument_name, rb_number=rb_number)
-            job = self.job_creator.spawn_job(job_name=job_name, script=script, ceph_path=ceph_path,
-                                             job_namespace=self.ir_k8s_api)
+            job = self.job_creator.spawn_job(
+                job_name=job_name, script=script, ceph_path=ceph_path, job_namespace=self.ir_k8s_api
+            )
             self.create_job_watcher(job, ceph_path)
         except Exception as exception:
             logger.exception(exception)
