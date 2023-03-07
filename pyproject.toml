@@ -24,7 +24,7 @@ test = [
 ]
 
 code-inspection = [
-    "pylint==2.15.7",
+    "pylint==2.16.4",
     "mypy==0.991",
     "jobcontroller[test]"
 ]
