@@ -69,8 +69,7 @@ class JobControllerTest(unittest.TestCase):
         self.joc.on_message(message)
 
         self.joc.create_job_watcher.assert_called_once_with(
-            self.joc.job_creator.spawn_job.return_value,
-            create_ceph_path.return_value
+            self.joc.job_creator.spawn_job.return_value, create_ceph_path.return_value
         )
 
     @mock.patch("jobcontroller.jobcontroller.logger")
@@ -80,6 +79,7 @@ class JobControllerTest(unittest.TestCase):
 
         def exception_side_effect(*_, **__):
             raise exception
+
         self.joc.job_creator.spawn_job = mock.MagicMock(side_effect=exception_side_effect)
 
         self.joc.on_message(message)
