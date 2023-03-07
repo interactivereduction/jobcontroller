@@ -72,10 +72,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-<<<<<<< HEAD
-=======
-
-{"filepath": "/test/path/to/file.txt", "experiment_number": "RB000001", "instrument": "INTER"}
-{"filepath": "/test/path/to/anotherone.txt", "experiment_number": "RB000001", "instrument": "INTER"}
-{"filepath": "/test/path/to/MARI0.nxs", "experiment_number": "0", "instrument": "MARI"}
->>>>>>> 2229b4a46d4d2ae4daedce8592f770471c948f40
