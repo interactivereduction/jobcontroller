@@ -72,9 +72,7 @@ class JobWatcher:
         :param job: The job that has failed
         :return:
         """
-        logger.info(
-            "Job %s has %s, with message: %s", self.job_name, job.status.phase, job.status.message
-        )
+        logger.info("Job %s has %s, with message: %s", self.job_name, job.status.phase, job.status.message)
         status = "Error"
         status_message = job.status.message
         self.notify_kafka(status=status, status_message=status_message)
@@ -84,9 +82,7 @@ class JobWatcher:
         Process a successful event, grab the required data and logged output that will notify kafka
         :return:
         """
-        pod_name = self.grab_pod_name_from_job_name_in_namespace(
-            job_name=self.job_name, job_namespace=self.namespace
-        )
+        pod_name = self.grab_pod_name_from_job_name_in_namespace(job_name=self.job_name, job_namespace=self.namespace)
         if pod_name is None:
             raise TypeError(
                 f"Pod name can't be None, {self.job_name} name and {self.namespace} "

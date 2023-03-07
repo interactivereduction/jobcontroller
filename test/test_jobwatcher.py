@@ -12,8 +12,9 @@ class JobWatcherTest(unittest.TestCase):
         self.namespace = mock.MagicMock()
         self.kafka_ip = mock.MagicMock()
         self.ceph_path = mock.MagicMock()
-        self.jobw = JobWatcher(job_name=self.job_name, namespace=self.namespace, kafka_ip=self.kafka_ip,
-                               ceph_path=self.ceph_path)
+        self.jobw = JobWatcher(
+            job_name=self.job_name, namespace=self.namespace, kafka_ip=self.kafka_ip, ceph_path=self.ceph_path
+        )
 
     @mock.patch("jobcontroller.jobwatcher.load_kubernetes_config")
     def test_ensure_init_load_kube_config(self, load_kube_config):
@@ -44,6 +45,7 @@ class JobWatcherTest(unittest.TestCase):
 
         def raise_exception(_):
             raise Exception("EVERYTHING IS ON FIRE")
+
         self.jobw.process_event = mock.MagicMock(side_effect=raise_exception)
         event = mock.MagicMock()
         watch_.stream.return_value = [event]
@@ -51,8 +53,9 @@ class JobWatcherTest(unittest.TestCase):
         self.jobw.watch()
 
         watch_.stream.assert_called_once_with(v1.list_job_for_all_namespaces)
-        logger.error.assert_called_once_with("Job watching failed due to an exception: %s",
-                                             str(Exception("EVERYTHING IS ON FIRE")))
+        logger.error.assert_called_once_with(
+            "Job watching failed due to an exception: %s", str(Exception("EVERYTHING IS ON FIRE"))
+        )
 
     @mock.patch("jobcontroller.jobwatcher.watch")
     @mock.patch("jobcontroller.jobwatcher.client")
@@ -97,47 +100,54 @@ class JobWatcherTest(unittest.TestCase):
 
         self.jobw.process_event_success()
 
-        self.jobw.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(job_name=self.job_name,
-                                                                                   job_namespace=self.namespace)
+        self.jobw.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(
+            job_name=self.job_name, job_namespace=self.namespace
+        )
 
     @mock.patch("jobcontroller.jobwatcher.client")
     def test_process_event_success_grabs_pod_name_using_grab_pod_name_from_job_name_in_namespace_raises_when_none(
-            self, _):
+        self, _
+    ):
         self.jobw.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value=None)
         self.jobw.notify_kafka = mock.MagicMock()
 
         self.assertRaises(TypeError, self.jobw.process_event_success)
 
-        self.jobw.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(job_name=self.job_name,
-                                                                                   job_namespace=self.namespace)
+        self.jobw.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(
+            job_name=self.job_name, job_namespace=self.namespace
+        )
 
     @mock.patch("jobcontroller.jobwatcher.client")
     def test_process_event_success_passed_penultimate_log_line_to_notify_kafka_as_data(self, k8s_client):
         self.jobw.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value="pod_name")
         self.jobw.notify_kafka = mock.MagicMock()
-        k8s_client.CoreV1Api.return_value.read_namespaced_pod_log.return_value =\
-            "4th to last\n3rd to last\n{\"status\": \"Success\", \"output_files\": [], \"status_message\": \"\"}\n"
+        k8s_client.CoreV1Api.return_value.read_namespaced_pod_log.return_value = (
+            '4th to last\n3rd to last\n{"status": "Success", "output_files": [], "status_message": ""}\n'
+        )
 
         self.jobw.process_event_success()
 
-        self.jobw.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(job_name=self.job_name,
-                                                                                   job_namespace=self.namespace)
+        self.jobw.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(
+            job_name=self.job_name, job_namespace=self.namespace
+        )
         self.jobw.notify_kafka.assert_called_once_with(status="Success", status_message="", output_files=[])
 
     @mock.patch("jobcontroller.jobwatcher.client")
     def test_process_event_success_handles_errors_where_penultimate_line_of_logs_is_not_valid_json(self, k8s_client):
         self.jobw.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value="pod_name")
         self.jobw.notify_kafka = mock.MagicMock()
-        k8s_client.CoreV1Api.return_value.read_namespaced_pod_log.return_value = \
-            "4th to last\n3rd to last\n{\"status\": Not valid json, \"output_files\": [], " \
-            "\"status_message\": \"\"}\n"
+        k8s_client.CoreV1Api.return_value.read_namespaced_pod_log.return_value = (
+            '4th to last\n3rd to last\n{"status": Not valid json, "output_files": [], ' '"status_message": ""}\n'
+        )
 
         self.jobw.process_event_success()
 
-        self.jobw.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(job_name=self.job_name,
-                                                                                   job_namespace=self.namespace)
-        self.jobw.notify_kafka.assert_called_once_with(status='Unsuccessful', status_message=
-                                                       'Expecting value: line 1 column 12 (char 11)', output_files=[])
+        self.jobw.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(
+            job_name=self.job_name, job_namespace=self.namespace
+        )
+        self.jobw.notify_kafka.assert_called_once_with(
+            status="Unsuccessful", status_message="Expecting value: line 1 column 12 (char 11)", output_files=[]
+        )
 
     def test_process_event_failed_notifies_kafka(self):
         self.jobw.notify_kafka = mock.MagicMock()
