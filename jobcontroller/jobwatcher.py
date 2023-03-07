@@ -36,28 +36,32 @@ class JobWatcher:
         watch_ = watch.Watch()
         try:
             for event in watch_.stream(v1.list_job_for_all_namespaces):
-                job = event['object']
+                job = event["object"]
                 if self.job_name in job.metadata.name:
                     if job.status.succeeded == 1:
                         # Job passed
-                        pod_name = self.grab_pod_name_from_job_name_in_namespace(job_name=self.job_name,
-                                                                                 job_namespace=self.namespace)
+                        pod_name = self.grab_pod_name_from_job_name_in_namespace(
+                            job_name=self.job_name, job_namespace=self.namespace
+                        )
                         if pod_name is None:
-                            raise TypeError(f"Pod name can't be None, {self.job_name} name and {self.namespace} "
-                                            f"namespace returned None when looking for a pod.")
+                            raise TypeError(
+                                f"Pod name can't be None, {self.job_name} name and {self.namespace} "
+                                f"namespace returned None when looking for a pod."
+                            )
                         v1Core = client.CoreV1Api()
-                        logs = v1Core.read_namespaced_pod_log(
-                            name=pod_name,
-                            namespace=self.namespace)
-                        output = logs.split('\n')[-2]  # Get second last line (last line is empty)
+                        logs = v1Core.read_namespaced_pod_log(name=pod_name, namespace=self.namespace)
+                        output = logs.split("\n")[-2]  # Get second last line (last line is empty)
                         logger.info("Job %s has been completed with output: %s", self.job_name, output)
                         # Convert message from JSON string to python dict
                         try:
                             job_output = json.loads(output)
                         except JSONDecodeError as exception:
                             logger.error("Last message from job is not a JSON string: %s", str(exception))
-                            job_output = {"status": "Unsuccessful", "output_files": [], "status_message":
-                                          f"{str(exception)}"}
+                            job_output = {
+                                "status": "Unsuccessful",
+                                "output_files": [],
+                                "status_message": f"{str(exception)}",
+                            }
 
                         # Grab status from output
                         status = job_output.get("status", "Unsuccessful")
@@ -66,8 +70,9 @@ class JobWatcher:
                         self.notify_kafka(status=status, status_message=status_message, output_files=output_files)
                     elif job.status.failed == 1:
                         # Job failed
-                        logger.info("Job %s has %s, with message: %s", self.job_name, job.status.phase,
-                                    job.status.message)
+                        logger.info(
+                            "Job %s has %s, with message: %s", self.job_name, job.status.phase, job.status.message
+                        )
                         status = "Error"
                         status_message = job.status.message
                         self.notify_kafka(status=status, status_message=status_message)

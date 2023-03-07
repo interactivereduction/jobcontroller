@@ -34,7 +34,7 @@ class JobControllerTest(unittest.TestCase):
         self.joc.job_creator.spawn_job.assert_called_once_with(
             job_name=f"run-{os.path.basename(message['filepath'])}",
             script=aquire_script.return_value,
-            ceph_path=create_ceph_path.return_value
+            ceph_path=create_ceph_path.return_value,
         )
 
     @mock.patch("jobcontroller.jobcontroller.aquire_script")
@@ -46,8 +46,7 @@ class JobControllerTest(unittest.TestCase):
         self.joc.on_message(message)
 
         aquire_script.assert_called_once_with(
-            filename=os.path.basename(message['filepath']),
-            ir_api_ip=self.joc.ir_api_ip
+            filename=os.path.basename(message["filepath"]), ir_api_ip=self.joc.ir_api_ip
         )
 
     @mock.patch("jobcontroller.jobcontroller.aquire_script")
@@ -58,8 +57,7 @@ class JobControllerTest(unittest.TestCase):
         self.joc.on_message(message)
 
         create_ceph_path.assert_called_once_with(
-            instrument_name=message["instrument"],
-            rb_number=message["experiment_number"]
+            instrument_name=message["instrument"], rb_number=message["experiment_number"]
         )
 
     @mock.patch("jobcontroller.jobcontroller.aquire_script")
@@ -71,8 +69,12 @@ class JobControllerTest(unittest.TestCase):
         self.joc.on_message(message)
 
         self.joc.create_job_watcher.assert_called_once_with(
+<<<<<<< HEAD
             self.joc.job_creator.spawn_job.return_value,
             create_ceph_path.return_value
+=======
+            self.joc.k8s.spawn_job.return_value, create_ceph_path.return_value
+>>>>>>> 2229b4a46d4d2ae4daedce8592f770471c948f40
         )
 
     @mock.patch("jobcontroller.jobcontroller.logger")
@@ -82,7 +84,12 @@ class JobControllerTest(unittest.TestCase):
 
         def exception_side_effect(*_, **__):
             raise exception
+<<<<<<< HEAD
         self.joc.job_creator.spawn_job = mock.MagicMock(side_effect=exception_side_effect)
+=======
+
+        self.joc.k8s.spawn_job = mock.MagicMock(side_effect=exception_side_effect)
+>>>>>>> 2229b4a46d4d2ae4daedce8592f770471c948f40
 
         self.joc.on_message(message)
 

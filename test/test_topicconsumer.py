@@ -97,11 +97,13 @@ class TopicConsumerTest(unittest.TestCase):
         message.error.return_value = None
         consumer = TopicConsumer(message_callback=mock.MagicMock(), broker_ip=broker_ip)
         consumer.consumer.poll.return_value = message
-        message_value = "{\"filepath\": \"/test/path/to/file.txt\", \"experiment_number\": \"RB000001\", " \
-                        "\"instrument\": \"INTER\"}"
+        message_value = (
+            '{"filepath": "/test/path/to/file.txt", "experiment_number": "RB000001", ' '"instrument": "INTER"}'
+        )
         message.value.return_value.decode.return_value = message_value
 
         consumer.start_consuming(run_once=True)
 
-        consumer.message_callback.assert_called_once_with({'filepath': '/test/path/to/file.txt',
-                                                           'experiment_number': 'RB000001', 'instrument': 'INTER'})
+        consumer.message_callback.assert_called_once_with(
+            {"filepath": "/test/path/to/file.txt", "experiment_number": "RB000001", "instrument": "INTER"}
+        )

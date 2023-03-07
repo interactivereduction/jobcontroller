@@ -21,8 +21,8 @@ class TopicConsumer:
         consumer_config = {
             "bootstrap.servers": broker_ip,
             "group.id": "consumer-group-name",
-            'auto.offset.reset': 'earliest',  # Consume from the earliest part of the topic
-            'reconnect.backoff.max.ms': 600000,  # Retry for up to 10 minutes
+            "auto.offset.reset": "earliest",  # Consume from the earliest part of the topic
+            "reconnect.backoff.max.ms": 600000,  # Retry for up to 10 minutes
         }
         self.consumer = Consumer(consumer_config)
         logger.info("Connecting to kafka using the ip: %s", broker_ip)

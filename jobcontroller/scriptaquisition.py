@@ -20,8 +20,9 @@ def apply_json_output(script: str) -> str:
     3 values, status of the run (status), status message, and output files.
     :return: The passed script with 3 lines added to ensure a json dump occurs at the end
     """
-    script_addon = \
-        "import json\n" \
-        "\n" \
+    script_addon = (
+        "import json\n"
+        "\n"
         "print(json.dumps({'status': 'Successful', 'status_message': '', 'output_files': output}))\n"
+    )
     return script + "\n" + script_addon
