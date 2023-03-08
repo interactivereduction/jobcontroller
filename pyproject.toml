@@ -1,0 +1,33 @@
+[project]
+name = "jobcontroller"
+readme = "README.md"
+version = "0.0.1"
+dependencies = [
+    "confluent-kafka==2.0.2",
+    "kubernetes==25.3.0"
+]
+
+[project.urls]
+"Repository" = "https://github.com/interactivereduction/jobcontroller"
+
+[project.scripts]
+jobcontroller = "jobcontroller.jobcontroller:main"
+
+[project.optional-dependencies]
+formatting = [
+    "toml==0.10.2",
+    "black==23.1.0",
+]
+
+test = [
+    "pytest==7.2.2"
+]
+
+code-inspection = [
+    "pylint==2.16.4",
+    "mypy==1.1.1",
+    "jobcontroller[test]"
+]
+
+[tool.setuptools]
+packages = ["jobcontroller"]

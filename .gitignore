@@ -127,6 +127,15 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+<<<<<<< HEAD
+<<<<<<< HEAD
 
 # Pycharm
 .idea/
+=======
+>>>>>>> Initial commit
+=======
+
+# Pycharm
+.idea/
+>>>>>>> Initial design for jobcontroller
