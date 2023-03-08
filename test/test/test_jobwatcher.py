@@ -168,29 +168,32 @@ class JobWatcherTest(unittest.TestCase):
     @mock.patch("jobcontroller.jobwatcher.Producer")
     def test_notify_kafka_produces_a_message_using_passed_data_for_success(self, producer):
         self.jobw.ceph_path = "/ceph/path/here/"
-        value = "{\"status\": \"Successful\", \"run output\": [\"/ceph/path/here/path\"]}"
+        value = '{"status": "Successful", "run output": ["/ceph/path/here/path"]}'
 
         self.jobw.notify_kafka("Successful", "", ["path"])
 
-        producer.return_value.produce.assert_called_once_with("completed-runs", value=value,
-                                                              callback=self.jobw._delivery_callback)
+        producer.return_value.produce.assert_called_once_with(
+            "completed-runs", value=value, callback=self.jobw._delivery_callback
+        )
 
     @mock.patch("jobcontroller.jobwatcher.Producer")
     def test_notify_kafka_produces_a_message_using_passed_data_for_error(self, producer):
         self.jobw.ceph_path = "/ceph/path/here/"
-        value = "{\"status\": \"Error\", \"status message\": \"Status message\"}"
+        value = '{"status": "Error", "status message": "Status message"}'
 
         self.jobw.notify_kafka("Error", "Status message", [])
 
-        producer.return_value.produce.assert_called_once_with("completed-runs", value=value,
-                                                              callback=self.jobw._delivery_callback)
+        producer.return_value.produce.assert_called_once_with(
+            "completed-runs", value=value, callback=self.jobw._delivery_callback
+        )
 
     @mock.patch("jobcontroller.jobwatcher.Producer")
     def test_notify_kafka_produces_a_message_using_passed_data_for_other(self, producer):
         self.jobw.ceph_path = "/ceph/path/here/"
-        value = "{\"status\": \"ANYTHING ELSE\", \"status message\": \"Status message\"}"
+        value = '{"status": "ANYTHING ELSE", "status message": "Status message"}'
 
         self.jobw.notify_kafka("ANYTHING ELSE", "Status message", [])
 
-        producer.return_value.produce.assert_called_once_with("completed-runs", value=value,
-                                                              callback=self.jobw._delivery_callback)
+        producer.return_value.produce.assert_called_once_with(
+            "completed-runs", value=value, callback=self.jobw._delivery_callback
+        )
