@@ -13,8 +13,14 @@ class TopicConsumerTest(unittest.TestCase):
 
         TopicConsumer(message_callback=mock.MagicMock, broker_ip=broker_ip)
 
-        kafka_consumer.assert_called_once_with({"bootstrap.servers": broker_ip, "group.id": "consumer-group-name",
-                                                'auto.offset.reset': 'earliest', 'reconnect.backoff.max.ms': 600000})
+        kafka_consumer.assert_called_once_with(
+            {
+                "bootstrap.servers": broker_ip,
+                "group.id": "consumer-group-name",
+                "auto.offset.reset": "earliest",
+                "reconnect.backoff.max.ms": 600000,
+            }
+        )
 
     @mock.patch("jobcontroller.topicconsumer.Consumer")
     def test_consumer_subscribes_using_kafka_consumer(self, kafka_consumer):

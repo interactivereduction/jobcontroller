@@ -34,10 +34,11 @@ class JobControllerTest(unittest.TestCase):
         self.joc.on_message(message)
 
         self.joc.job_creator.spawn_job.assert_called_once()
-        self.assertIn(f"run-{Path(message['filepath']).stem}", self.joc.job_creator.spawn_job.call_args.kwargs[
-            'job_name'])
-        self.assertEqual(self.joc.job_creator.spawn_job.call_args.kwargs['script'], acquire_script.return_value)
-        self.assertEqual(self.joc.job_creator.spawn_job.call_args.kwargs['ceph_path'], create_ceph_path.return_value)
+        self.assertIn(
+            f"run-{Path(message['filepath']).stem}", self.joc.job_creator.spawn_job.call_args.kwargs["job_name"]
+        )
+        self.assertEqual(self.joc.job_creator.spawn_job.call_args.kwargs["script"], acquire_script.return_value)
+        self.assertEqual(self.joc.job_creator.spawn_job.call_args.kwargs["ceph_path"], create_ceph_path.return_value)
 
     @mock.patch("jobcontroller.jobcontroller.acquire_script")
     @mock.patch("jobcontroller.jobcontroller.create_ceph_path")
