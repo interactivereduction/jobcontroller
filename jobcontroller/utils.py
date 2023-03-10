@@ -5,8 +5,8 @@ import logging
 import os
 import sys
 from typing import List
-from kubernetes import config
-from kubernetes.config import ConfigException
+from kubernetes import config  # type: ignore[import]
+from kubernetes.config import ConfigException  # type: ignore[import]
 
 stdout_handler = logging.StreamHandler(stream=sys.stdout)
 logging.basicConfig(
@@ -38,7 +38,7 @@ def add_ceph_path_to_output_files(ceph_path: str, output_files: List[str]) -> Li
     return [os.path.join(ceph_path, output) for output in output_files]
 
 
-def load_kubernetes_config():
+def load_kubernetes_config() -> None:
     """
     Load the kubernetes config for the kubernetes library, attempt incluster first, then try the KUBECONFIG variable,
     then finally try the default kube config locations

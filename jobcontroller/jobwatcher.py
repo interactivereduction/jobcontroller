@@ -3,10 +3,11 @@ Watch a kubernetes job, and when it ends notify a kafka topic
 """
 import json
 from json import JSONDecodeError
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Dict
 
-from confluent_kafka import Producer
-from kubernetes import client, watch
+from confluent_kafka import Producer  # type: ignore[import]
+from kubernetes import client, watch  # type: ignore[import]
+from kubernetes.client import V1Job
 
 from jobcontroller.utils import logger, add_ceph_path_to_output_files, load_kubernetes_config
 
@@ -38,7 +39,7 @@ class JobWatcher:
         for pod in pods.items:
             for owner in pod.metadata.owner_references:
                 if owner.name == job_name:
-                    return pod.metadata.name
+                    return str(pod.metadata.name)
         return None
 
     def watch(self) -> None:
@@ -58,7 +59,7 @@ class JobWatcher:
             return
         logger.info("Ending JobWatcher for job %s", self.job_name)
 
-    def process_event(self, event):
+    def process_event(self, event: Dict) -> None:
         """
         Process events from the stream, send the success to a success event processing, send failed to failed event
         processing.
@@ -74,7 +75,7 @@ class JobWatcher:
                 # Job failed
                 self.process_event_failed(job)
 
-    def process_event_failed(self, job):
+    def process_event_failed(self, job: V1Job) -> None:
         """
         Process the event that failed, and notify kafka
         :param job: The job that has failed
@@ -85,7 +86,7 @@ class JobWatcher:
         status_message = job.status.message
         self.notify_kafka(status=status, status_message=status_message)
 
-    def process_event_success(self):
+    def process_event_success(self) -> None:
         """
         Process a successful event, grab the required data and logged output that will notify kafka
         :return:
@@ -124,7 +125,7 @@ class JobWatcher:
         output_files = job_output.get("output_files", [])
         self.notify_kafka(status=status, status_message=status_message, output_files=output_files)
 
-    def notify_kafka(self, status: str, status_message: str = "", output_files: List[str] = None) -> None:
+    def notify_kafka(self, status: str, status_message: str = "", output_files: Optional[List[str]] = None) -> None:
         """
         Connect to kafka, send message and disconnect from kafka
         :param status: The end state of the Run
@@ -141,7 +142,7 @@ class JobWatcher:
         )
 
         logger.info("Creating message for kafka")
-        if output_files is not None:
+        if output_files is not []:
             outputs = add_ceph_path_to_output_files(ceph_path=self.ceph_path, output_files=output_files)
         else:
             outputs = []

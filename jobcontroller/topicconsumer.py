@@ -3,9 +3,9 @@ The topic consumer connects to kafka and polls for messages from the topic. It e
 environment variable, the value should be the kafka broker ip address.
 """
 import json
-from typing import Callable
+from typing import Callable, Dict
 
-from confluent_kafka import Consumer  # type: ignore
+from confluent_kafka import Consumer  # type: ignore[import]
 
 from jobcontroller.utils import logger
 
@@ -16,7 +16,7 @@ class TopicConsumer:
     JobController
     """
 
-    def __init__(self, message_callback: Callable, broker_ip: str) -> None:
+    def __init__(self, message_callback: Callable[[Dict], ...], broker_ip: str) -> None:
         self.message_callback = message_callback
         consumer_config = {
             "bootstrap.servers": broker_ip,

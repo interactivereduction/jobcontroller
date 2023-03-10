@@ -1,7 +1,7 @@
 """
 Communicate to a kubernetes API to spawn a pod with the metadata passed by kafka message to the RunMaker
 """
-from kubernetes import client  # type: ignore
+from kubernetes import client  # type: ignore[import]
 
 from jobcontroller.utils import logger, load_kubernetes_config
 
@@ -58,4 +58,4 @@ class JobCreator:
             },
         )
         response = client.BatchV1Api().create_namespaced_job(namespace=job_namespace, body=job)
-        return response.metadata.name
+        return str(response.metadata.name)

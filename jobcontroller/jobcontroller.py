@@ -6,6 +6,7 @@ import os
 import threading
 import uuid
 from pathlib import Path
+from typing import Dict
 
 from jobcontroller.jobwatcher import JobWatcher
 from jobcontroller.jobcreator import JobCreator
@@ -27,7 +28,7 @@ class JobController:
         self.job_creator = JobCreator()
         self.ir_k8s_api = "ir-jobs"
 
-    def on_message(self, message: dict) -> None:
+    def on_message(self, message: Dict) -> None:
         """
         Request that the k8s api spawns a pod
         :param message: dict, the message is a dictionary containing the needed information for spawning a pod
@@ -67,7 +68,7 @@ class JobController:
         self.consumer.start_consuming()
 
 
-def main():
+def main() -> None:
     """
     This is the main function that will run the entire software
     """
