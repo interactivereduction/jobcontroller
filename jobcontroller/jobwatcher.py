@@ -1,6 +1,6 @@
 import json
 from json import JSONDecodeError
-from typing import Any, List
+from typing import Any, List, Optional
 
 from confluent_kafka import Producer
 from kubernetes import client, watch
@@ -17,7 +17,7 @@ class JobWatcher:
         load_kubernetes_config()  # Should already be called in job creator, this is a defensive call.
 
     @staticmethod
-    def grab_pod_name_from_job_name_in_namespace(job_name: str, job_namespace: str) -> str:
+    def grab_pod_name_from_job_name_in_namespace(job_name: str, job_namespace: str) -> Optional[str]:
         """
         Find the name of the pod, given a job name and a job namespace, this works on the assumtion that there is
         only 1 pod in a job.

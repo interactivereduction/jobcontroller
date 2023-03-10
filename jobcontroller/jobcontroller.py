@@ -1,10 +1,11 @@
 """
-The RunMaker is responsible for creating k8s pods that perform the reduction. It expects the kafka IP to be present in
-the environment as KAFKA_IP.
+Main class, creates jobs by calling to the jobcreator, creates the jobwatcher for each created job, and recieves
+requests from the topicconsumer.
 """
 import os
 import threading
 import uuid
+from pathlib import Path
 
 from jobcontroller.jobwatcher import JobWatcher
 from jobcontroller.jobcreator import JobCreator
@@ -33,7 +34,7 @@ class JobController:
         :return: None
         """
         try:
-            filename = os.path.splitext(os.path.basename(message["filepath"]))[0]
+            filename = Path(message["filepath"]).stem
             rb_number = message["experiment_number"]
             instrument_name = message["instrument"]
             # Add UUID which will avoid collisions for reruns

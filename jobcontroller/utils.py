@@ -36,10 +36,7 @@ def add_ceph_path_to_output_files(ceph_path: str, output_files: List[str]) -> Li
     the ceph_path
     :return: A list with the new paths
     """
-    full_paths = []
-    for output in output_files:
-        full_paths.append(os.path.join(ceph_path, output))
-    return full_paths
+    return [os.path.join(ceph_path, output) for output in output_files]
 
 
 def load_kubernetes_config():
