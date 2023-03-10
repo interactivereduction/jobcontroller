@@ -34,7 +34,7 @@ class JobWatcherTest(unittest.TestCase):
 
         return_value = self.jobw.grab_pod_name_from_job_name_in_namespace(self.job_name, self.namespace)
 
-        self.assertEqual(return_value, output)
+        self.assertEqual(str(return_value), str(output))
 
     @mock.patch("jobcontroller.jobwatcher.logger")
     @mock.patch("jobcontroller.jobwatcher.watch")

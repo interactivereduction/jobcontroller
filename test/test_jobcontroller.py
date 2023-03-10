@@ -2,18 +2,19 @@
 
 import os
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from jobcontroller.jobcontroller import JobController
 
 
 class JobControllerTest(unittest.TestCase):
-    @mock.patch("jobcontroller.jobcontroller.K8sAPI")
+    @mock.patch("jobcontroller.jobcontroller.JobCreator")
     @mock.patch("jobcontroller.jobcontroller.TopicConsumer")
     def setUp(self, _, __):
         self.joc = JobController()
 
-    @mock.patch("jobcontroller.jobcontroller.K8sAPI")
+    @mock.patch("jobcontroller.jobcontroller.JobCreator")
     @mock.patch("jobcontroller.jobcontroller.TopicConsumer")
     def test_job_controller_gets_kafka_ip_from_env(self, _, __):
         self.assertEqual(self.joc.kafka_ip, "broker")
@@ -24,32 +25,33 @@ class JobControllerTest(unittest.TestCase):
 
         os.environ.pop("KAFKA_IP")
 
-    @mock.patch("jobcontroller.jobcontroller.aquire_script")
+    @mock.patch("jobcontroller.jobcontroller.JobWatcher")
+    @mock.patch("jobcontroller.jobcontroller.acquire_script")
     @mock.patch("jobcontroller.jobcontroller.create_ceph_path")
-    def test_on_message_calls_spawn_pod_with_message(self, create_ceph_path, aquire_script):
+    def test_on_message_calls_spawn_pod_with_message(self, create_ceph_path, acquire_script, _):
         message = mock.MagicMock()
 
         self.joc.on_message(message)
 
-        self.joc.job_creator.spawn_job.assert_called_once_with(
-            job_name=f"run-{os.path.basename(message['filepath'])}",
-            script=aquire_script.return_value,
-            ceph_path=create_ceph_path.return_value,
-        )
+        self.joc.job_creator.spawn_job.assert_called_once()
+        self.assertIn(f"run-{Path(message['filepath']).stem}", self.joc.job_creator.spawn_job.call_args.kwargs[
+            'job_name'])
+        self.assertEqual(self.joc.job_creator.spawn_job.call_args.kwargs['script'], acquire_script.return_value)
+        self.assertEqual(self.joc.job_creator.spawn_job.call_args.kwargs['ceph_path'], create_ceph_path.return_value)
 
-    @mock.patch("jobcontroller.jobcontroller.aquire_script")
+    @mock.patch("jobcontroller.jobcontroller.acquire_script")
     @mock.patch("jobcontroller.jobcontroller.create_ceph_path")
-    def test_on_message_aquires_script_using_filename(self, _, aquire_script):
+    def test_on_message_aquires_script_using_filename(self, _, acquire_script):
         message = mock.MagicMock()
         self.joc.ir_api_ip = mock.MagicMock()
 
         self.joc.on_message(message)
 
-        aquire_script.assert_called_once_with(
+        acquire_script.assert_called_once_with(
             filename=os.path.basename(message["filepath"]), ir_api_ip=self.joc.ir_api_ip
         )
 
-    @mock.patch("jobcontroller.jobcontroller.aquire_script")
+    @mock.patch("jobcontroller.jobcontroller.acquire_script")
     @mock.patch("jobcontroller.jobcontroller.create_ceph_path")
     def test_on_message_calls_create_ceph_path(self, create_ceph_path, _):
         message = mock.MagicMock()
@@ -60,7 +62,7 @@ class JobControllerTest(unittest.TestCase):
             instrument_name=message["instrument"], rb_number=message["experiment_number"]
         )
 
-    @mock.patch("jobcontroller.jobcontroller.aquire_script")
+    @mock.patch("jobcontroller.jobcontroller.acquire_script")
     @mock.patch("jobcontroller.jobcontroller.create_ceph_path")
     def test_on_message_sends_the_job_to_the_job_watch(self, create_ceph_path, __):
         message = mock.MagicMock()
