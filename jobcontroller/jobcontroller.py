@@ -28,7 +28,7 @@ class JobController:
         self.job_creator = JobCreator()
         self.ir_k8s_api = "ir-jobs"
 
-    def on_message(self, message: Dict) -> None:
+    def on_message(self, message: Dict[str, str]) -> None:
         """
         Request that the k8s api spawns a pod
         :param message: dict, the message is a dictionary containing the needed information for spawning a pod
