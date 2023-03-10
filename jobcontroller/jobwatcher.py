@@ -59,7 +59,7 @@ class JobWatcher:
             return
         logger.info("Ending JobWatcher for job %s", self.job_name)
 
-    def process_event(self, event: Dict[str, str]) -> None:
+    def process_event(self, event: Dict[str, Any]) -> None:
         """
         Process events from the stream, send the success to a success event processing, send failed to failed event
         processing.

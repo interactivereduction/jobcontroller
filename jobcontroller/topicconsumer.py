@@ -16,7 +16,7 @@ class TopicConsumer:
     JobController
     """
 
-    def __init__(self, message_callback: Callable[[Dict[str, str]]], broker_ip: str) -> None:
+    def __init__(self, message_callback: Callable[[Dict[str, str]], None], broker_ip: str) -> None:
         self.message_callback = message_callback
         consumer_config = {
             "bootstrap.servers": broker_ip,
