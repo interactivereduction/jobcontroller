@@ -1,3 +1,6 @@
+"""
+Watch a kubernetes job, and when it ends notify a kafka topic
+"""
 import json
 from json import JSONDecodeError
 from typing import Any, List, Optional
@@ -9,6 +12,9 @@ from jobcontroller.utils import logger, add_ceph_path_to_output_files, load_kube
 
 
 class JobWatcher:
+    """
+    Watch a kubernetes job, and when it ends notify a kafka topic
+    """
     def __init__(self, job_name: str, namespace: str, kafka_ip: str, ceph_path: str):
         self.job_name = job_name
         self.namespace = namespace
@@ -32,6 +38,7 @@ class JobWatcher:
             for owner in pod.metadata.owner_references:
                 if owner.name == job_name:
                     return pod.metadata.name
+        return None
 
     def watch(self) -> None:
         """
@@ -45,7 +52,7 @@ class JobWatcher:
         try:
             for event in watch_.stream(v1.list_job_for_all_namespaces):
                 self.process_event(event)
-        except Exception as exception:
+        except Exception as exception:  # pylint: disable=broad-exception-caught
             logger.error("Job watching failed due to an exception: %s", str(exception))
             return
         logger.info("Ending JobWatcher for job %s", self.job_name)
@@ -88,8 +95,8 @@ class JobWatcher:
                 f"Pod name can't be None, {self.job_name} name and {self.namespace} "
                 f"namespace returned None when looking for a pod."
             )
-        v1Core = client.CoreV1Api()
-        logs = v1Core.read_namespaced_pod_log(name=pod_name, namespace=self.namespace)
+        v1_core = client.CoreV1Api()
+        logs = v1_core.read_namespaced_pod_log(name=pod_name, namespace=self.namespace)
         output = logs.split("\n")[-2]  # Get second last line (last line is empty)
         logger.info("Job %s has been completed with output: %s", self.job_name, output)
         # Convert message from JSON string to python dict

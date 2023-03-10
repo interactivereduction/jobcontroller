@@ -45,7 +45,7 @@ class JobController:
                 job_name=job_name, script=script, ceph_path=ceph_path, job_namespace=self.ir_k8s_api
             )
             self.create_job_watcher(job, ceph_path)
-        except Exception as exception:
+        except Exception as exception:  # pylint: disable=broad-exception-caught
             logger.exception(exception)
 
     def create_job_watcher(self, job_name: str, ceph_path: str) -> None:
@@ -68,6 +68,9 @@ class JobController:
 
 
 def main():
+    """
+    This is the main function that will run the entire software
+    """
     job_controller = JobController()
     job_controller.run()
 

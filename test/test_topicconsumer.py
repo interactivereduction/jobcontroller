@@ -91,14 +91,14 @@ class TopicConsumerTest(unittest.TestCase):
         consumer.message_callback.assert_not_called()
 
     @mock.patch("jobcontroller.topicconsumer.Consumer")
-    def test_consuming_decodes_string_into_dict_correctly(self, kafka_consumer):
+    def test_consuming_decodes_string_into_dict_correctly(self, _):
         broker_ip = mock.MagicMock()
         message = mock.MagicMock()
         message.error.return_value = None
         consumer = TopicConsumer(message_callback=mock.MagicMock(), broker_ip=broker_ip)
         consumer.consumer.poll.return_value = message
         message_value = (
-            '{"filepath": "/test/path/to/file.txt", "experiment_number": "RB000001", ' '"instrument": "INTER"}'
+            r'{"filepath": "/test/path/to/file.txt", "experiment_number": "RB000001", ' '"instrument": "INTER"}'
         )
         message.value.return_value.decode.return_value = message_value
 

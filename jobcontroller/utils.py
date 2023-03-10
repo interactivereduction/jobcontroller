@@ -5,13 +5,12 @@ import logging
 import os
 import sys
 from typing import List
-from kubernetes import client, config  # type: ignore
+from kubernetes import config
 from kubernetes.config import ConfigException
 
-file_handler = logging.FileHandler(filename="run-detection.log")
 stdout_handler = logging.StreamHandler(stream=sys.stdout)
 logging.basicConfig(
-    handlers=[file_handler, stdout_handler],
+    handlers=[stdout_handler],
     format="[%(asctime)s]-%(name)s-%(levelname)s: %(message)s",
     level=logging.INFO,
 )
@@ -40,6 +39,11 @@ def add_ceph_path_to_output_files(ceph_path: str, output_files: List[str]) -> Li
 
 
 def load_kubernetes_config():
+    """
+    Load the kubernetes config for the kubernetes library, attempt incluster first, then try the KUBECONFIG variable,
+    then finally try the default kube config locations
+    :return:
+    """
     try:
         config.load_incluster_config()
     except ConfigException:

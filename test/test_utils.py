@@ -3,10 +3,9 @@ import os
 import unittest
 from unittest import mock
 
-from kubernetes import client, config  # type: ignore
 from kubernetes.config import ConfigException
 
-from utils import load_kubernetes_config
+from jobcontroller.utils import load_kubernetes_config
 
 
 class UtilTests(unittest.TestCase):
