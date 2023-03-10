@@ -44,7 +44,7 @@ class JobWatcherTest(unittest.TestCase):
         watch_ = k8s_watch.Watch.return_value
 
         def raise_exception(_):
-            raise Exception("EVERYTHING IS ON FIRE")  # pylint: disable=broad-exception-caught
+            raise Exception("EVERYTHING IS ON FIRE")  # pylint: disable=broad-exception-raised
 
         self.jobw.process_event = mock.MagicMock(side_effect=raise_exception)
         event = mock.MagicMock()
@@ -175,7 +175,7 @@ class JobWatcherTest(unittest.TestCase):
         producer.return_value.produce.assert_called_once_with(
             "completed-runs",
             value=value,
-            callback=self.jobw._delivery_callback,  # pylint: disable=broad-exception-caught
+            callback=self.jobw._delivery_callback,  # pylint: disable=protected-access
         )
 
     @mock.patch("jobcontroller.jobwatcher.Producer")
@@ -188,7 +188,7 @@ class JobWatcherTest(unittest.TestCase):
         producer.return_value.produce.assert_called_once_with(
             "completed-runs",
             value=value,
-            callback=self.jobw._delivery_callback,  # pylint: disable=broad-exception-caught
+            callback=self.jobw._delivery_callback,  # pylint: disable=protected-access
         )
 
     @mock.patch("jobcontroller.jobwatcher.Producer")
@@ -201,5 +201,5 @@ class JobWatcherTest(unittest.TestCase):
         producer.return_value.produce.assert_called_once_with(
             "completed-runs",
             value=value,
-            callback=self.jobw._delivery_callback,  # pylint: disable=broad-exception-caught
+            callback=self.jobw._delivery_callback,  # pylint: disable=protected-access
         )

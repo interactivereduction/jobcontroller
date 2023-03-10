@@ -98,7 +98,7 @@ class TopicConsumerTest(unittest.TestCase):
         consumer = TopicConsumer(message_callback=mock.MagicMock(), broker_ip=broker_ip)
         consumer.consumer.poll.return_value = message
         message_value = (
-            r'{"filepath": "/test/path/to/file.txt", "experiment_number": "RB000001", ' '"instrument": "INTER"}'
+            '{\"filepath\": \"/test/path/to/file.txt\", \"experiment_number\": \"RB000001\", \"instrument\": \"INTER\"}'
         )
         message.value.return_value.decode.return_value = message_value
 
