@@ -137,7 +137,7 @@ class JobWatcherTest(unittest.TestCase):
         self.jobw.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value="pod_name")
         self.jobw.notify_kafka = mock.MagicMock()
         k8s_client.CoreV1Api.return_value.read_namespaced_pod_log.return_value = (
-            '4th to last\n3rd to last\n{\"status\": Not valid json, \"output_files\": [], \"status_message\": \"\"}\n'
+            '4th to last\n3rd to last\n{"status": Not valid json, "output_files": [], "status_message": ""}\n'
         )
 
         self.jobw.process_event_success()
@@ -173,8 +173,9 @@ class JobWatcherTest(unittest.TestCase):
         self.jobw.notify_kafka("Successful", "", ["path"])
 
         producer.return_value.produce.assert_called_once_with(
-            "completed-runs", value=value,
-            callback=self.jobw._delivery_callback  # pylint: disable=broad-exception-caught
+            "completed-runs",
+            value=value,
+            callback=self.jobw._delivery_callback,  # pylint: disable=broad-exception-caught
         )
 
     @mock.patch("jobcontroller.jobwatcher.Producer")
@@ -185,8 +186,9 @@ class JobWatcherTest(unittest.TestCase):
         self.jobw.notify_kafka("Error", "Status message", [])
 
         producer.return_value.produce.assert_called_once_with(
-            "completed-runs", value=value,
-            callback=self.jobw._delivery_callback  # pylint: disable=broad-exception-caught
+            "completed-runs",
+            value=value,
+            callback=self.jobw._delivery_callback,  # pylint: disable=broad-exception-caught
         )
 
     @mock.patch("jobcontroller.jobwatcher.Producer")
@@ -197,6 +199,7 @@ class JobWatcherTest(unittest.TestCase):
         self.jobw.notify_kafka("ANYTHING ELSE", "Status message", [])
 
         producer.return_value.produce.assert_called_once_with(
-            "completed-runs", value=value,
-            callback=self.jobw._delivery_callback  # pylint: disable=broad-exception-caught
+            "completed-runs",
+            value=value,
+            callback=self.jobw._delivery_callback,  # pylint: disable=broad-exception-caught
         )

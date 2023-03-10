@@ -15,6 +15,7 @@ class JobWatcher:
     """
     Watch a kubernetes job, and when it ends notify a kafka topic
     """
+
     def __init__(self, job_name: str, namespace: str, kafka_ip: str, ceph_path: str):
         self.job_name = job_name
         self.namespace = namespace

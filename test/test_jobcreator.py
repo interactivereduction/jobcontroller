@@ -41,5 +41,6 @@ class JobCreatorTest(unittest.TestCase):
         self.assertEqual(len(volumes), 2)
 
         kubernetes_client.BatchV1Api.return_value.create_namespaced_job.assert_called_once()
-        self.assertEqual(kubernetes_client.BatchV1Api.return_value
-                         .create_namespaced_job.call_args.kwargs["namespace"], job_namespace)
+        self.assertEqual(
+            kubernetes_client.BatchV1Api.return_value.create_namespaced_job.call_args.kwargs["namespace"], job_namespace
+        )
