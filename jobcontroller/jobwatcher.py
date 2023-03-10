@@ -142,7 +142,7 @@ class JobWatcher:
         )
 
         logger.info("Creating message for kafka")
-        if output_files is not []:
+        if output_files is not None:
             outputs = add_ceph_path_to_output_files(ceph_path=self.ceph_path, output_files=output_files)
         else:
             outputs = []
