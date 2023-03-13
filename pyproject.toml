@@ -1,5 +1,5 @@
 [project]
-name = "jobcontroller"
+name = "job_controller"
 readme = "README.md"
 version = "0.0.1"
 dependencies = [
@@ -11,7 +11,7 @@ dependencies = [
 "Repository" = "https://github.com/interactivereduction/jobcontroller"
 
 [project.scripts]
-jobcontroller = "jobcontroller.jobcontroller:main"
+jobcontroller = "job_controller.job_controller:main"
 
 [project.optional-dependencies]
 formatting = [

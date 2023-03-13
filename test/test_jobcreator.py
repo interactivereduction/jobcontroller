@@ -3,7 +3,7 @@
 import unittest
 from unittest import mock
 
-from jobcontroller.jobcreator import JobCreator
+from job_controller.job_creator import JobCreator
 
 
 class JobCreatorTest(unittest.TestCase):

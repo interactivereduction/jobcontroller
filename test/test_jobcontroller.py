@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from jobcontroller.jobcontroller import JobController
+from job_controller.job_controller import JobController
 
 
 class JobControllerTest(unittest.TestCase):

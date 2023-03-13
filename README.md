@@ -52,7 +52,11 @@ docker push ghcr.io/interactivereduction/jobcontroller -a
 
 # Running Tests:
 
-#TODO
+To run the tests:
+
+```bash
+pytest .
+```
 
 Example kafka messages:
 ```

@@ -8,11 +8,11 @@ import uuid
 from pathlib import Path
 from typing import Dict
 
-from jobcontroller.jobwatcher import JobWatcher
-from jobcontroller.jobcreator import JobCreator
-from jobcontroller.scriptaquisition import acquire_script
-from jobcontroller.topicconsumer import TopicConsumer
-from jobcontroller.utils import create_ceph_path, logger
+from job_controller.job_watcher import JobWatcher
+from job_controller.job_creator import JobCreator
+from job_controller.script_aquisition import acquire_script
+from job_controller.topic_consumer import TopicConsumer
+from job_controller.utils import create_ceph_path, logger
 
 
 class JobController:

@@ -3,7 +3,7 @@
 import unittest
 from unittest import mock
 
-from jobcontroller.scriptaquisition import acquire_script, apply_json_output
+from job_controller.script_aquisition import acquire_script, apply_json_output
 
 
 class UtilsTest(unittest.TestCase):

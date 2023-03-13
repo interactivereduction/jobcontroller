@@ -9,7 +9,7 @@ from confluent_kafka import Producer  # type: ignore[import]
 from kubernetes import client, watch  # type: ignore[import]
 from kubernetes.client import V1Job  # type: ignore[import]
 
-from jobcontroller.utils import logger, add_ceph_path_to_output_files, load_kubernetes_config
+from job_controller.utils import logger, add_ceph_path_to_output_files, load_kubernetes_config
 
 
 class JobWatcher:
