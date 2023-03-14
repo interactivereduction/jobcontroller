@@ -7,14 +7,14 @@ from job_controller.job_creator import JobCreator
 
 
 class JobCreatorTest(unittest.TestCase):
-    @mock.patch("jobcontroller.jobcreator.load_kubernetes_config")
+    @mock.patch("job_controller.job_creator.load_kubernetes_config")
     def test_init_calls_load_cluster_config(self, load_kubernetes_config):
         JobCreator()
 
         load_kubernetes_config.assert_called_once_with()
 
-    @mock.patch("jobcontroller.jobcreator.client")
-    @mock.patch("jobcontroller.jobcreator.load_kubernetes_config")
+    @mock.patch("job_controller.job_creator.client")
+    @mock.patch("job_controller.job_creator.load_kubernetes_config")
     def test_spawn_pod_creates_pod_with_passed_values(self, _, kubernetes_client):
         script = mock.MagicMock()
         ceph_path = mock.MagicMock()

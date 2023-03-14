@@ -7,7 +7,7 @@ from job_controller.topic_consumer import TopicConsumer
 
 
 class TopicConsumerTest(unittest.TestCase):
-    @mock.patch("jobcontroller.topicconsumer.Consumer")
+    @mock.patch("job_controller.topic_consumer.Consumer")
     def test_consumer_is_made_with_passed_ip(self, kafka_consumer):
         broker_ip = mock.MagicMock()
 
@@ -22,7 +22,7 @@ class TopicConsumerTest(unittest.TestCase):
             }
         )
 
-    @mock.patch("jobcontroller.topicconsumer.Consumer")
+    @mock.patch("job_controller.topic_consumer.Consumer")
     def test_consumer_subscribes_using_kafka_consumer(self, kafka_consumer):
         broker_ip = mock.MagicMock()
 
@@ -30,7 +30,7 @@ class TopicConsumerTest(unittest.TestCase):
 
         kafka_consumer.return_value.subscribe.assert_called_once_with(["detected-runs"])
 
-    @mock.patch("jobcontroller.topicconsumer.Consumer")
+    @mock.patch("job_controller.topic_consumer.Consumer")
     def test_consumer_empty_message_does_nothing(self, kafka_consumer):
         broker_ip = mock.MagicMock()
         consumer = TopicConsumer(message_callback=mock.MagicMock(), broker_ip=broker_ip)
@@ -41,7 +41,7 @@ class TopicConsumerTest(unittest.TestCase):
         kafka_consumer.return_value.poll.assert_called_once_with()
         consumer.message_callback.assert_not_called()
 
-    @mock.patch("jobcontroller.topicconsumer.Consumer")
+    @mock.patch("job_controller.topic_consumer.Consumer")
     def test_consumer_error_message_does_nothing(self, kafka_consumer):
         broker_ip = mock.MagicMock()
         message = mock.MagicMock()
@@ -53,7 +53,7 @@ class TopicConsumerTest(unittest.TestCase):
         kafka_consumer.return_value.poll.assert_called_once_with()
         consumer.message_callback.assert_not_called()
 
-    @mock.patch("jobcontroller.topicconsumer.Consumer")
+    @mock.patch("job_controller.topic_consumer.Consumer")
     def test_consumer_decoded_message_is_none_does_nothing(self, kafka_consumer):
         broker_ip = mock.MagicMock()
         message = mock.MagicMock()
@@ -66,8 +66,8 @@ class TopicConsumerTest(unittest.TestCase):
         kafka_consumer.return_value.poll.assert_called_once_with()
         consumer.message_callback.assert_not_called()
 
-    @mock.patch("jobcontroller.topicconsumer.Consumer")
-    @mock.patch("jobcontroller.topicconsumer.json")
+    @mock.patch("job_controller.topic_consumer.Consumer")
+    @mock.patch("job_controller.topic_consumer.json")
     def test_consumer_message_callback_receives_dictionary_of_decoded_message_str(self, json, kafka_consumer):
         broker_ip = mock.MagicMock()
         message = mock.MagicMock()
@@ -83,7 +83,7 @@ class TopicConsumerTest(unittest.TestCase):
         json.loads.assert_called_once_with(message_value)
         consumer.message_callback.assert_called_once_with(json.loads.return_value)
 
-    @mock.patch("jobcontroller.topicconsumer.Consumer")
+    @mock.patch("job_controller.topic_consumer.Consumer")
     def test_consumer_with_json_decode_error_logs_exception_and_does_nothing(self, kafka_consumer):
         broker_ip = mock.MagicMock()
         message = mock.MagicMock()
@@ -97,7 +97,7 @@ class TopicConsumerTest(unittest.TestCase):
         kafka_consumer.return_value.poll.assert_called_once_with()
         consumer.message_callback.assert_not_called()
 
-    @mock.patch("jobcontroller.topicconsumer.Consumer")
+    @mock.patch("job_controller.topic_consumer.Consumer")
     def test_consuming_decodes_string_into_dict_correctly(self, _):
         broker_ip = mock.MagicMock()
         message = mock.MagicMock()

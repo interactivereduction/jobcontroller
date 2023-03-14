@@ -6,7 +6,7 @@ from job_controller.job_watcher import JobWatcher
 
 
 class JobWatcherTest(unittest.TestCase):
-    @mock.patch("jobcontroller.jobwatcher.load_kubernetes_config")
+    @mock.patch("job_controller.job_watcher.load_kubernetes_config")
     def setUp(self, _):
         self.job_name = mock.MagicMock()
         self.namespace = mock.MagicMock()
@@ -16,13 +16,13 @@ class JobWatcherTest(unittest.TestCase):
             job_name=self.job_name, namespace=self.namespace, kafka_ip=self.kafka_ip, ceph_path=self.ceph_path
         )
 
-    @mock.patch("jobcontroller.jobwatcher.load_kubernetes_config")
+    @mock.patch("job_controller.job_watcher.load_kubernetes_config")
     def test_ensure_init_load_kube_config(self, load_kube_config):
         JobWatcher("", "", "", "")
 
         load_kube_config.assert_called_once_with()
 
-    @mock.patch("jobcontroller.jobwatcher.client")
+    @mock.patch("job_controller.job_watcher.client")
     def test_grab_pod_name_filters_all_pods_in_namespace_against_passed_job_name(self, k8s_client):
         output = mock.MagicMock()
         owner = mock.MagicMock()
@@ -36,9 +36,9 @@ class JobWatcherTest(unittest.TestCase):
 
         self.assertEqual(str(return_value), str(output))
 
-    @mock.patch("jobcontroller.jobwatcher.logger")
-    @mock.patch("jobcontroller.jobwatcher.watch")
-    @mock.patch("jobcontroller.jobwatcher.client")
+    @mock.patch("job_controller.job_watcher.logger")
+    @mock.patch("job_controller.job_watcher.watch")
+    @mock.patch("job_controller.job_watcher.client")
     def test_watch_handles_exceptions_from_code_handling_events(self, k8s_client, k8s_watch, logger):
         v1 = k8s_client.BatchV1Api.return_value
         watch_ = k8s_watch.Watch.return_value
@@ -57,8 +57,8 @@ class JobWatcherTest(unittest.TestCase):
             "Job watching failed due to an exception: %s", str(Exception("EVERYTHING IS ON FIRE"))
         )
 
-    @mock.patch("jobcontroller.jobwatcher.watch")
-    @mock.patch("jobcontroller.jobwatcher.client")
+    @mock.patch("job_controller.job_watcher.watch")
+    @mock.patch("job_controller.job_watcher.client")
     def test_watch_analyzes_events_from_watch_stream(self, k8s_client, k8s_watch):
         v1 = k8s_client.BatchV1Api.return_value
         watch_ = k8s_watch.Watch.return_value
@@ -93,7 +93,7 @@ class JobWatcherTest(unittest.TestCase):
 
         self.jobw.process_event_failed.assert_called_once_with(event.__getitem__.return_value)
 
-    @mock.patch("jobcontroller.jobwatcher.client")
+    @mock.patch("job_controller.job_watcher.client")
     def test_process_event_success_grabs_pod_name_using_grab_pod_name_from_job_name_in_namespace(self, _):
         self.jobw.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value="pod_name")
         self.jobw.notify_kafka = mock.MagicMock()
@@ -104,7 +104,7 @@ class JobWatcherTest(unittest.TestCase):
             job_name=self.job_name, job_namespace=self.namespace
         )
 
-    @mock.patch("jobcontroller.jobwatcher.client")
+    @mock.patch("job_controller.job_watcher.client")
     def test_process_event_success_grabs_pod_name_using_grab_pod_name_from_job_name_in_namespace_raises_when_none(
         self, _
     ):
@@ -117,7 +117,7 @@ class JobWatcherTest(unittest.TestCase):
             job_name=self.job_name, job_namespace=self.namespace
         )
 
-    @mock.patch("jobcontroller.jobwatcher.client")
+    @mock.patch("job_controller.job_watcher.client")
     def test_process_event_success_passed_penultimate_log_line_to_notify_kafka_as_data(self, k8s_client):
         self.jobw.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value="pod_name")
         self.jobw.notify_kafka = mock.MagicMock()
@@ -132,7 +132,7 @@ class JobWatcherTest(unittest.TestCase):
         )
         self.jobw.notify_kafka.assert_called_once_with(status="Success", status_message="", output_files=[])
 
-    @mock.patch("jobcontroller.jobwatcher.client")
+    @mock.patch("job_controller.job_watcher.client")
     def test_process_event_success_handles_errors_where_penultimate_line_of_logs_is_not_valid_json(self, k8s_client):
         self.jobw.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value="pod_name")
         self.jobw.notify_kafka = mock.MagicMock()
@@ -158,14 +158,14 @@ class JobWatcherTest(unittest.TestCase):
 
         self.jobw.notify_kafka.assert_called_once_with(status="Error", status_message="Status message")
 
-    @mock.patch("jobcontroller.jobwatcher.add_ceph_path_to_output_files")
-    @mock.patch("jobcontroller.jobwatcher.Producer")
+    @mock.patch("job_controller.job_watcher.add_ceph_path_to_output_files")
+    @mock.patch("job_controller.job_watcher.Producer")
     def test_notify_kafka_converts_output_files_to_ceph_paths(self, _, add_ceph_path_to_output_files):
         self.jobw.notify_kafka("", "", ["/path"])
 
         add_ceph_path_to_output_files.assert_called_once_with(ceph_path=self.ceph_path, output_files=["/path"])
 
-    @mock.patch("jobcontroller.jobwatcher.Producer")
+    @mock.patch("job_controller.job_watcher.Producer")
     def test_notify_kafka_produces_a_message_using_passed_data_for_success(self, producer):
         self.jobw.ceph_path = "/ceph/path/here/"
         value = '{"status": "Successful", "run output": ["/ceph/path/here/path"]}'
@@ -178,7 +178,7 @@ class JobWatcherTest(unittest.TestCase):
             callback=self.jobw._delivery_callback,  # pylint: disable=protected-access
         )
 
-    @mock.patch("jobcontroller.jobwatcher.Producer")
+    @mock.patch("job_controller.job_watcher.Producer")
     def test_notify_kafka_produces_a_message_using_passed_data_for_error(self, producer):
         self.jobw.ceph_path = "/ceph/path/here/"
         value = '{"status": "Error", "status message": "Status message"}'
@@ -191,7 +191,7 @@ class JobWatcherTest(unittest.TestCase):
             callback=self.jobw._delivery_callback,  # pylint: disable=protected-access
         )
 
-    @mock.patch("jobcontroller.jobwatcher.Producer")
+    @mock.patch("job_controller.job_watcher.Producer")
     def test_notify_kafka_produces_a_message_using_passed_data_for_other(self, producer):
         self.jobw.ceph_path = "/ceph/path/here/"
         value = '{"status": "ANYTHING ELSE", "status message": "Status message"}'

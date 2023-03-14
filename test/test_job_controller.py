@@ -9,13 +9,13 @@ from job_controller.job_controller import JobController
 
 
 class JobControllerTest(unittest.TestCase):
-    @mock.patch("jobcontroller.jobcontroller.JobCreator")
-    @mock.patch("jobcontroller.jobcontroller.TopicConsumer")
+    @mock.patch("job_controller.job_controller.JobCreator")
+    @mock.patch("job_controller.job_controller.TopicConsumer")
     def setUp(self, _, __):
         self.joc = JobController()
 
-    @mock.patch("jobcontroller.jobcontroller.JobCreator")
-    @mock.patch("jobcontroller.jobcontroller.TopicConsumer")
+    @mock.patch("job_controller.job_controller.JobCreator")
+    @mock.patch("job_controller.job_controller.TopicConsumer")
     def test_job_controller_gets_kafka_ip_from_env(self, _, __):
         self.assertEqual(self.joc.kafka_ip, "broker")
 
@@ -25,9 +25,9 @@ class JobControllerTest(unittest.TestCase):
 
         os.environ.pop("KAFKA_IP")
 
-    @mock.patch("jobcontroller.jobcontroller.JobWatcher")
-    @mock.patch("jobcontroller.jobcontroller.acquire_script")
-    @mock.patch("jobcontroller.jobcontroller.create_ceph_path")
+    @mock.patch("job_controller.job_controller.JobWatcher")
+    @mock.patch("job_controller.job_controller.acquire_script")
+    @mock.patch("job_controller.job_controller.create_ceph_path")
     def test_on_message_calls_spawn_pod_with_message(self, create_ceph_path, acquire_script, _):
         message = mock.MagicMock()
 
@@ -40,8 +40,8 @@ class JobControllerTest(unittest.TestCase):
         self.assertEqual(self.joc.job_creator.spawn_job.call_args.kwargs["script"], acquire_script.return_value)
         self.assertEqual(self.joc.job_creator.spawn_job.call_args.kwargs["ceph_path"], create_ceph_path.return_value)
 
-    @mock.patch("jobcontroller.jobcontroller.acquire_script")
-    @mock.patch("jobcontroller.jobcontroller.create_ceph_path")
+    @mock.patch("job_controller.job_controller.acquire_script")
+    @mock.patch("job_controller.job_controller.create_ceph_path")
     def test_on_message_aquires_script_using_filename(self, _, acquire_script):
         message = mock.MagicMock()
         self.joc.ir_api_host = mock.MagicMock()
@@ -52,8 +52,8 @@ class JobControllerTest(unittest.TestCase):
             filename=os.path.basename(message["filepath"]), ir_api_ip=self.joc.ir_api_host
         )
 
-    @mock.patch("jobcontroller.jobcontroller.acquire_script")
-    @mock.patch("jobcontroller.jobcontroller.create_ceph_path")
+    @mock.patch("job_controller.job_controller.acquire_script")
+    @mock.patch("job_controller.job_controller.create_ceph_path")
     def test_on_message_calls_create_ceph_path(self, create_ceph_path, _):
         message = mock.MagicMock()
 
@@ -63,8 +63,8 @@ class JobControllerTest(unittest.TestCase):
             instrument_name=message["instrument"], rb_number=message["experiment_number"]
         )
 
-    @mock.patch("jobcontroller.jobcontroller.acquire_script")
-    @mock.patch("jobcontroller.jobcontroller.create_ceph_path")
+    @mock.patch("job_controller.job_controller.acquire_script")
+    @mock.patch("job_controller.job_controller.create_ceph_path")
     def test_on_message_sends_the_job_to_the_job_watch(self, create_ceph_path, __):
         message = mock.MagicMock()
         self.joc.create_job_watcher = mock.MagicMock()
@@ -75,7 +75,7 @@ class JobControllerTest(unittest.TestCase):
             self.joc.job_creator.spawn_job.return_value, create_ceph_path.return_value
         )
 
-    @mock.patch("jobcontroller.jobcontroller.logger")
+    @mock.patch("job_controller.job_controller.logger")
     def test_ensure_exceptions_are_caught_and_logged_using_the_logger_in_on_message(self, logger):
         exception = Exception("Super cool exception message")
         message = mock.MagicMock()
@@ -89,8 +89,8 @@ class JobControllerTest(unittest.TestCase):
 
         logger.exception.assert_called_once_with(exception)
 
-    @mock.patch("jobcontroller.jobcontroller.JobWatcher")
-    @mock.patch("jobcontroller.jobcontroller.threading")
+    @mock.patch("job_controller.job_controller.JobWatcher")
+    @mock.patch("job_controller.job_controller.threading")
     def test_create_job_watchers_spins_off_new_thread_with_jobwatcher(self, threading, job_watcher):
         self.joc.create_job_watcher(job_name="job", ceph_path="/path/to/ceph/folder/for/output")
 
