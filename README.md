@@ -24,9 +24,14 @@ To install when developing:
 
 - `pip install .[dev]`
 
-To demo and test. The easiest way to test JobController is running, requires a kubernetes cluster to interact with, and a kafka instance with a topic to listen to:
+To demo and test. The easiest way to test JobController is running and functioning correctly, it requires a kubernetes cluster to interact with, and a kafka instance with a topic to listen to:
 
-#TODO
+- Follow these instructions to [create the cluster](https://github.com/interactivereduction/k8s#developing-using-a-local-cluster)
+- Download [kafka console producer and consumer](https://www.apache.org/dyn/closer.cgi?path=/kafka/3.4.0/kafka_2.13-3.4.0.tgz)
+- You need to wait for the kafka cluster to finish being ready, it's recommended to use k9s for this.
+- Follow these instructions to [create the local kafka producer](https://github.com/interactivereduction/k8s#creating-a-kafka-producer-for-connecting-to-the-cluster-and-sending-things-to-a-topic)
+- Using the producer send one of the messages in the example kafka messages section below.
+- The JobController should make a job and the job will make pods that will perform the work for the run
 
 # How to container
 
@@ -60,7 +65,5 @@ pytest .
 
 Example kafka messages:
 ```
-{"filepath": "/test/path/to/file.txt", "experiment_number": "RB000001", "instrument": "INTER"}
-{"filepath": "/test/path/to/anotherone.txt", "experiment_number": "RB000001", "instrument": "INTER"}
 {"filepath": "/test/path/to/MARI0.nxs", "experiment_number": "0", "instrument": "MARI"}
 ```
