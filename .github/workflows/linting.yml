@@ -18,7 +18,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install .[code-inspection]
       - name: Run pylint
-        run: pylint jobcontroller test
+        run: pylint job_controller test
 
       - name: Run MyPy
-        run: mypy --strict jobcontroller
+        run: mypy --strict job_controller

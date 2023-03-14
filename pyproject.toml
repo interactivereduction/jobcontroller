@@ -26,8 +26,8 @@ test = [
 code-inspection = [
     "pylint==2.16.4",
     "mypy==1.1.1",
-    "jobcontroller[test]"
+    "job_controller[test]"
 ]
 
 [tool.setuptools]
-packages = ["jobcontroller"]
+packages = ["job_controller"]
