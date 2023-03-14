@@ -17,7 +17,7 @@ class JobControllerTest(unittest.TestCase):
     @mock.patch("job_controller.job_controller.JobCreator")
     @mock.patch("job_controller.job_controller.TopicConsumer")
     def test_job_controller_gets_kafka_ip_from_env(self, _, __):
-        self.assertEqual(self.joc.kafka_ip, "broker")
+        self.assertEqual(self.joc.kafka_ip, None)
 
         os.environ["KAFKA_IP"] = "random_ip_address_from_kafka"
 
@@ -49,7 +49,7 @@ class JobControllerTest(unittest.TestCase):
         self.joc.on_message(message)
 
         acquire_script.assert_called_once_with(
-            filename=os.path.basename(message["filepath"]), ir_api_ip=self.joc.ir_api_host
+            filename=os.path.basename(message["filepath"]), ir_api_host=self.joc.ir_api_host
         )
 
     @mock.patch("job_controller.job_controller.acquire_script")

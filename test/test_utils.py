@@ -9,13 +9,13 @@ from job_controller.utils import load_kubernetes_config
 
 
 class UtilTests(unittest.TestCase):
-    @mock.patch("jobcontroller.utils.config")
+    @mock.patch("job_controller.utils.config")
     def test_config_grabbed_from_incluster(self, kubernetes_config):
         load_kubernetes_config()
 
         kubernetes_config.load_incluster_config.assert_called_once_with()
 
-    @mock.patch("jobcontroller.utils.config")
+    @mock.patch("job_controller.utils.config")
     def test_not_in_cluster_grab_kubeconfig_from_env_var(self, kubernetes_config):
         def raise_config_exception():
             raise ConfigException()
@@ -30,7 +30,7 @@ class UtilTests(unittest.TestCase):
         kubernetes_config.load_kube_config.assert_called_once_with(config_file=str(kubeconfig_path))
         os.environ.pop("KUBECONFIG", None)
 
-    @mock.patch("jobcontroller.utils.config")
+    @mock.patch("job_controller.utils.config")
     def test_not_in_cluster_and_not_in_env_grab_kubeconfig_from_default_location(self, kubernetes_config):
         os.environ.pop("KUBECONFIG", None)
 

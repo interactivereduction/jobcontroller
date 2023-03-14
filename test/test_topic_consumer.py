@@ -16,8 +16,7 @@ class TopicConsumerTest(unittest.TestCase):
         kafka_consumer.assert_called_once_with(
             {
                 "bootstrap.servers": broker_ip,
-                "group.id": "consumer-group-name",
-                "auto.offset.reset": "earliest",
+                "group.id": "job-controller",
                 "reconnect.backoff.max.ms": 600000,
             }
         )
