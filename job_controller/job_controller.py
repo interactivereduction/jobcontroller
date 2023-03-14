@@ -23,7 +23,7 @@ class JobController:
 
     def __init__(self) -> None:
         self.ir_api_host = "irapi.ir.svc.cluster.local"
-        self.kafka_ip = os.environ.get("KAFKA_IP")
+        self.kafka_ip = os.environ.get("KAFKA_IP", "")
         self.consumer = TopicConsumer(self.on_message, broker_ip=self.kafka_ip)
         self.job_creator = JobCreator()
         self.ir_k8s_api = "ir-jobs"
