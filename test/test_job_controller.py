@@ -17,7 +17,7 @@ class JobControllerTest(unittest.TestCase):
     @mock.patch("job_controller.job_controller.JobCreator")
     @mock.patch("job_controller.job_controller.TopicConsumer")
     def test_job_controller_gets_kafka_ip_from_env(self, _, __):
-        self.assertEqual(self.joc.kafka_ip, None)
+        self.assertEqual(self.joc.kafka_ip, "")
 
         os.environ["KAFKA_IP"] = "random_ip_address_from_kafka"
 
