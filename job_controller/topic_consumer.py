@@ -20,8 +20,7 @@ class TopicConsumer:
         self.message_callback = message_callback
         consumer_config = {
             "bootstrap.servers": broker_ip,
-            "group.id": "consumer-group-name",
-            "auto.offset.reset": "earliest",  # Consume from the earliest part of the topic
+            "group.id": "job-controller",
             "reconnect.backoff.max.ms": 600000,  # Retry for up to 10 minutes
         }
         self.consumer = Consumer(consumer_config)

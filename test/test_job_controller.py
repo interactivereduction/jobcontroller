@@ -44,12 +44,12 @@ class JobControllerTest(unittest.TestCase):
     @mock.patch("jobcontroller.jobcontroller.create_ceph_path")
     def test_on_message_aquires_script_using_filename(self, _, acquire_script):
         message = mock.MagicMock()
-        self.joc.ir_api_ip = mock.MagicMock()
+        self.joc.ir_api_host = mock.MagicMock()
 
         self.joc.on_message(message)
 
         acquire_script.assert_called_once_with(
-            filename=os.path.basename(message["filepath"]), ir_api_ip=self.joc.ir_api_ip
+            filename=os.path.basename(message["filepath"]), ir_api_ip=self.joc.ir_api_host
         )
 
     @mock.patch("jobcontroller.jobcontroller.acquire_script")

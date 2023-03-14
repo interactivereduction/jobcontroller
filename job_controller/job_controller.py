@@ -22,8 +22,8 @@ class JobController:
     """
 
     def __init__(self) -> None:
-        self.ir_api_ip = "irapi.ir.svc.cluster.local"
-        self.kafka_ip = os.environ.get("KAFKA_IP", "broker")
+        self.ir_api_host = "irapi.ir.svc.cluster.local"
+        self.kafka_ip = os.environ.get("KAFKA_IP")
         self.consumer = TopicConsumer(self.on_message, broker_ip=self.kafka_ip)
         self.job_creator = JobCreator()
         self.ir_k8s_api = "ir-jobs"
@@ -40,7 +40,7 @@ class JobController:
             instrument_name = message["instrument"]
             # Add UUID which will avoid collisions for reruns
             job_name = f"run-{filename.lower()}-{str(uuid.uuid4().hex)}"
-            script = acquire_script(filename=filename, ir_api_ip=self.ir_api_ip)
+            script = acquire_script(filename=filename, ir_api_host=self.ir_api_host)
             ceph_path = create_ceph_path(instrument_name=instrument_name, rb_number=rb_number)
             job = self.job_creator.spawn_job(
                 job_name=job_name, script=script, ceph_path=ceph_path, job_namespace=self.ir_k8s_api
