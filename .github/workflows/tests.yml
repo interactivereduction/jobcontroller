@@ -69,11 +69,11 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/jobcontroller-test:${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/jobcontroller-test
 
       - name: Push new container image to the kubernetes cluster
         run: |
-          kubectl set image -n ir deployment/jobcontroller jobcontroller=ghcr.io/interactivereduction/jobcontroller-test:${{ github.sha }}
+          kubectl set image -n ir deployment/jobcontroller jobcontroller=ghcr.io/interactivereduction/jobcontroller-test@sha256:${{ github.sha }}
 
       - name: Run e2e test
         run: |
