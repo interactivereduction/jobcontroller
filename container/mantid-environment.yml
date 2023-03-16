@@ -1,0 +1,8 @@
+name: mantid
+
+channels:
+  - conda-forge
+  - mantid
+
+dependencies:
+  - mantid=6.6.0
