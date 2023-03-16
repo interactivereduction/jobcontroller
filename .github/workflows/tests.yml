@@ -28,12 +28,12 @@ jobs:
 
       - name: Create archive-like folder
         run: |
-          mkdir -p /archive/NDXMARI/Instrument/data/cycle_22_5/
-          touch /archive/NDXMARI/Instrument/data/cycle_22_5/MAR28503.nxs
+          sudo mkdir -p /archive/NDXMARI/Instrument/data/cycle_22_5/
+          sudo touch /archive/NDXMARI/Instrument/data/cycle_22_5/MAR28503.nxs
 
       - name: Create ceph-like folder
         run: |
-          mkdir -p /ceph/MARI/RBNumber/RB0/autoreduced
+          sudo mkdir -p /ceph/MARI/RBNumber/RB0/autoreduced
 
       - name: Start minikube
         uses: medyagh/setup-minikube@master
