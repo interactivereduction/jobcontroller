@@ -39,7 +39,7 @@ jobs:
         run: |
           curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
           sudo install minikube-linux-amd64 /usr/local/bin/minikube
-          minikube start --kubernetes-version=1.25.6 --mount --mount-string="/archive:/archive,/ceph:/ceph"
+          minikube start --kubernetes-version=1.25.6
 
       - name: Clone k8s repo
         uses: actions/checkout@v2
@@ -76,4 +76,6 @@ jobs:
 
       - name: Run e2e test
         run: |
+          minikube mount "/archive:/archive" &
+          minikube mount "/ceph:/ceph" &
           KAFKA_IP=$(minikube ip) pytest test/test_e2e.py
