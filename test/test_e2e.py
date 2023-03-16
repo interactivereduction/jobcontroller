@@ -19,8 +19,10 @@ class JobControllerTest(unittest.TestCase):
 
     def send_kafka_message(self):
         kafka_producer = Producer(self.kafka_config)
-        kafka_producer.produce("detected-runs", value='{"filepath": "/test/path/to/MARI0.nxs", '
-                                                      '"experiment_number": "0", "instrument": "MARI"}')
+        kafka_producer.produce(
+            "detected-runs",
+            value='{"filepath": "/test/path/to/MARI0.nxs", ' '"experiment_number": "0", "instrument": "MARI"}',
+        )
         kafka_producer.flush()
 
     def recieve_kafka_message(self, expected_message):
