@@ -39,9 +39,7 @@ jobs:
         uses: medyagh/setup-minikube@master
         with:
             kubernetes-version: 1.25.6
-            mount-path:
-              - "/archive:/archive"
-              - "/ceph:/ceph"
+            mount-path: "/archive:/archive /ceph:/ceph"
 
       - name: Clone k8s repo
         uses: actions/checkout@v2
