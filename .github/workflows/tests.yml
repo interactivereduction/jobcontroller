@@ -80,4 +80,5 @@ jobs:
         run: |
           minikube mount "/archive:/archive" &
           minikube mount "/ceph:/ceph" &
+          sudo apt-get update && sudo apt-get install python3-pytest
           KAFKA_IP=$(minikube ip) pytest test/test_e2e.py
