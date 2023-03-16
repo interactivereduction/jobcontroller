@@ -49,7 +49,8 @@ jobs:
 
       - name: Deploy the k8s local cluster version using ansible
         run: |
-          sudo apt-get update && sudo apt-get install ansible python3-kubernetes
+          sudo apt-get update && sudo apt-get install ansible
+          /opt/pipx/venvs/ansible-core/bin/python -m pip install kubernetes
           ansible-galaxy collection install kubernetes.core
           ansible-playbook /home/runner/work/jobcontroller/jobcontroller/k8s/ansible/deploy-dev-k8s-services.yml
 
