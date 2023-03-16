@@ -45,13 +45,13 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: interactivereduction/k8s
-          path: /home/runner/k8s
+          path: /home/runner/work/jobcontroller/jobcontroller/k8s
 
       - name: Deploy the k8s local cluster version using ansible
         run: |
           sudo apt-get update && sudo apt-get install ansible
           ansible-galaxy collection install kubernetes.core
-          ansible-playbook /home/runner/k8s/ansible/deploy-dev-k8s-services.yml
+          ansible-playbook /home/runner/work/jobcontroller/jobcontroller/k8s/ansible/deploy-dev-k8s-services.yml
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
