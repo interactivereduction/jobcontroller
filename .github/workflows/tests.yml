@@ -35,11 +35,11 @@ jobs:
         run: |
           sudo mkdir -p /ceph/MARI/RBNumber/RB0/autoreduced
 
-      - name: Start minikube
-        uses: medyagh/setup-minikube@master
-        with:
-            kubernetes-version: 1.25.6
-            mount-path: "/archive:/archive /ceph:/ceph"
+      - name: Install and Start minikube
+        run: |
+          curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+          sudo install minikube-linux-amd64 /usr/local/bin/minikube
+          minikube start --kubernetes-version=1.25.6 --mount --mount-string="/archive:/archive,/ceph:/ceph"
 
       - name: Clone k8s repo
         uses: actions/checkout@v2
