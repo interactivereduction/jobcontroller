@@ -17,6 +17,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install .[test]
+
       - name: Run pytest
         run: pytest . --ignore test/test_e2e.py
 
@@ -80,5 +81,6 @@ jobs:
         run: |
           minikube mount "/archive:/archive" &
           minikube mount "/ceph:/ceph" &
-          sudo apt-get update && sudo apt-get install python3-pytest
+          python -m pip install --upgrade pip
+          python -m pip install .[test]
           KAFKA_IP=$(minikube ip) pytest test/test_e2e.py
