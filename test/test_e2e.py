@@ -4,7 +4,7 @@ from time import sleep
 
 from confluent_kafka import Consumer, Producer
 
-from utils import load_kubernetes_config
+from job_controller.utils import load_kubernetes_config
 
 
 class JobControllerTest(unittest.TestCase):
