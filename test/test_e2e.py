@@ -9,6 +9,8 @@ from confluent_kafka.admin import AdminClient, ConfigResource
 class JobControllerTest(unittest.TestCase):
     def setUp(self):
         kafka_ip = os.environ.get("KAFKA_IP")
+        if kafka_ip is None:
+            raise OSError("Kafka IP is not set as env var KAFKA_IP")
         self.kafka_config = {
             "bootstrap.servers": kafka_ip,
             "group.id": "job-controller",

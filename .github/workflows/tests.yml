@@ -96,6 +96,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install .[test]
           set KAFKA_NODE_PORT $(kubectl get service -n kafka kafka-cluster-kafka-external-bootstrap -o=jsonpath='{.spec.ports[0].nodePort}{"\n"}')
-          set KAFKA_NODE_IP $(kubectl get node minikube -o=jsonpath='{range .status.addresses[*]}{.type}{"\t"}{.address}{"\n"}')
+          set KAFKA_NODE_IP $(kubectl get node minikube -o=jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')
           echo "Kafka IP is: $KAFKA_NODE_IP:$KAFKA_NODE_PORT"
-          KAFKA_IP=$KAFKA_NODE_IP:$KAFKA_NODE_PORT pytest test/test_e2e.py
+          KAFKA_IP=minikube:30159 pytest test/test_e2e.py
