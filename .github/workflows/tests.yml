@@ -77,6 +77,18 @@ jobs:
         run: |
           kubectl set image -n ir deployment/jobcontroller jobcontroller=ghcr.io/interactivereduction/jobcontroller-test@sha256:${{ github.sha }}
 
+      - name: Wait for kafka to exist
+        run: |
+          while true; do
+            if kubectl get service kafka-cluster-kafka-external-bootstrap -n kafka > /dev/null 2>&1; then
+              echo "Service kafka-cluster-kafka-external-bootstrap exists"
+              break
+            else
+              echo "Waiting for service kafka-cluster-kafka-external-bootstrap to exist"
+              sleep 5
+            fi
+          done
+
       - name: Run e2e test
         run: |
           minikube mount "/archive:/archive" &
@@ -84,5 +96,5 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install .[test]
           set KAFKA_NODE_PORT $(kubectl get service -n kafka kafka-cluster-kafka-external-bootstrap -o=jsonpath='{.spec.ports[0].nodePort}{"\n"}')
-          set KAFKA_NODE_IP $(kubectl get node k0s-app-worker-5 -o=jsonpath='{range .status.addresses[*]}{.type}{"\t"}{.address}{"\n"}')
+          set KAFKA_NODE_IP $(kubectl get node minikube -o=jsonpath='{range .status.addresses[*]}{.type}{"\t"}{.address}{"\n"}')
           KAFKA_IP=$KAFKA_NODE_IP:$KAFKA_NODE_PORT pytest test/test_e2e.py
