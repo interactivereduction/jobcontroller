@@ -13,13 +13,13 @@ class JobControllerTest(unittest.TestCase):
             "bootstrap.servers": kafka_ip,
             "group.id": "job-controller",
             "reconnect.backoff.max.ms": 600000,  # Retry for up to 10 minutes
-            "auto.offset.reset": "earliest"
+            "auto.offset.reset": "earliest",
         }
         self.ensure_retention_of_topic_is_only_2_seconds()
 
     def ensure_retention_of_topic_is_only_2_seconds(self):
-        config_resource = ConfigResource('topic', "completed-runs")
-        config_resource.set_config('retention.ms', str(2000))
+        config_resource = ConfigResource("topic", "completed-runs")
+        config_resource.set_config("retention.ms", str(2000))
         AdminClient(self.kafka_config).alter_configs([config_resource])
 
     @staticmethod
