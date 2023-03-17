@@ -3,9 +3,7 @@ import unittest
 from time import sleep
 
 from confluent_kafka import Consumer, Producer
-from confluent_kafka.admin import AdminClient
-
-from job_controller.utils import load_kubernetes_config
+from confluent_kafka.admin import AdminClient, ConfigResource
 
 
 class JobControllerTest(unittest.TestCase):
@@ -15,8 +13,14 @@ class JobControllerTest(unittest.TestCase):
             "bootstrap.servers": kafka_ip,
             "group.id": "job-controller",
             "reconnect.backoff.max.ms": 600000,  # Retry for up to 10 minutes
+            "auto.offset.reset": "earliest"
         }
-        load_kubernetes_config()
+        self.ensure_retention_of_topic_is_only_2_seconds()
+
+    def ensure_retention_of_topic_is_only_2_seconds(self):
+        config_resource = ConfigResource('topic', "completed-runs")
+        config_resource.set_config('retention.ms', str(2000))
+        AdminClient(self.kafka_config).alter_configs([config_resource])
 
     @staticmethod
     def topic_exists(admin, topic):
@@ -74,6 +78,3 @@ class JobControllerTest(unittest.TestCase):
 
         # Wait for message on kafka topic completed-runs with timeout 5 mins
         self.recieve_kafka_message('{"status": "Successful", "run output": []}')
-
-    def test_job_controller_sends_expected_output_on_failing_run(self):
-        pass
