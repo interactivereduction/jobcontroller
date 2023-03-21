@@ -24,6 +24,7 @@ class JobController:
     def __init__(self) -> None:
         self.ir_api_host = "irapi.ir.svc.cluster.local"
         self.kafka_ip = os.environ.get("KAFKA_IP", "")
+        self.reduce_user_id = os.environ.get("REDUCE_USER_ID", "")
         self.consumer = TopicConsumer(self.on_message, broker_ip=self.kafka_ip)
         self.job_creator = JobCreator()
         self.ir_k8s_api = "ir-jobs"
@@ -43,7 +44,11 @@ class JobController:
             script = acquire_script(filename=filename, ir_api_host=self.ir_api_host)
             ceph_path = create_ceph_path(instrument_name=instrument_name, rb_number=rb_number)
             job = self.job_creator.spawn_job(
-                job_name=job_name, script=script, ceph_path=ceph_path, job_namespace=self.ir_k8s_api
+                job_name=job_name,
+                script=script,
+                ceph_path=ceph_path,
+                job_namespace=self.ir_k8s_api,
+                user_id=self.reduce_user_id,
             )
             self.create_job_watcher(job, ceph_path)
         except Exception as exception:  # pylint: disable=broad-exception-caught

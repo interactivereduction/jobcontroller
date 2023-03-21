@@ -20,13 +20,19 @@ class JobCreatorTest(unittest.TestCase):
         ceph_path = mock.MagicMock()
         job_name = mock.MagicMock()
         job_namespace = mock.MagicMock()
+        user_id = mock.MagicMock()
         k8s = JobCreator()
 
-        k8s.spawn_job(job_name=job_name, job_namespace=job_namespace, script=script, ceph_path=ceph_path)
+        k8s.spawn_job(
+            job_name=job_name, job_namespace=job_namespace, script=script, ceph_path=ceph_path, user_id=user_id
+        )
 
         k8s_pod_call_kwargs = kubernetes_client.V1Job.call_args_list[0].kwargs
         pod_metadata = k8s_pod_call_kwargs["metadata"]
         self.assertEqual(pod_metadata["name"], job_name)
+
+        security_context = k8s_pod_call_kwargs["spec"]["template"]["spec"]["security_context"]
+        self.assertEqual({"runAsUser": user_id}, security_context)
 
         pod_container = k8s_pod_call_kwargs["spec"]["template"]["spec"]["containers"][0]
         self.assertEqual(pod_container["name"], job_name)

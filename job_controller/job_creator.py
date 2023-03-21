@@ -15,7 +15,7 @@ class JobCreator:
         load_kubernetes_config()
 
     @staticmethod
-    def spawn_job(job_name: str, script: str, ceph_path: str, job_namespace: str) -> str:
+    def spawn_job(job_name: str, script: str, ceph_path: str, job_namespace: str, user_id: str) -> str:
         """
         Takes the meta_data from the kafka message and uses that dictionary for generating the deployment of the pod.
         :param job_name: The name that the job should be created as
@@ -23,6 +23,8 @@ class JobCreator:
         :param ceph_path: The path to which that should be mounted at /output in the job, this is expected to be the
         RBNumber folder that data will be dumped into.
         :param job_namespace: The namespace that the job should be created inside of
+        :param user_id: The autoreduce user's user id, this is used primarily for mounting CEPH and will ensure that
+        the containers have permission to use the directories required for outputting data.
         :return: The response for the actual job's name
         """
         logger.info("Spawning job: %s", job_name)
@@ -34,6 +36,9 @@ class JobCreator:
                 "ttlSecondsAfterFinished": 21600,  # 6 hours
                 "template": {
                     "spec": {
+                        "security_context": {
+                            "runAsUser": user_id,
+                        },
                         "containers": [
                             {
                                 "name": job_name,

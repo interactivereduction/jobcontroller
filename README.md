@@ -66,4 +66,5 @@ pytest .
 Example kafka messages:
 ```
 {"filepath": "/test/path/to/MARI0.nxs", "experiment_number": "0", "instrument": "MARI"}
+{"filepath": "/test/path/to/MARI123456.nxs", "experiment_number": "1220474", "instrument": "MARI"}
 ```
