@@ -44,8 +44,11 @@ class JobController:
             script = acquire_script(filename=filename, ir_api_host=self.ir_api_host)
             ceph_path = create_ceph_path(instrument_name=instrument_name, rb_number=rb_number)
             job = self.job_creator.spawn_job(
-                job_name=job_name, script=script, ceph_path=ceph_path, job_namespace=self.ir_k8s_api,
-                user_id=self.reduce_user_id
+                job_name=job_name,
+                script=script,
+                ceph_path=ceph_path,
+                job_namespace=self.ir_k8s_api,
+                user_id=self.reduce_user_id,
             )
             self.create_job_watcher(job, ceph_path)
         except Exception as exception:  # pylint: disable=broad-exception-caught

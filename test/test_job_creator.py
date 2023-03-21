@@ -23,8 +23,9 @@ class JobCreatorTest(unittest.TestCase):
         user_id = mock.MagicMock()
         k8s = JobCreator()
 
-        k8s.spawn_job(job_name=job_name, job_namespace=job_namespace, script=script, ceph_path=ceph_path,
-                      user_id=user_id)
+        k8s.spawn_job(
+            job_name=job_name, job_namespace=job_namespace, script=script, ceph_path=ceph_path, user_id=user_id
+        )
 
         k8s_pod_call_kwargs = kubernetes_client.V1Job.call_args_list[0].kwargs
         pod_metadata = k8s_pod_call_kwargs["metadata"]
