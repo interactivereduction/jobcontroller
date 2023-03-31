@@ -4,7 +4,9 @@ readme = "README.md"
 version = "0.0.1"
 dependencies = [
     "confluent-kafka==2.0.2",
-    "kubernetes==25.3.0"
+    "kubernetes==25.3.0",
+    "psycopg2==2.9.5",
+    "SQLAlchemy==2.0.7"
 ]
 
 [project.urls]

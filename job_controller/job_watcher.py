@@ -9,7 +9,9 @@ from confluent_kafka import Producer  # type: ignore[import]
 from kubernetes import client, watch  # type: ignore[import]
 from kubernetes.client import V1Job  # type: ignore[import]
 
-from job_controller.utils import logger, add_ceph_path_to_output_files, load_kubernetes_config
+from database.db_updater import DBUpdater
+from utils import logger, load_kubernetes_config
+from database.state_enum import State
 
 
 class JobWatcher:
@@ -17,11 +19,12 @@ class JobWatcher:
     Watch a kubernetes job, and when it ends notify a kafka topic
     """
 
-    def __init__(self, job_name: str, namespace: str, kafka_ip: str, ceph_path: str):
+    def __init__(self, job_name: str, namespace: str, kafka_ip: str, ceph_path: str, db_updater: DBUpdater):
         self.job_name = job_name
         self.namespace = namespace
         self.kafka_ip = kafka_ip
         self.ceph_path = ceph_path
+        self.db_updater = db_updater
         load_kubernetes_config()  # Should already be called in job creator, this is a defensive call.
 
     @staticmethod
@@ -125,38 +128,41 @@ class JobWatcher:
         output_files = job_output.get("output_files", [])
         self.notify_kafka(status=status, status_message=status_message, output_files=output_files)
 
-    def notify_kafka(self, status: str, status_message: str = "", output_files: Optional[List[str]] = None) -> None:
-        """
-        Connect to kafka, send message and disconnect from kafka
-        :param status: The end state of the Run
-        :param status_message: The status message to be sent when status is not "Success"
-        :param output_files: The names of files to be sent when status is "Success"
-        :return: None
-        """
-        logger.info("Notifying kafka of job %s finished with status %s", self.job_name, status)
-        producer = Producer(
-            {
-                "bootstrap.servers": self.kafka_ip,
-                "client.id": f"runner-{self.job_name}",
-            }
-        )
+    def update_database(self, status: State, status_message: str, output_files: List[str] = None):
+        pass
 
-        logger.info("Creating message for kafka")
-        if output_files is not None:
-            outputs = add_ceph_path_to_output_files(ceph_path=self.ceph_path, output_files=output_files)
-        else:
-            outputs = []
-
-        if status == "Error":
-            value = json.dumps({"status": status, "status message": status_message})
-        elif status == "Successful":
-            value = json.dumps({"status": status, "run output": outputs})
-        else:
-            value = json.dumps({"status": status, "status message": status_message})
-
-        producer.produce("completed-runs", value=value, callback=self._delivery_callback)
-        producer.flush()
-        logger.info("Kafka notified with message: %s", value)
+    # def notify_kafka(self, status: str, status_message: str = "", output_files: Optional[List[str]] = None) -> None:
+    #     """
+    #     Connect to kafka, send message and disconnect from kafka
+    #     :param status: The end state of the Run
+    #     :param status_message: The status message to be sent when status is not "Success"
+    #     :param output_files: The names of files to be sent when status is "Success"
+    #     :return: None
+    #     """
+    #     logger.info("Notifying kafka of job %s finished with status %s", self.job_name, status)
+    #     producer = Producer(
+    #         {
+    #             "bootstrap.servers": self.kafka_ip,
+    #             "client.id": f"runner-{self.job_name}",
+    #         }
+    #     )
+    #
+    #     logger.info("Creating message for kafka")
+    #     if output_files is not None:
+    #         outputs = add_ceph_path_to_output_files(ceph_path=self.ceph_path, output_files=output_files)
+    #     else:
+    #         outputs = []
+    #
+    #     if status == "Error":
+    #         value = json.dumps({"status": status, "status message": status_message})
+    #     elif status == "Successful":
+    #         value = json.dumps({"status": status, "run output": outputs})
+    #     else:
+    #         value = json.dumps({"status": status, "status message": status_message})
+    #
+    #     producer.produce("completed-runs", value=value, callback=self._delivery_callback)
+    #     producer.flush()
+    #     logger.info("Kafka notified with message: %s", value)
 
     @staticmethod
     def _delivery_callback(err: Any, msg: Any) -> None:

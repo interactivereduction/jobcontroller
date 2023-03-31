@@ -1,5 +1,5 @@
 """
-Main class, creates jobs by calling to the jobcreator, creates the jobwatcher for each created job, and recieves
+Main class, creates jobs by calling to the jobcreator, creates the jobwatcher for each created job, and receives
 requests from the topicconsumer.
 """
 import os
@@ -8,11 +8,12 @@ import uuid
 from pathlib import Path
 from typing import Dict
 
-from job_controller.job_watcher import JobWatcher
-from job_controller.job_creator import JobCreator
-from job_controller.script_aquisition import acquire_script
-from job_controller.topic_consumer import TopicConsumer
-from job_controller.utils import create_ceph_path, logger
+from database.db_updater import DBUpdater
+from job_watcher import JobWatcher
+from job_creator import JobCreator
+from script_aquisition import acquire_script
+from topic_consumer import TopicConsumer
+from utils import create_ceph_path, logger
 
 
 class JobController:
@@ -22,6 +23,10 @@ class JobController:
     """
 
     def __init__(self) -> None:
+        db_ip = os.environ.get("DB_IP", "")
+        db_username = os.environ.get("DB_USERNAME", "")
+        db_password = os.environ.get("DB_PASSWORD", "")
+        self.db_updater = DBUpdater(ip=db_ip, username=db_username, password=db_password)
         self.ir_api_host = "irapi.ir.svc.cluster.local"
         self.kafka_ip = os.environ.get("KAFKA_IP", "")
         self.reduce_user_id = os.environ.get("REDUCE_USER_ID", "")
@@ -63,7 +68,7 @@ class JobController:
         :param ceph_path: The path that was mounted in the container for the jobs that were created
         :return:
         """
-        watcher = JobWatcher(job_name, self.ir_k8s_api, self.kafka_ip, ceph_path)
+        watcher = JobWatcher(job_name, self.ir_k8s_api, self.kafka_ip, ceph_path, self.db_updater)
         threading.Thread(target=watcher.watch).start()
 
     def run(self) -> None:
