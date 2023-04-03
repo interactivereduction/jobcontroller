@@ -56,10 +56,17 @@ class JobController:
             job_name = f"run-{filename.lower()}-{str(uuid.uuid4().hex)}"
             script = acquire_script(filename=filename, ir_api_host=self.ir_api_host)
             ceph_path = create_ceph_path(instrument_name=instrument_name, rb_number=rb_number)
-            db_reduction_id = self.db_updater\
-                .add_detected_run(filename=filename, title=title, users=users, experiment_number=experiment_number,
-                                  run_start=run_start, run_end=run_end, good_frames=good_frames,
-                                  raw_frames=raw_frames, reduction_inputs=additional_values)
+            db_reduction_id = self.db_updater.add_detected_run(
+                filename=filename,
+                title=title,
+                users=users,
+                experiment_number=experiment_number,
+                run_start=run_start,
+                run_end=run_end,
+                good_frames=good_frames,
+                raw_frames=raw_frames,
+                reduction_inputs=additional_values,
+            )
             job = self.job_creator.spawn_job(
                 job_name=job_name,
                 script=script,
@@ -71,8 +78,9 @@ class JobController:
         except Exception as exception:  # pylint: disable=broad-exception-caught
             logger.exception(exception)
 
-    def create_job_watcher(self, job_name: str, ceph_path: str, db_reduction_id: int, job_script: str,
-                           reduction_inputs: Dict[str, Any]) -> None:
+    def create_job_watcher(
+        self, job_name: str, ceph_path: str, db_reduction_id: int, job_script: str, reduction_inputs: Dict[str, Any]
+    ) -> None:
         """
         Start a thread with a pod manager to maintain looking at these pods that have been created, checking for it
         to finish every 1 millisecond, when it dies, do the job of sending a message to the kafka topic determining
@@ -81,8 +89,16 @@ class JobController:
         :param ceph_path: The path that was mounted in the container for the jobs that were created
         :return:
         """
-        watcher = JobWatcher(job_name, self.ir_k8s_api, self.kafka_ip, ceph_path, self.db_updater, db_reduction_id,
-                             job_script, reduction_inputs)
+        watcher = JobWatcher(
+            job_name,
+            self.ir_k8s_api,
+            self.kafka_ip,
+            ceph_path,
+            self.db_updater,
+            db_reduction_id,
+            job_script,
+            reduction_inputs,
+        )
         threading.Thread(target=watcher.watch).start()
 
     def run(self) -> None:

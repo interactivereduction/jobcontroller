@@ -11,7 +11,7 @@ Base = declarative_base()
 
 
 class Run(Base):
-    __tablename__ = 'runs'
+    __tablename__ = "runs"
     id = Column(Integer, primary_key=True, autoincrement=True)
     filename = Column(String)
     title = Column(String)
@@ -21,36 +21,36 @@ class Run(Base):
     run_end = Column(DateTime)
     good_frames = Column(Integer)
     raw_frames = Column(Integer)
-    reductions = relationship('RunReduction', back_populates='run_relationship')
+    reductions = relationship("RunReduction", back_populates="run_relationship")
 
 
 class Script(Base):
-    __tablename__ = 'scripts'
+    __tablename__ = "scripts"
     id = Column(Integer, primary_key=True, autoincrement=True)
     script = Column(String)
-    reductions = relationship('Reduction', back_populates='script_relationship')
+    reductions = relationship("Reduction", back_populates="script_relationship")
 
 
 class Reduction(Base):
-    __tablename__ = 'reductions'
+    __tablename__ = "reductions"
     id = Column(Integer, primary_key=True, autoincrement=True)
     reduction_start = Column(DateTime)
     reduction_end = Column(DateTime)
     reduction_state = Column(State)
     reduction_status_message = Column(String)
     reduction_inputs = Column(JSONB)
-    script = Column(Integer, ForeignKey('scripts.id'))
-    script_relationship = relationship('Script', back_populates='reductions')
+    script = Column(Integer, ForeignKey("scripts.id"))
+    script_relationship = relationship("Script", back_populates="reductions")
     reduction_outputs = Column(String)
-    run_reduction_relationship = relationship('RunReduction', back_populates='reduction_relationship')
+    run_reduction_relationship = relationship("RunReduction", back_populates="reduction_relationship")
 
 
 class RunReduction(Base):
-    __tablename__ = 'runs_reductions'
-    run = Column(Integer, ForeignKey('runs.id'), primary_key=True)
-    reduction = Column(Integer, ForeignKey('reductions.id'), primary_key=True)
-    run_relationship = relationship('Run', back_populates='reductions')
-    reduction_relationship = relationship('Reduction', back_populates='run_reduction_relationship')
+    __tablename__ = "runs_reductions"
+    run = Column(Integer, ForeignKey("runs.id"), primary_key=True)
+    reduction = Column(Integer, ForeignKey("reductions.id"), primary_key=True)
+    run_relationship = relationship("Run", back_populates="reductions")
+    reduction_relationship = relationship("Reduction", back_populates="run_reduction_relationship")
 
 
 class DBUpdater:
@@ -63,13 +63,37 @@ class DBUpdater:
         self.runs_reductions_table = RunReduction()
         self.script_table = Script()
 
-    def add_detected_run(self, filename: str, title: str, users: str, experiment_number: str, run_start: str,
-                         run_end: str, good_frames: str, raw_frames: str, reduction_inputs: Dict[str, Any]) -> int:
+    def add_detected_run(
+        self,
+        filename: str,
+        title: str,
+        users: str,
+        experiment_number: str,
+        run_start: str,
+        run_end: str,
+        good_frames: str,
+        raw_frames: str,
+        reduction_inputs: Dict[str, Any],
+    ) -> int:
         session = self.session_maker_func()
-        run = Run(filename=filename, title=title, users=users, experiment_number=experiment_number,
-                  run_start=run_start, run_end=run_end, good_frames=good_frames, raw_frames=raw_frames)
-        reduction = Reduction(reduction_start=None, reduction_end=None, reduction_state=None,
-                              reduction_inputs=reduction_inputs, script=None, reduction_outputs=None)
+        run = Run(
+            filename=filename,
+            title=title,
+            users=users,
+            experiment_number=experiment_number,
+            run_start=run_start,
+            run_end=run_end,
+            good_frames=good_frames,
+            raw_frames=raw_frames,
+        )
+        reduction = Reduction(
+            reduction_start=None,
+            reduction_end=None,
+            reduction_state=None,
+            reduction_inputs=reduction_inputs,
+            script=None,
+            reduction_outputs=None,
+        )
         session.add(run)
         session.add(reduction)
         session.commit()
@@ -80,8 +104,15 @@ class DBUpdater:
 
         return reduction.id
 
-    def add_completed_run(self, db_reduction_id: int, reduction_inputs: Dict[str, Any], state: State,
-                          status_message: str, output_files: List[str], reduction_script):
+    def add_completed_run(
+        self,
+        db_reduction_id: int,
+        reduction_inputs: Dict[str, Any],
+        state: State,
+        status_message: str,
+        output_files: List[str],
+        reduction_script,
+    ):
         session = self.session_maker_func()
         script = Script(script=reduction_script)
         session.add(script)
