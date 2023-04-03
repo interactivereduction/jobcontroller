@@ -3,7 +3,7 @@ Communicate to a kubernetes API to spawn a pod with the metadata passed by kafka
 """
 from kubernetes import client  # type: ignore[import]
 
-from utils import logger, load_kubernetes_config
+from job_controller.utils import logger, load_kubernetes_config
 
 
 class JobCreator:

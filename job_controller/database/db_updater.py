@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
-from database.state_enum import State
+from job_controller.database.state_enum import State
 
 Base = declarative_base()
 

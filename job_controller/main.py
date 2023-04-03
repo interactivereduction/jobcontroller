@@ -8,12 +8,12 @@ import uuid
 from pathlib import Path
 from typing import Dict, Any
 
-from database.db_updater import DBUpdater
-from job_watcher import JobWatcher
-from job_creator import JobCreator
-from script_aquisition import acquire_script
-from topic_consumer import TopicConsumer
-from utils import create_ceph_path, logger
+from job_controller.database.db_updater import DBUpdater
+from job_controller.job_watcher import JobWatcher
+from job_controller.job_creator import JobCreator
+from job_controller.script_aquisition import acquire_script
+from job_controller.topic_consumer import TopicConsumer
+from job_controller.utils import create_ceph_path, logger
 
 
 class JobController:

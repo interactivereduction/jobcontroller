@@ -2,7 +2,7 @@
 import unittest
 from unittest import mock
 
-from job_controller.job_watcher import JobWatcher
+from main.job_watcher import JobWatcher
 
 
 class JobWatcherTest(unittest.TestCase):

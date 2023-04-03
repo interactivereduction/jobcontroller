@@ -5,7 +5,7 @@ from unittest import mock
 
 from kubernetes.config import ConfigException
 
-from job_controller.utils import load_kubernetes_config
+from main.utils import load_kubernetes_config
 
 
 class UtilTests(unittest.TestCase):

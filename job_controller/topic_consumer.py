@@ -7,7 +7,7 @@ from typing import Callable, Dict
 
 from confluent_kafka import Consumer  # type: ignore[import]
 
-from utils import logger
+from job_controller.utils import logger
 
 
 class TopicConsumer:

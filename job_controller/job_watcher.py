@@ -3,15 +3,14 @@ Watch a kubernetes job, and when it ends notify a kafka topic
 """
 import json
 from json import JSONDecodeError
-from typing import Any, List, Optional, Dict
+from typing import Any, Optional, Dict
 
 from confluent_kafka import Producer  # type: ignore[import]
 from kubernetes import client, watch  # type: ignore[import]
 from kubernetes.client import V1Job  # type: ignore[import]
 
-from database.db_updater import DBUpdater
-from utils import logger, load_kubernetes_config
-from database.state_enum import State
+from job_controller.database.db_updater import DBUpdater
+from job_controller.utils import logger, load_kubernetes_config
 
 
 class JobWatcher:

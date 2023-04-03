@@ -1,7 +1,9 @@
 FROM python:3.10
 
+WORKDIR /jobcontroller
+
 # Install jobcontroller to the container
-ADD . .
+COPY . /jobcontroller
 RUN python -m pip install --no-cache-dir .
 
-CMD jobcontroller
+CMD ["jobcontroller"]

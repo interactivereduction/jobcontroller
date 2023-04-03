@@ -13,7 +13,7 @@ dependencies = [
 "Repository" = "https://github.com/interactivereduction/jobcontroller"
 
 [project.scripts]
-jobcontroller = "job_controller.job_controller:main"
+jobcontroller = "job_controller.main:main"
 
 [project.optional-dependencies]
 formatting = [
