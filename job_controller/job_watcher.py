@@ -19,12 +19,16 @@ class JobWatcher:
     Watch a kubernetes job, and when it ends notify a kafka topic
     """
 
-    def __init__(self, job_name: str, namespace: str, kafka_ip: str, ceph_path: str, db_updater: DBUpdater):
+    def __init__(self, job_name: str, namespace: str, kafka_ip: str, ceph_path: str, db_updater: DBUpdater,
+                 db_reduction_id: int, job_script: str, reduction_inputs: Dict[str, Any]):
         self.job_name = job_name
         self.namespace = namespace
         self.kafka_ip = kafka_ip
         self.ceph_path = ceph_path
         self.db_updater = db_updater
+        self.db_reduction_id = db_reduction_id
+        self.job_script = job_script
+        self.reduction_inputs = reduction_inputs
         load_kubernetes_config()  # Should already be called in job creator, this is a defensive call.
 
     @staticmethod
@@ -126,10 +130,10 @@ class JobWatcher:
         status = job_output.get("status", "Unsuccessful")
         status_message = job_output.get("status_message", "")
         output_files = job_output.get("output_files", [])
-        self.notify_kafka(status=status, status_message=status_message, output_files=output_files)
-
-    def update_database(self, status: State, status_message: str, output_files: List[str] = None):
-        pass
+        self.db_updater\
+            .add_completed_run(db_reduction_id=self.db_reduction_id, state=status, status_message=status_message,
+                               output_files=output_files, reduction_script=self.job_script,
+                               reduction_inputs=self.reduction_inputs)
 
     # def notify_kafka(self, status: str, status_message: str = "", output_files: Optional[List[str]] = None) -> None:
     #     """
