@@ -114,9 +114,10 @@ class DBUpdater:
         reduction_script,
     ):
         session = self.session_maker_func()
-        script = Script(script=reduction_script)
-        session.add(script)
-        session.commit()
+        script = session.query(Script).filter_by(script=reduction_script).first()
+        if script is None:
+            script = Script(script=reduction_script)
+            session.commit()
 
         reduction = session.query(Reduction).filter_by(id=db_reduction_id).first()
         reduction.reduction_state = str(state)
