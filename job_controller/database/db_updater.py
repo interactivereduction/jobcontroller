@@ -117,6 +117,7 @@ class DBUpdater:
         script = session.query(Script).filter_by(script=reduction_script).first()
         if script is None:
             script = Script(script=reduction_script)
+            session.add(script)
             session.commit()
 
         reduction = session.query(Reduction).filter_by(id=db_reduction_id).first()
