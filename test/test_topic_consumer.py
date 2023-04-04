@@ -3,7 +3,7 @@
 import unittest
 from unittest import mock
 
-from main.topic_consumer import TopicConsumer
+from job_controller.topic_consumer import TopicConsumer
 
 
 class TopicConsumerTest(unittest.TestCase):

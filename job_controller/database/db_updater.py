@@ -23,12 +23,29 @@ class Run(Base):
     raw_frames = Column(Integer)
     reductions = relationship("RunReduction", back_populates="run_relationship")
 
+    def __eq__(self, other):
+        if isinstance(other, Run):
+            return (self.filename == other.filename and
+                    self.title == other.title and
+                    self.users == other.users and
+                    self.experiment_number == other.experiment_number and
+                    self.run_start == other.run_start and
+                    self.run_end == other.run_end and
+                    self.good_frames == other.good_frames and
+                    self.raw_frames == other.raw_frames)
+        return False
+
 
 class Script(Base):
     __tablename__ = "scripts"
     id = Column(Integer, primary_key=True, autoincrement=True)
     script = Column(String)
     reductions = relationship("Reduction", back_populates="script_relationship")
+
+    def __eq__(self, other):
+        if isinstance(other, Script):
+            return self.script == other.script
+        return False
 
 
 class Reduction(Base):
@@ -44,6 +61,17 @@ class Reduction(Base):
     reduction_outputs = Column(String)
     run_reduction_relationship = relationship("RunReduction", back_populates="reduction_relationship")
 
+    def __eq__(self, other):
+        if isinstance(other, Reduction):
+            return (self.reduction_start == other.reduction_start and
+                    self.reduction_end == other.reduction_end and
+                    self.reduction_state == other.reduction_state and
+                    self.reduction_status_message == other.reduction_status_message and
+                    self.reduction_inputs == other.reduction_inputs and
+                    self.script == other.script and
+                    self.reduction_outputs == other.reduction_outputs)
+        return False
+
 
 class RunReduction(Base):
     __tablename__ = "runs_reductions"
@@ -51,6 +79,12 @@ class RunReduction(Base):
     reduction = Column(Integer, ForeignKey("reductions.id"), primary_key=True)
     run_relationship = relationship("Run", back_populates="reductions")
     reduction_relationship = relationship("Reduction", back_populates="run_reduction_relationship")
+
+    def __eq__(self, other):
+        if isinstance(other, RunReduction):
+            return (self.run == other.run and
+                    self.reduction == other.reduction)
+        return False
 
 
 class DBUpdater:

@@ -2,7 +2,8 @@
 import unittest
 from unittest import mock
 
-from main.job_watcher import JobWatcher
+from job_controller.database.state_enum import State
+from job_controller.job_watcher import JobWatcher
 
 
 class JobWatcherTest(unittest.TestCase):
@@ -12,13 +13,19 @@ class JobWatcherTest(unittest.TestCase):
         self.namespace = mock.MagicMock()
         self.kafka_ip = mock.MagicMock()
         self.ceph_path = mock.MagicMock()
+        self.db_updater = mock.MagicMock()
+        self.db_reduction_id = mock.MagicMock()
+        self.job_script = mock.MagicMock()
+        self.reduction_inputs = mock.MagicMock()
         self.jobw = JobWatcher(
-            job_name=self.job_name, namespace=self.namespace, kafka_ip=self.kafka_ip, ceph_path=self.ceph_path
+            job_name=self.job_name, namespace=self.namespace, kafka_ip=self.kafka_ip, ceph_path=self.ceph_path,
+            db_updater=self.db_updater, db_reduction_id=self.db_reduction_id, job_script=self.job_script,
+            reduction_inputs=self.reduction_inputs
         )
 
     @mock.patch("job_controller.job_watcher.load_kubernetes_config")
     def test_ensure_init_load_kube_config(self, load_kube_config):
-        JobWatcher("", "", "", "")
+        JobWatcher("", "", "", "", mock.MagicMock(), 1, "", {})
 
         load_kube_config.assert_called_once_with()
 
@@ -122,7 +129,7 @@ class JobWatcherTest(unittest.TestCase):
         self.jobw.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value="pod_name")
         self.jobw.notify_kafka = mock.MagicMock()
         k8s_client.CoreV1Api.return_value.read_namespaced_pod_log.return_value = (
-            '4th to last\n3rd to last\n{"status": "Success", "output_files": [], "status_message": ""}\n'
+            '4th to last\n3rd to last\n{"status": "Successful", "output_files": [], "status_message": ""}\n'
         )
 
         self.jobw.process_event_success()
@@ -130,7 +137,14 @@ class JobWatcherTest(unittest.TestCase):
         self.jobw.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(
             job_name=self.job_name, job_namespace=self.namespace
         )
-        self.jobw.notify_kafka.assert_called_once_with(status="Success", status_message="", output_files=[])
+        self.db_updater.add_completed_run.assert_called_once_with(
+            db_reduction_id=self.db_reduction_id,
+            state=State.Successful,
+            status_message="",
+            output_files=[],
+            reduction_script=self.job_script,
+            reduction_inputs=self.reduction_inputs,
+        )
 
     @mock.patch("job_controller.job_watcher.client")
     def test_process_event_success_handles_errors_where_penultimate_line_of_logs_is_not_valid_json(self, k8s_client):
@@ -145,61 +159,11 @@ class JobWatcherTest(unittest.TestCase):
         self.jobw.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(
             job_name=self.job_name, job_namespace=self.namespace
         )
-        self.jobw.notify_kafka.assert_called_once_with(
-            status="Unsuccessful", status_message="Expecting value: line 1 column 12 (char 11)", output_files=[]
-        )
-
-    def test_process_event_failed_notifies_kafka(self):
-        self.jobw.notify_kafka = mock.MagicMock()
-        job = mock.MagicMock()
-        job.status.message = "Status message"
-
-        self.jobw.process_event_failed(job)
-
-        self.jobw.notify_kafka.assert_called_once_with(status="Error", status_message="Status message")
-
-    @mock.patch("job_controller.job_watcher.add_ceph_path_to_output_files")
-    @mock.patch("job_controller.job_watcher.Producer")
-    def test_notify_kafka_converts_output_files_to_ceph_paths(self, _, add_ceph_path_to_output_files):
-        self.jobw.notify_kafka("", "", ["/path"])
-
-        add_ceph_path_to_output_files.assert_called_once_with(ceph_path=self.ceph_path, output_files=["/path"])
-
-    @mock.patch("job_controller.job_watcher.Producer")
-    def test_notify_kafka_produces_a_message_using_passed_data_for_success(self, producer):
-        self.jobw.ceph_path = "/ceph/path/here/"
-        value = '{"status": "Successful", "run output": ["/ceph/path/here/path"]}'
-
-        self.jobw.notify_kafka("Successful", "", ["path"])
-
-        producer.return_value.produce.assert_called_once_with(
-            "completed-runs",
-            value=value,
-            callback=self.jobw._delivery_callback,  # pylint: disable=protected-access
-        )
-
-    @mock.patch("job_controller.job_watcher.Producer")
-    def test_notify_kafka_produces_a_message_using_passed_data_for_error(self, producer):
-        self.jobw.ceph_path = "/ceph/path/here/"
-        value = '{"status": "Error", "status message": "Status message"}'
-
-        self.jobw.notify_kafka("Error", "Status message", [])
-
-        producer.return_value.produce.assert_called_once_with(
-            "completed-runs",
-            value=value,
-            callback=self.jobw._delivery_callback,  # pylint: disable=protected-access
-        )
-
-    @mock.patch("job_controller.job_watcher.Producer")
-    def test_notify_kafka_produces_a_message_using_passed_data_for_other(self, producer):
-        self.jobw.ceph_path = "/ceph/path/here/"
-        value = '{"status": "ANYTHING ELSE", "status message": "Status message"}'
-
-        self.jobw.notify_kafka("ANYTHING ELSE", "Status message", [])
-
-        producer.return_value.produce.assert_called_once_with(
-            "completed-runs",
-            value=value,
-            callback=self.jobw._delivery_callback,  # pylint: disable=protected-access
+        self.db_updater.add_completed_run.assert_called_once_with(
+            db_reduction_id=self.db_reduction_id,
+            state=State.Unsuccessful,
+            status_message="Expecting value: line 1 column 12 (char 11)",
+            output_files=[],
+            reduction_script=self.job_script,
+            reduction_inputs=self.reduction_inputs,
         )
