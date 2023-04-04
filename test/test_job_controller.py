@@ -73,8 +73,11 @@ class JobControllerTest(unittest.TestCase):
         self.joc.on_message(message)
 
         self.joc.create_job_watcher.assert_called_once_with(
-            self.joc.job_creator.spawn_job.return_value, create_ceph_path.return_value,
-            self.joc.db_updater.add_detected_run.return_value, aquire_script.return_value, message["additional_values"]
+            self.joc.job_creator.spawn_job.return_value,
+            create_ceph_path.return_value,
+            self.joc.db_updater.add_detected_run.return_value,
+            aquire_script.return_value,
+            message["additional_values"],
         )
 
     @mock.patch("job_controller.main.logger")
@@ -94,8 +97,13 @@ class JobControllerTest(unittest.TestCase):
     @mock.patch("job_controller.main.JobWatcher")
     @mock.patch("job_controller.main.threading")
     def test_create_job_watchers_spins_off_new_thread_with_jobwatcher(self, threading, job_watcher):
-        self.joc.create_job_watcher(job_name="job", ceph_path="/path/to/ceph/folder/for/output", db_reduction_id=1,
-                                    job_script="print('script')", reduction_inputs={})
+        self.joc.create_job_watcher(
+            job_name="job",
+            ceph_path="/path/to/ceph/folder/for/output",
+            db_reduction_id=1,
+            job_script="print('script')",
+            reduction_inputs={},
+        )
 
         threading.Thread.assert_called_once_with(target=job_watcher.return_value.watch)
         threading.Thread.return_value.start.assert_called_once_with()

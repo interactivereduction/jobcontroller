@@ -18,9 +18,14 @@ class JobWatcherTest(unittest.TestCase):
         self.job_script = mock.MagicMock()
         self.reduction_inputs = mock.MagicMock()
         self.jobw = JobWatcher(
-            job_name=self.job_name, namespace=self.namespace, kafka_ip=self.kafka_ip, ceph_path=self.ceph_path,
-            db_updater=self.db_updater, db_reduction_id=self.db_reduction_id, job_script=self.job_script,
-            reduction_inputs=self.reduction_inputs
+            job_name=self.job_name,
+            namespace=self.namespace,
+            kafka_ip=self.kafka_ip,
+            ceph_path=self.ceph_path,
+            db_updater=self.db_updater,
+            db_reduction_id=self.db_reduction_id,
+            job_script=self.job_script,
+            reduction_inputs=self.reduction_inputs,
         )
 
     @mock.patch("job_controller.job_watcher.load_kubernetes_config")
