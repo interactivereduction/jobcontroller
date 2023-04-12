@@ -29,10 +29,17 @@ class DBUpdaterTests(unittest.TestCase):
         raw_frames = mock.MagicMock()
         reduction_inputs = mock.MagicMock()
 
-        self.db_updater.add_detected_run(filename=filename, title=title, users=users,
-                                         experiment_number=experiment_number, run_start=run_start,
-                                         run_end=run_end, good_frames=good_frames, raw_frames=raw_frames,
-                                         reduction_inputs=reduction_inputs)
+        self.db_updater.add_detected_run(
+            filename=filename,
+            title=title,
+            users=users,
+            experiment_number=experiment_number,
+            run_start=run_start,
+            run_end=run_end,
+            good_frames=good_frames,
+            raw_frames=raw_frames,
+            reduction_inputs=reduction_inputs,
+        )
 
         run = Run(
             filename=filename,
@@ -54,13 +61,11 @@ class DBUpdaterTests(unittest.TestCase):
         )
         self.assertEqual(self.mock_session.add.call_args_list[0][0][0], run)
         self.assertEqual(self.mock_session.add.call_args_list[1][0][0], reduction)
-        self.assertEqual(self.mock_session.add.call_args_list[2][0][0],
-                         RunReduction(run=run.id, reduction=reduction.id))
+        self.assertEqual(
+            self.mock_session.add.call_args_list[2][0][0], RunReduction(run=run.id, reduction=reduction.id)
+        )
         self.assertEqual(self.mock_session.add.call_count, 3)
-        self.mock_session.commit.assert_has_calls([
-            mock.call(),
-            mock.call()
-        ])
+        self.mock_session.commit.assert_has_calls([mock.call(), mock.call()])
         self.assertEqual(self.mock_session.commit.call_count, 2)
 
     def test_add_completed_run_when_script_found(self):

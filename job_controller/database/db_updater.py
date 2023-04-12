@@ -25,14 +25,16 @@ class Run(Base):
 
     def __eq__(self, other):
         if isinstance(other, Run):
-            return (self.filename == other.filename and
-                    self.title == other.title and
-                    self.users == other.users and
-                    self.experiment_number == other.experiment_number and
-                    self.run_start == other.run_start and
-                    self.run_end == other.run_end and
-                    self.good_frames == other.good_frames and
-                    self.raw_frames == other.raw_frames)
+            return (
+                self.filename == other.filename
+                and self.title == other.title
+                and self.users == other.users
+                and self.experiment_number == other.experiment_number
+                and self.run_start == other.run_start
+                and self.run_end == other.run_end
+                and self.good_frames == other.good_frames
+                and self.raw_frames == other.raw_frames
+            )
         return False
 
 
@@ -63,13 +65,15 @@ class Reduction(Base):
 
     def __eq__(self, other):
         if isinstance(other, Reduction):
-            return (self.reduction_start == other.reduction_start and
-                    self.reduction_end == other.reduction_end and
-                    self.reduction_state == other.reduction_state and
-                    self.reduction_status_message == other.reduction_status_message and
-                    self.reduction_inputs == other.reduction_inputs and
-                    self.script == other.script and
-                    self.reduction_outputs == other.reduction_outputs)
+            return (
+                self.reduction_start == other.reduction_start
+                and self.reduction_end == other.reduction_end
+                and self.reduction_state == other.reduction_state
+                and self.reduction_status_message == other.reduction_status_message
+                and self.reduction_inputs == other.reduction_inputs
+                and self.script == other.script
+                and self.reduction_outputs == other.reduction_outputs
+            )
         return False
 
 
@@ -82,8 +86,7 @@ class RunReduction(Base):
 
     def __eq__(self, other):
         if isinstance(other, RunReduction):
-            return (self.run == other.run and
-                    self.reduction == other.reduction)
+            return self.run == other.run and self.reduction == other.reduction
         return False
 
 
