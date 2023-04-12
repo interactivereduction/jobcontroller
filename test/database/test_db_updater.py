@@ -76,23 +76,26 @@ class DBUpdaterTests(unittest.TestCase):
         output_files = mock.MagicMock()
         reduction_script = mock.MagicMock()
 
-        self.db_updater.add_completed_run(db_reduction_id=db_reduction_id, reduction_inputs=reduction_inputs,
-                                          state=state, status_message=status_message,
-                                          output_files=output_files, reduction_script=reduction_script)
+        self.db_updater.add_completed_run(
+            db_reduction_id=db_reduction_id,
+            reduction_inputs=reduction_inputs,
+            state=state,
+            status_message=status_message,
+            output_files=output_files,
+            reduction_script=reduction_script,
+        )
 
         reduction_mock = self.mock_session.query(Reduction).filter_by(id=db_reduction_id).one()
         self.assertEqual(reduction_mock.reduction_state, str(state))
         self.assertEqual(reduction_mock.reduction_inputs, reduction_inputs)
-        self.assertEqual(reduction_mock.script, self.mock_session.query(Script)
-                         .filter_by(script=reduction_script).first().id)
+        self.assertEqual(
+            reduction_mock.script, self.mock_session.query(Script).filter_by(script=reduction_script).first().id
+        )
         self.assertEqual(reduction_mock.reduction_outputs, str(output_files))
         self.assertEqual(reduction_mock.reduction_status_message, status_message)
 
-        self.mock_session.commit.assert_has_calls([
-            mock.call()
-        ])
+        self.mock_session.commit.assert_has_calls([mock.call()])
         self.assertEqual(self.mock_session.commit.call_count, 1)
-
 
     def test_add_completed_run_when_script_not_found(self):
         db_reduction_id = mock.MagicMock()
@@ -103,9 +106,14 @@ class DBUpdaterTests(unittest.TestCase):
         reduction_script = mock.MagicMock()
         self.mock_session.query(Script).filter_by(script=reduction_script).first.return_value = None
 
-        self.db_updater.add_completed_run(db_reduction_id=db_reduction_id, reduction_inputs=reduction_inputs,
-                                          state=state, status_message=status_message,
-                                          output_files=output_files, reduction_script=reduction_script)
+        self.db_updater.add_completed_run(
+            db_reduction_id=db_reduction_id,
+            reduction_inputs=reduction_inputs,
+            state=state,
+            status_message=status_message,
+            output_files=output_files,
+            reduction_script=reduction_script,
+        )
 
         script = Script(id=0, script=reduction_script)
 
@@ -119,8 +127,5 @@ class DBUpdaterTests(unittest.TestCase):
         self.assertEqual(reduction_mock.reduction_outputs, str(output_files))
         self.assertEqual(reduction_mock.reduction_status_message, status_message)
 
-        self.mock_session.commit.assert_has_calls([
-            mock.call(),
-            mock.call()
-        ])
+        self.mock_session.commit.assert_has_calls([mock.call(), mock.call()])
         self.assertEqual(self.mock_session.commit.call_count, 2)

@@ -66,8 +66,12 @@ class JobController:
                 raw_frames=raw_frames,
                 reduction_inputs=additional_values,
             )
-            script = acquire_script(filename=filename, ir_api_host=self.ir_api_host, reduction_id=db_reduction_id,
-                                    instrument=instrument_name)
+            script = acquire_script(
+                filename=filename,
+                ir_api_host=self.ir_api_host,
+                reduction_id=db_reduction_id,
+                instrument=instrument_name,
+            )
             job = self.job_creator.spawn_job(
                 job_name=job_name,
                 script=script,

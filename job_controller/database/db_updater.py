@@ -148,7 +148,7 @@ class DBUpdater:
         state: State,
         status_message: str,
         output_files: List[str],
-        reduction_script: str
+        reduction_script: str,
     ):
         session = self.session_maker_func()
         script = session.query(Script).filter_by(script=reduction_script).first()
