@@ -3,7 +3,7 @@ name = "job_controller"
 readme = "README.md"
 version = "0.0.1"
 dependencies = [
-    "confluent-kafka==2.0.2",
+    "confluent-kafka==2.1.0",
     "kubernetes==25.3.0"
 ]
 
