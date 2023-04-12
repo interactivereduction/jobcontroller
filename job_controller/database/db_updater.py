@@ -145,7 +145,7 @@ class DBUpdater:
         state: State,
         status_message: str,
         output_files: List[str],
-        reduction_script,
+        reduction_script: str
     ):
         session = self.session_maker_func()
         script = session.query(Script).filter_by(script=reduction_script).first()
@@ -154,7 +154,7 @@ class DBUpdater:
             session.add(script)
             session.commit()
 
-        reduction = session.query(Reduction).filter_by(id=db_reduction_id).first()
+        reduction = session.query(Reduction).filter_by(id=db_reduction_id).one()
         reduction.reduction_state = str(state)
         reduction.reduction_inputs = reduction_inputs
         reduction.script = script.id

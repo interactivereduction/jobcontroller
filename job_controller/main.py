@@ -54,7 +54,6 @@ class JobController:
             additional_values = message["additional_values"]
             # Add UUID which will avoid collisions for reruns
             job_name = f"run-{filename.lower()}-{str(uuid.uuid4().hex)}"
-            script = acquire_script(filename=filename, ir_api_host=self.ir_api_host)
             ceph_path = create_ceph_path(instrument_name=instrument_name, rb_number=rb_number)
             db_reduction_id = self.db_updater.add_detected_run(
                 filename=filename,
@@ -67,6 +66,8 @@ class JobController:
                 raw_frames=raw_frames,
                 reduction_inputs=additional_values,
             )
+            script = acquire_script(filename=filename, ir_api_host=self.ir_api_host, reduction_id=db_reduction_id,
+                                    instrument=instrument_name)
             job = self.job_creator.spawn_job(
                 job_name=job_name,
                 script=script,
