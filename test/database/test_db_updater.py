@@ -18,7 +18,8 @@ class DBUpdaterTests(unittest.TestCase):
         self.db_updater = DBUpdater(self.ip, self.username, self.password)
         self.db_updater.session_maker_func = self.session_maker_func
 
-    def test_add_detected_run(self):
+    @mock.patch("job_controller.database.db_updater.Reduction")
+    def test_add_detected_run(self, reduction_mock):
         filename = mock.MagicMock()
         title = mock.MagicMock()
         experiment_number = mock.MagicMock()
@@ -51,16 +52,9 @@ class DBUpdaterTests(unittest.TestCase):
             good_frames=good_frames,
             raw_frames=raw_frames,
         )
-        reduction = Reduction(
-            reduction_start=None,
-            reduction_end=None,
-            reduction_state=None,
-            reduction_inputs=reduction_inputs,
-            script=None,
-            reduction_outputs=None,
-        )
         self.assertEqual(self.mock_session.add.call_args_list[0][0][0], run)
-        self.assertEqual(self.mock_session.add.call_args_list[1][0][0], reduction)
+        reduction = self.mock_session.add.call_args_list[1][0][0]
+        self.assertEqual(reduction, reduction_mock.return_value)
         self.assertEqual(
             self.mock_session.add.call_args_list[2][0][0], RunReduction(run=run.id, reduction=reduction.id)
         )
