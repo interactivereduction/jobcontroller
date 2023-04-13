@@ -8,6 +8,7 @@ class State(Enum):  # pylint: disable=too-many-ancestors
     """
     The State Enum for reduction status
     """
+
     Successful = "Successful"
     Unsuccessful = "Unsuccessful"
     Error = "Error"

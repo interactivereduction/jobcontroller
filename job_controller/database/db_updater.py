@@ -20,6 +20,7 @@ class Run(Base):
     """
     The Run Table's declarative declaration
     """
+
     __tablename__ = "runs"
     id = Column(Integer, primary_key=True, autoincrement=True)
     filename = Column(String)
@@ -51,6 +52,7 @@ class Script(Base):
     """
     The Script Table's declarative declaration
     """
+
     __tablename__ = "scripts"
     id = Column(Integer, primary_key=True, autoincrement=True)
     script = Column(String)
@@ -66,6 +68,7 @@ class Reduction(Base):
     """
     The Reduction Table's declarative declaration
     """
+
     __tablename__ = "reductions"
     id = Column(Integer, primary_key=True, autoincrement=True)
     reduction_start = Column(DateTime)
@@ -96,6 +99,7 @@ class RunReduction(Base):
     """
     The RunReduction Table's declarative declaration
     """
+
     __tablename__ = "runs_reductions"
     run = Column(Integer, ForeignKey("runs.id"), primary_key=True)
     reduction = Column(Integer, ForeignKey("reductions.id"), primary_key=True)
@@ -112,6 +116,7 @@ class DBUpdater:
     """
     The class responsible for handling session state, and sending SQL queries via SQLAlchemy
     """
+
     def __init__(self, ip: str, username: str, password: str):
         connection_string = f"postgresql+psycopg2://{username}:{password}@{ip}:5432/interactive-reduction"
         engine = create_engine(connection_string, poolclass=QueuePool, pool_size=20)
@@ -121,7 +126,7 @@ class DBUpdater:
         self.runs_reductions_table = RunReduction()
         self.script_table = Script()
 
-# pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments
     def add_detected_run(
         self,
         filename: str,
@@ -259,4 +264,6 @@ class DBUpdater:
             output_files,
             reduction_script,
         )
+
+
 # pylint: enable=too-many-arguments
