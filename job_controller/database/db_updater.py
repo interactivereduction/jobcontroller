@@ -6,7 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
 from job_controller.database.state_enum import State
-from utils import logger
+from job_controller.utils import logger
 
 Base = declarative_base()
 
