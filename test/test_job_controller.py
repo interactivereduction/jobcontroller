@@ -51,9 +51,10 @@ class JobControllerTest(unittest.TestCase):
         self.joc.on_message(message)
 
         acquire_script.assert_called_once_with(
-            filename=os.path.basename(message["filepath"]), ir_api_host=self.joc.ir_api_host,
+            filename=os.path.basename(message["filepath"]),
+            ir_api_host=self.joc.ir_api_host,
             reduction_id=self.joc.db_updater.add_detected_run.return_value,
-            instrument=message["instrument"]
+            instrument=message["instrument"],
         )
 
     @mock.patch("job_controller.main.acquire_script")
