@@ -5,8 +5,15 @@ via SQLAlchemy via pre-made functions.
 
 from typing import Any, Dict, List
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, \
-    ForeignKey, QueuePool  # type: ignore[attr-defined]
+from sqlalchemy import (
+    create_engine,
+    Column,
+    Integer,
+    String,
+    DateTime,
+    ForeignKey,
+    QueuePool,
+)  # type: ignore[attr-defined]
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship, sessionmaker, declarative_base  # type: ignore[attr-defined]
 
