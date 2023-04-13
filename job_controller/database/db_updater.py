@@ -5,14 +5,14 @@ via SQLAlchemy via pre-made functions.
 
 from typing import Any, Dict, List
 
-from sqlalchemy import (
+from sqlalchemy import (  # type: ignore[attr-defined]
     create_engine,
     Column,
     Integer,
     String,
     DateTime,
     ForeignKey,
-    QueuePool,  # type: ignore[attr-defined]
+    QueuePool,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship, sessionmaker, declarative_base  # type: ignore[attr-defined]
@@ -215,7 +215,7 @@ class DBUpdater:
             reduction_inputs,
         )
 
-        return reduction.id.one()
+        return int(reduction.id)
 
     def add_completed_run(
         self,
