@@ -19,6 +19,7 @@ class Run(Base):
     """
     The Run Table's declarative declaration
     """
+
     __tablename__ = "runs"
     id = Column(Integer, primary_key=True, autoincrement=True)
     filename = Column(String)
