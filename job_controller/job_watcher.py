@@ -3,25 +3,40 @@ Watch a kubernetes job, and when it ends notify a kafka topic
 """
 import json
 from json import JSONDecodeError
-from typing import Any, List, Optional, Dict
+from typing import Any, Optional, Dict
 
-from confluent_kafka import Producer  # type: ignore[import]
 from kubernetes import client, watch  # type: ignore[import]
 from kubernetes.client import V1Job  # type: ignore[import]
 
-from job_controller.utils import logger, add_ceph_path_to_output_files, load_kubernetes_config
+from job_controller.database.state_enum import State
+from job_controller.database.db_updater import DBUpdater
+from job_controller.utils import logger, load_kubernetes_config
 
 
-class JobWatcher:
+class JobWatcher:  # pylint: disable=too-many-instance-attributes
     """
     Watch a kubernetes job, and when it ends notify a kafka topic
     """
 
-    def __init__(self, job_name: str, namespace: str, kafka_ip: str, ceph_path: str):
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        job_name: str,
+        namespace: str,
+        kafka_ip: str,
+        ceph_path: str,
+        db_updater: DBUpdater,
+        db_reduction_id: int,
+        job_script: str,
+        reduction_inputs: Dict[str, Any],
+    ):
         self.job_name = job_name
         self.namespace = namespace
         self.kafka_ip = kafka_ip
         self.ceph_path = ceph_path
+        self.db_updater = db_updater
+        self.db_reduction_id = db_reduction_id
+        self.job_script = job_script
+        self.reduction_inputs = reduction_inputs
         load_kubernetes_config()  # Should already be called in job creator, this is a defensive call.
 
     @staticmethod
@@ -82,9 +97,14 @@ class JobWatcher:
         :return:
         """
         logger.info("Job %s has %s, with message: %s", self.job_name, job.status.phase, job.status.message)
-        status = "Error"
-        status_message = job.status.message
-        self.notify_kafka(status=status, status_message=status_message)
+        self.db_updater.add_completed_run(
+            db_reduction_id=self.db_reduction_id,
+            state=State(State.Error),
+            status_message=job.status.message,
+            output_files=[],
+            reduction_script=self.job_script,
+            reduction_inputs=self.reduction_inputs,
+        )
 
     def process_event_success(self) -> None:
         """
@@ -123,40 +143,14 @@ class JobWatcher:
         status = job_output.get("status", "Unsuccessful")
         status_message = job_output.get("status_message", "")
         output_files = job_output.get("output_files", [])
-        self.notify_kafka(status=status, status_message=status_message, output_files=output_files)
-
-    def notify_kafka(self, status: str, status_message: str = "", output_files: Optional[List[str]] = None) -> None:
-        """
-        Connect to kafka, send message and disconnect from kafka
-        :param status: The end state of the Run
-        :param status_message: The status message to be sent when status is not "Success"
-        :param output_files: The names of files to be sent when status is "Success"
-        :return: None
-        """
-        logger.info("Notifying kafka of job %s finished with status %s", self.job_name, status)
-        producer = Producer(
-            {
-                "bootstrap.servers": self.kafka_ip,
-                "client.id": f"runner-{self.job_name}",
-            }
+        self.db_updater.add_completed_run(
+            db_reduction_id=self.db_reduction_id,
+            state=status,
+            status_message=status_message,
+            output_files=output_files,
+            reduction_script=self.job_script,
+            reduction_inputs=self.reduction_inputs,
         )
-
-        logger.info("Creating message for kafka")
-        if output_files is not None:
-            outputs = add_ceph_path_to_output_files(ceph_path=self.ceph_path, output_files=output_files)
-        else:
-            outputs = []
-
-        if status == "Error":
-            value = json.dumps({"status": status, "status message": status_message})
-        elif status == "Successful":
-            value = json.dumps({"status": status, "run output": outputs})
-        else:
-            value = json.dumps({"status": status, "status message": status_message})
-
-        producer.produce("completed-runs", value=value, callback=self._delivery_callback)
-        producer.flush()
-        logger.info("Kafka notified with message: %s", value)
 
     @staticmethod
     def _delivery_callback(err: Any, msg: Any) -> None:

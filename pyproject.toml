@@ -4,14 +4,16 @@ readme = "README.md"
 version = "0.0.1"
 dependencies = [
     "confluent-kafka==2.1.0",
-    "kubernetes==25.3.0"
+    "kubernetes==25.3.0",
+    "psycopg2==2.9.5",
+    "SQLAlchemy==2.0.7"
 ]
 
 [project.urls]
 "Repository" = "https://github.com/interactivereduction/jobcontroller"
 
 [project.scripts]
-jobcontroller = "job_controller.job_controller:main"
+jobcontroller = "job_controller.main:main"
 
 [project.optional-dependencies]
 formatting = [
@@ -26,6 +28,7 @@ test = [
 code-inspection = [
     "pylint==2.17.1",
     "mypy==1.2.0",
+    "sqlalchemy-stubs==0.4",
     "job_controller[test]"
 ]
 
