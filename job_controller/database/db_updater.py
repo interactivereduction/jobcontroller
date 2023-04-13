@@ -5,9 +5,10 @@ via SQLAlchemy via pre-made functions.
 
 from typing import Any, Dict, List
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, QueuePool
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, \
+    ForeignKey, QueuePool  # type: ignore[attr-defined]
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import relationship, sessionmaker, declarative_base
+from sqlalchemy.orm import relationship, sessionmaker, declarative_base  # type: ignore[attr-defined]
 
 from job_controller.database.state_enum import State
 from job_controller.utils import logger
@@ -15,7 +16,7 @@ from job_controller.utils import logger
 Base = declarative_base()
 
 
-class Run(Base):
+class Run(Base):  # mypy: ignore[valid-type, misc]
     """
     The Run Table's declarative declaration
     """
@@ -32,7 +33,7 @@ class Run(Base):
     raw_frames = Column(Integer)
     reductions = relationship("RunReduction", back_populates="run_relationship")
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, Run):
             return (
                 self.filename == other.filename
@@ -47,7 +48,7 @@ class Run(Base):
         return False
 
 
-class Script(Base):
+class Script(Base):  # mypy: ignore[valid-type, misc]
     """
     The Script Table's declarative declaration
     """
@@ -57,13 +58,13 @@ class Script(Base):
     script = Column(String)
     reductions = relationship("Reduction", back_populates="script_relationship")
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, Script):
             return self.script == other.script
         return False
 
 
-class Reduction(Base):
+class Reduction(Base):  # mypy: ignore[valid-type, misc]
     """
     The Reduction Table's declarative declaration
     """
@@ -80,7 +81,7 @@ class Reduction(Base):
     reduction_outputs = Column(String)
     run_reduction_relationship = relationship("RunReduction", back_populates="reduction_relationship")
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, Reduction):
             return (
                 self.reduction_start == other.reduction_start
@@ -94,7 +95,7 @@ class Reduction(Base):
         return False
 
 
-class RunReduction(Base):
+class RunReduction(Base):  # mypy: ignore[valid-type, misc]
     """
     The RunReduction Table's declarative declaration
     """
@@ -105,7 +106,7 @@ class RunReduction(Base):
     run_relationship = relationship("Run", back_populates="reductions")
     reduction_relationship = relationship("Reduction", back_populates="run_reduction_relationship")
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunReduction):
             return self.run == other.run and self.reduction == other.reduction
         return False
@@ -137,7 +138,7 @@ class DBUpdater:
         good_frames: str,
         raw_frames: str,
         reduction_inputs: Dict[str, Any],
-    ) -> int:
+    ) -> Column[int]:
         """
         This function submits data to the database from what is initially available on detected-runs kafka topic
         :param filename: the filename of the run that needs to be reduced
@@ -217,7 +218,7 @@ class DBUpdater:
         status_message: str,
         output_files: List[str],
         reduction_script: str,
-    ):
+    ) -> None:
         """
         This function submits data to the database from what is initially available on completed-runs kafka topic
         :param db_reduction_id: The ID for the reduction row in the reduction table
