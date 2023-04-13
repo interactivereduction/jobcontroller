@@ -5,7 +5,6 @@ import json
 from json import JSONDecodeError
 from typing import Any, Optional, Dict
 
-from confluent_kafka import Producer  # type: ignore[import]
 from kubernetes import client, watch  # type: ignore[import]
 from kubernetes.client import V1Job  # type: ignore[import]
 
@@ -14,12 +13,12 @@ from job_controller.database.db_updater import DBUpdater
 from job_controller.utils import logger, load_kubernetes_config
 
 
-class JobWatcher:
+class JobWatcher:  # pylint: disable=too-many-instance-attributes
     """
     Watch a kubernetes job, and when it ends notify a kafka topic
     """
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         job_name: str,
         namespace: str,

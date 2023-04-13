@@ -1,15 +1,15 @@
 # pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring
+# pylint: disable=too-many-instance-attributes
 
 import unittest
 from unittest import mock
-from mock_alchemy.mocking import UnifiedAlchemyMagicMock
 
 from job_controller.database.db_updater import DBUpdater, RunReduction, Reduction, Run, Script
 
 
 class DBUpdaterTests(unittest.TestCase):
     @mock.patch("job_controller.database.db_updater.sessionmaker")
-    def setUp(self, session_maker) -> None:
+    def setUp(self, _) -> None:
         self.ip = mock.MagicMock()
         self.username = mock.MagicMock()
         self.password = mock.MagicMock()

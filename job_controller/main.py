@@ -34,7 +34,7 @@ class JobController:
         self.job_creator = JobCreator()
         self.ir_k8s_api = "ir-jobs"
 
-    def on_message(self, message: Dict[str, Any]) -> None:
+    def on_message(self, message: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
         """
         Request that the k8s api spawns a pod
         :param message: dict, the message is a dictionary containing the needed information for spawning a pod
@@ -83,7 +83,7 @@ class JobController:
         except Exception as exception:  # pylint: disable=broad-exception-caught
             logger.exception(exception)
 
-    def create_job_watcher(
+    def create_job_watcher(  # pylint: disable=too-many-arguments
         self, job_name: str, ceph_path: str, db_reduction_id: int, job_script: str, reduction_inputs: Dict[str, Any]
     ) -> None:
         """
@@ -92,6 +92,9 @@ class JobController:
         the end of the runstate, and the output result.
         :param job_name: The name of the job that was created by the k8s api
         :param ceph_path: The path that was mounted in the container for the jobs that were created
+        :param db_reduction_id: The ID for the reduction's row in the database
+        :param job_script: The script used in the reduction
+        :param reduction_inputs: The inputs that the reduction is using.
         :return:
         """
         watcher = JobWatcher(

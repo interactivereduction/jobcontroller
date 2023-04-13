@@ -1,3 +1,8 @@
+"""
+This module is responsible for holding the SQL Classes that SQLAlchemy will use and then formatting the SQL queries
+via SQLAlchemy via pre-made functions.
+"""
+
 from typing import Any, Dict, List
 
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, QueuePool
@@ -12,6 +17,9 @@ Base = declarative_base()
 
 
 class Run(Base):
+    """
+    The Run Table's declarative declaration
+    """
     __tablename__ = "runs"
     id = Column(Integer, primary_key=True, autoincrement=True)
     filename = Column(String)
@@ -40,6 +48,9 @@ class Run(Base):
 
 
 class Script(Base):
+    """
+    The Script Table's declarative declaration
+    """
     __tablename__ = "scripts"
     id = Column(Integer, primary_key=True, autoincrement=True)
     script = Column(String)
@@ -52,6 +63,9 @@ class Script(Base):
 
 
 class Reduction(Base):
+    """
+    The Reduction Table's declarative declaration
+    """
     __tablename__ = "reductions"
     id = Column(Integer, primary_key=True, autoincrement=True)
     reduction_start = Column(DateTime)
@@ -79,6 +93,9 @@ class Reduction(Base):
 
 
 class RunReduction(Base):
+    """
+    The RunReduction Table's declarative declaration
+    """
     __tablename__ = "runs_reductions"
     run = Column(Integer, ForeignKey("runs.id"), primary_key=True)
     reduction = Column(Integer, ForeignKey("reductions.id"), primary_key=True)
@@ -92,6 +109,9 @@ class RunReduction(Base):
 
 
 class DBUpdater:
+    """
+    The class responsible for handling session state, and sending SQL queries via SQLAlchemy
+    """
     def __init__(self, ip: str, username: str, password: str):
         connection_string = f"postgresql+psycopg2://{username}:{password}@{ip}:5432/interactive-reduction"
         engine = create_engine(connection_string, poolclass=QueuePool, pool_size=20)
@@ -101,6 +121,7 @@ class DBUpdater:
         self.runs_reductions_table = RunReduction()
         self.script_table = Script()
 
+# pylint: disable=too-many-arguments
     def add_detected_run(
         self,
         filename: str,
@@ -113,6 +134,19 @@ class DBUpdater:
         raw_frames: str,
         reduction_inputs: Dict[str, Any],
     ) -> int:
+        """
+        This function submits data to the database from what is initially available on detected-runs kafka topic
+        :param filename: the filename of the run that needs to be reduced
+        :param title: The title of the run file
+        :param users: The users entered into the run file
+        :param experiment_number: The RB number of the run entered by users
+        :param run_start: The time at which the run started, created using the standard python time format.
+        :param run_end: The time at which the run ended, created using the standard python time format.
+        :param good_frames: The number of frames that are considered "good" in the file
+        :param raw_frames: The number of frames that are in the file
+        :param reduction_inputs: The inputs to be used by the reduction
+        :return: The id of the reduction row entry
+        """
         logger.info(
             "Submitting detected-run to the database: {filename: %s, title: %s, users: %s, "
             "experiment_number: %s, run_start: %s, run_end: %s, good_frames: %s, raw_frames: %s, "
@@ -180,6 +214,17 @@ class DBUpdater:
         output_files: List[str],
         reduction_script: str,
     ):
+        """
+        This function submits data to the database from what is initially available on completed-runs kafka topic
+        :param db_reduction_id: The ID for the reduction row in the reduction table
+        :param reduction_inputs: The inputs used in the reduction script by the IR-API
+        :param state: The state of how the run ended
+        :param status_message: The message that accompanies the state for how the  state ended, if the state for
+        example was unsuccessful or an error, it would have the reason/error message.
+        :param output_files: The files output from the reduction job
+        :param reduction_script: The script used in the reduction
+        :return:
+        """
         logger.info(
             "Submitting completed-run to the database: {id: %s, reduction_inputs: %s, state: %s, "
             "status_message: %s, output_files: %s, reduction_script: %s}",
@@ -214,3 +259,4 @@ class DBUpdater:
             output_files,
             reduction_script,
         )
+# pylint: enable=too-many-arguments
