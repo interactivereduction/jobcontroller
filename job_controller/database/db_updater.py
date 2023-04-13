@@ -264,4 +264,6 @@ class DBUpdater:
             output_files,
             reduction_script,
         )
+
+
 # pylint: enable=too-many-arguments
