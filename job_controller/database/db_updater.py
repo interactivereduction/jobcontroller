@@ -6,6 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
 from job_controller.database.state_enum import State
+from utils import logger
 
 Base = declarative_base()
 
@@ -112,6 +113,10 @@ class DBUpdater:
         raw_frames: str,
         reduction_inputs: Dict[str, Any],
     ) -> int:
+        logger.info("Submitting detected-run to the database: {filename: %s, title: %s, users: %s, "
+                    "experiment_number: %s, run_start: %s, run_end: %s, good_frames: %s, raw_frames: %s, "
+                    "reduction_inputs: %s}", filename, title, users, experiment_number, run_start, run_end,
+                    good_frames, raw_frames, reduction_inputs)
         session = self.session_maker_func()
         run = Run(
             filename=filename,
@@ -139,6 +144,11 @@ class DBUpdater:
         session.add(run_reduction)
         session.commit()
 
+        logger.info("Submitted detected-run to the database successfully: {filename: %s, title: %s, users: %s, "
+                    "experiment_number: %s, run_start: %s, run_end: %s, good_frames: %s, raw_frames: %s, "
+                    "reduction_inputs: %s}", filename, title, users, experiment_number, run_start, run_end,
+                    good_frames, raw_frames, reduction_inputs)
+
         return reduction.id
 
     def add_completed_run(
@@ -150,6 +160,9 @@ class DBUpdater:
         output_files: List[str],
         reduction_script: str,
     ):
+        logger.info("Submitting completed-run to the database: {id: %s, reduction_inputs: %s, state: %s, "
+                    "status_message: %s, output_files: %s, reduction_script: %s}", db_reduction_id, reduction_inputs,
+                    str(state), status_message, output_files, reduction_script)
         session = self.session_maker_func()
         script = session.query(Script).filter_by(script=reduction_script).first()
         if script is None:
@@ -164,3 +177,6 @@ class DBUpdater:
         reduction.reduction_outputs = str(output_files)
         reduction.reduction_status_message = status_message
         session.commit()
+        logger.info("Submitted completed-run to the database successfully: {id: %s, reduction_inputs: %s, state: %s, "
+                    "status_message: %s, output_files: %s, reduction_script: %s}", db_reduction_id, reduction_inputs,
+                    str(state), status_message, output_files, reduction_script)
