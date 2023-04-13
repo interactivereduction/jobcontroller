@@ -23,13 +23,13 @@ class JobController:
     """
 
     def __init__(self) -> None:
-        db_ip = os.environ.get("DB_IP")
-        db_username = os.environ.get("DB_USERNAME")
-        db_password = os.environ.get("DB_PASSWORD")
+        db_ip = os.environ.get("DB_IP", "")
+        db_username = os.environ.get("DB_USERNAME", "")
+        db_password = os.environ.get("DB_PASSWORD", "")
         self.db_updater = DBUpdater(ip=db_ip, username=db_username, password=db_password)
         self.ir_api_host = "irapi.ir.svc.cluster.local"
-        self.kafka_ip = os.environ.get("KAFKA_IP")
-        self.reduce_user_id = os.environ.get("REDUCE_USER_ID")
+        self.kafka_ip = os.environ.get("KAFKA_IP", "")
+        self.reduce_user_id = os.environ.get("REDUCE_USER_ID", "")
         self.consumer = TopicConsumer(self.on_message, broker_ip=self.kafka_ip)
         self.job_creator = JobCreator()
         self.ir_k8s_api = "ir-jobs"
