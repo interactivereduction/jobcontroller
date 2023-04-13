@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, QueuePool
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm import relationship, sessionmaker, Relationship
 
 from job_controller.database.state_enum import State
 from job_controller.utils import logger
@@ -22,18 +22,18 @@ class Run(Base):
     """
 
     __tablename__ = "runs"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    filename = Column(String)
-    title = Column(String)
-    users = Column(String)
-    experiment_number = Column(Integer)
-    run_start = Column(DateTime)
-    run_end = Column(DateTime)
-    good_frames = Column(Integer)
-    raw_frames = Column(Integer)
-    reductions = relationship("RunReduction", back_populates="run_relationship")
+    id: Column = Column(Integer, primary_key=True, autoincrement=True)
+    filename: Column = Column(String)
+    title: Column = Column(String)
+    users: Column = Column(String)
+    experiment_number: Column = Column(Integer)
+    run_start: Column = Column(DateTime)
+    run_end: Column = Column(DateTime)
+    good_frames: Column = Column(Integer)
+    raw_frames: Column = Column(Integer)
+    reductions: Relationship = relationship("RunReduction", back_populates="run_relationship")
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any):
         if isinstance(other, Run):
             return (
                 self.filename == other.filename
@@ -54,11 +54,11 @@ class Script(Base):
     """
 
     __tablename__ = "scripts"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    script = Column(String)
-    reductions = relationship("Reduction", back_populates="script_relationship")
+    id: Column = Column(Integer, primary_key=True, autoincrement=True)
+    script: Column = Column(String)
+    reductions: Relationship = relationship("Reduction", back_populates="script_relationship")
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any):
         if isinstance(other, Script):
             return self.script == other.script
         return False
@@ -70,18 +70,18 @@ class Reduction(Base):
     """
 
     __tablename__ = "reductions"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    reduction_start = Column(DateTime)
-    reduction_end = Column(DateTime)
-    reduction_state = Column(State)
-    reduction_status_message = Column(String)
-    reduction_inputs = Column(JSONB)
-    script = Column(Integer, ForeignKey("scripts.id"))
-    script_relationship = relationship("Script", back_populates="reductions")
-    reduction_outputs = Column(String)
-    run_reduction_relationship = relationship("RunReduction", back_populates="reduction_relationship")
+    id: Column = Column(Integer, primary_key=True, autoincrement=True)
+    reduction_start: Column = Column(DateTime)
+    reduction_end: Column = Column(DateTime)
+    reduction_state: Column = Column(State)
+    reduction_status_message: Column = Column(String)
+    reduction_inputs: Column = Column(JSONB)
+    script: Column = Column(Integer, ForeignKey("scripts.id"))
+    script_relationship: Relationship = relationship("Script", back_populates="reductions")
+    reduction_outputs: Column = Column(String)
+    run_reduction_relationship: Relationship = relationship("RunReduction", back_populates="reduction_relationship")
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any):
         if isinstance(other, Reduction):
             return (
                 self.reduction_start == other.reduction_start
@@ -101,12 +101,12 @@ class RunReduction(Base):
     """
 
     __tablename__ = "runs_reductions"
-    run = Column(Integer, ForeignKey("runs.id"), primary_key=True)
-    reduction = Column(Integer, ForeignKey("reductions.id"), primary_key=True)
-    run_relationship = relationship("Run", back_populates="reductions")
-    reduction_relationship = relationship("Reduction", back_populates="run_reduction_relationship")
+    run: Column = Column(Integer, ForeignKey("runs.id"), primary_key=True)
+    reduction: Column = Column(Integer, ForeignKey("reductions.id"), primary_key=True)
+    run_relationship: Relationship = relationship("Run", back_populates="reductions")
+    reduction_relationship: Relationship = relationship("Reduction", back_populates="run_reduction_relationship")
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any):
         if isinstance(other, RunReduction):
             return self.run == other.run and self.reduction == other.reduction
         return False
@@ -264,6 +264,4 @@ class DBUpdater:
             output_files,
             reduction_script,
         )
-
-
 # pylint: enable=too-many-arguments
