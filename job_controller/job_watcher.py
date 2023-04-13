@@ -99,7 +99,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         logger.info("Job %s has %s, with message: %s", self.job_name, job.status.phase, job.status.message)
         self.db_updater.add_completed_run(
             db_reduction_id=self.db_reduction_id,
-            state=State.Error,
+            state=State(State.Error),
             status_message=job.status.message,
             output_files=[],
             reduction_script=self.job_script,

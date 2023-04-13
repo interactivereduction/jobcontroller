@@ -12,8 +12,8 @@ from sqlalchemy import (
     String,
     DateTime,
     ForeignKey,
-    QueuePool,
-)  # type: ignore[attr-defined]
+    QueuePool,  # type: ignore[attr-defined]
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship, sessionmaker, declarative_base  # type: ignore[attr-defined]
 
@@ -23,7 +23,7 @@ from job_controller.utils import logger
 Base = declarative_base()
 
 
-class Run(Base):  # mypy: ignore[valid-type, misc]
+class Run(Base):  # type: ignore[valid-type, misc]
     """
     The Run Table's declarative declaration
     """
@@ -55,7 +55,7 @@ class Run(Base):  # mypy: ignore[valid-type, misc]
         return False
 
 
-class Script(Base):  # mypy: ignore[valid-type, misc]
+class Script(Base):  # type: ignore[valid-type, misc]
     """
     The Script Table's declarative declaration
     """
@@ -71,7 +71,7 @@ class Script(Base):  # mypy: ignore[valid-type, misc]
         return False
 
 
-class Reduction(Base):  # mypy: ignore[valid-type, misc]
+class Reduction(Base):  # type: ignore[valid-type, misc]
     """
     The Reduction Table's declarative declaration
     """
@@ -102,7 +102,7 @@ class Reduction(Base):  # mypy: ignore[valid-type, misc]
         return False
 
 
-class RunReduction(Base):  # mypy: ignore[valid-type, misc]
+class RunReduction(Base):  # type: ignore[valid-type, misc]
     """
     The RunReduction Table's declarative declaration
     """
