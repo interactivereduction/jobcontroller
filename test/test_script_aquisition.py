@@ -10,8 +10,10 @@ class UtilsTest(unittest.TestCase):
     def test_acquire_script(self):
         ir_api_ip = mock.MagicMock()
         filename = mock.MagicMock()
+        reduction_id = mock.MagicMock()
+        instrument = mock.MagicMock()
 
-        output = acquire_script(filename, ir_api_ip)
+        output = acquire_script(filename, ir_api_ip, reduction_id, instrument)
 
         expected_output = (
             "output = []\nprint('Performing run for file: " + str(filename) + "...')\nimport json\n\n"

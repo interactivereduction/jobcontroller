@@ -43,14 +43,17 @@ class JobControllerTest(unittest.TestCase):
 
     @mock.patch("job_controller.main.acquire_script")
     @mock.patch("job_controller.main.create_ceph_path")
-    def test_on_message_aquires_script_using_filename(self, _, acquire_script):
+    @mock.patch("job_controller.job_watcher.load_kubernetes_config")
+    def test_on_message_aquires_script_using_filename(self, _, __, acquire_script):
         message = mock.MagicMock()
         self.joc.ir_api_host = mock.MagicMock()
 
         self.joc.on_message(message)
 
         acquire_script.assert_called_once_with(
-            filename=os.path.basename(message["filepath"]), ir_api_host=self.joc.ir_api_host
+            filename=os.path.basename(message["filepath"]), ir_api_host=self.joc.ir_api_host,
+            reduction_id=self.joc.db_updater.add_detected_run.return_value,
+            instrument=message["instrument"]
         )
 
     @mock.patch("job_controller.main.acquire_script")
