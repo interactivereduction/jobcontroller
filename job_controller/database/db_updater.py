@@ -145,7 +145,7 @@ class DBUpdater:
         good_frames: str,
         raw_frames: str,
         reduction_inputs: Dict[str, Any],
-    ) -> Column[int]:
+    ) -> int:
         """
         This function submits data to the database from what is initially available on detected-runs kafka topic
         :param filename: the filename of the run that needs to be reduced
@@ -215,7 +215,7 @@ class DBUpdater:
             reduction_inputs,
         )
 
-        return reduction.id
+        return reduction.id.one()
 
     def add_completed_run(
         self,

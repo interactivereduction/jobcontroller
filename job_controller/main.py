@@ -65,7 +65,7 @@ class JobController:
                 good_frames=good_frames,
                 raw_frames=raw_frames,
                 reduction_inputs=additional_values,
-            ).one()
+            )
             script = acquire_script(
                 filename=filename,
                 ir_api_host=self.ir_api_host,
