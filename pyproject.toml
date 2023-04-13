@@ -3,7 +3,7 @@ name = "job_controller"
 readme = "README.md"
 version = "0.0.1"
 dependencies = [
-    "confluent-kafka==2.0.2",
+    "confluent-kafka==2.1.0",
     "kubernetes==25.3.0",
     "psycopg2==2.9.5",
     "SQLAlchemy==2.0.7"
@@ -28,7 +28,7 @@ test = [
 
 code-inspection = [
     "pylint==2.17.1",
-    "mypy==1.1.1",
+    "mypy==1.2.0",
     "job_controller[test]"
 ]
 
