@@ -56,14 +56,14 @@ def load_kubernetes_config() -> None:
             config.load_kube_config()
 
 
-def ensure_ceph_path_exists(ceph_path: str) -> str:
+def ensure_ceph_path_exists(ceph_path_str: str) -> str:
     """
     Takes a path that is intended to be on ceph and ensures that it will be correct for what we should mount and
     apply output to.
-    :param ceph_path: Is the string path to where we should output to ceph
+    :param ceph_path_str: Is the string path to where we should output to ceph
     :return: The corrected path for output to ceph path
     """
-    ceph_path = Path(ceph_path)
+    ceph_path = Path(ceph_path_str)
     if not ceph_path.exists():
         rb_folder = ceph_path.parent
         if not rb_folder.exists():
