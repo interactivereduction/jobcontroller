@@ -58,6 +58,7 @@ class JobController:
             db_reduction_id = self.db_updater.add_detected_run(
                 filename=filename,
                 title=title,
+                instrument_name=instrument_name,
                 users=users,
                 experiment_number=experiment_number,
                 run_start=run_start,
