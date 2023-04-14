@@ -118,9 +118,10 @@ class RunReduction(Base):  # type: ignore[valid-type, misc]
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunReduction):
-            return (self.run == other.run and self.reduction == other.reduction) \
-                   or (self.run_relationship == other.run_relationship
-                       and self.reduction_relationship == other.reduction_relationship)
+            return (self.run == other.run and self.reduction == other.reduction) or (
+                self.run_relationship == other.run_relationship
+                and self.reduction_relationship == other.reduction_relationship
+            )
         return False
 
 

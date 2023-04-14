@@ -63,7 +63,7 @@ class DBUpdaterTests(unittest.TestCase):
         )
         self.assertEqual(
             self.mock_session.add.call_args_list[0][0][0],
-            RunReduction(run_relationship=run, reduction_relationship=reduction_mock.return_value)
+            RunReduction(run_relationship=run, reduction_relationship=reduction_mock.return_value),
         )
         self.assertEqual(self.mock_session.add.call_count, 1)
         self.mock_session.commit.assert_has_calls([mock.call()])
@@ -108,7 +108,7 @@ class DBUpdaterTests(unittest.TestCase):
         )
         self.assertEqual(
             self.mock_session.add.call_args_list[0][0][0],
-            RunReduction(run_relationship=run, reduction_relationship=reduction_mock.return_value)
+            RunReduction(run_relationship=run, reduction_relationship=reduction_mock.return_value),
         )
         self.assertEqual(self.mock_session.add.call_count, 1)
         self.mock_session.commit.assert_has_calls([mock.call()])
@@ -135,8 +135,8 @@ class DBUpdaterTests(unittest.TestCase):
         self.assertEqual(reduction_mock.reduction_state, str(state))
         self.assertEqual(reduction_mock.reduction_inputs, reduction_inputs)
         self.assertEqual(
-            reduction_mock.script_relationship, self.mock_session.query(Script).filter_by(
-                script=reduction_script).first()
+            reduction_mock.script_relationship,
+            self.mock_session.query(Script).filter_by(script=reduction_script).first(),
         )
         self.assertEqual(reduction_mock.reduction_outputs, str(output_files))
         self.assertEqual(reduction_mock.reduction_status_message, status_message)
