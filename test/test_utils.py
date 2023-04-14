@@ -51,4 +51,3 @@ class UtilTests(unittest.TestCase):
 
         self.assertEqual(end_path, "/tmp/ceph/mari/RBNumber/unknown/autoreduced")
         os.removedirs("/tmp/ceph/mari/RBNumber/unknown/autoreduced")
-
