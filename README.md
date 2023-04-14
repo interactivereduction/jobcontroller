@@ -12,6 +12,11 @@ The software responsible for controlling the creation of Jobs, and notifying the
 Expects the following environment variables to be set when running:
 
 - "KAFKA_IP": ip to kafka broker
+- "DB_IP": ip for database
+- "DB_USERNAME": Username for database
+- "DB_PASSWORD": Password for database
+- "REDUCE_USER_ID": The ID for used for when interacting with CEPH
+- "KUBECONFIG": (Optional) Path to the kubeconfig file
 
 When a job is created it will have a volume mounted to `/output` that will be the correct folder for ceph to output to.
 

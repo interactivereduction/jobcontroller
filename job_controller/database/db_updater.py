@@ -31,6 +31,7 @@ class Run(Base):  # type: ignore[valid-type, misc]
     __tablename__ = "runs"
     id = Column(Integer, primary_key=True, autoincrement=True)
     filename = Column(String)
+    instrument = Column(Integer, ForeignKey("instruments.id"))
     title = Column(String)
     users = Column(String)
     experiment_number = Column(Integer)
@@ -45,6 +46,7 @@ class Run(Base):  # type: ignore[valid-type, misc]
             return (
                 self.filename == other.filename
                 and self.title == other.title
+                and self.instrument == other.instrument
                 and self.users == other.users
                 and self.experiment_number == other.experiment_number
                 and self.run_start == other.run_start
@@ -119,6 +121,21 @@ class RunReduction(Base):  # type: ignore[valid-type, misc]
         return False
 
 
+class Instrument(Base):  # type: ignore[valid-type, misc]
+    """
+    The Instrument Table's declarative declaration
+    """
+
+    __tablename__ = "instruments"
+    id = Column(Integer, primary_key=True)
+    instrument_name = Column(String)
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, Instrument):
+            return self.instrument_name == other.instrument_name
+        return False
+
+
 class DBUpdater:
     """
     The class responsible for handling session state, and sending SQL queries via SQLAlchemy
@@ -138,6 +155,7 @@ class DBUpdater:
         self,
         filename: str,
         title: str,
+        instrument_name: str,
         users: str,
         experiment_number: str,
         run_start: str,
@@ -150,6 +168,7 @@ class DBUpdater:
         This function submits data to the database from what is initially available on detected-runs kafka topic
         :param filename: the filename of the run that needs to be reduced
         :param title: The title of the run file
+        :param instrument_name: The name of the instrument for the run
         :param users: The users entered into the run file
         :param experiment_number: The RB number of the run entered by users
         :param run_start: The time at which the run started, created using the standard python time format.
@@ -160,11 +179,12 @@ class DBUpdater:
         :return: The id of the reduction row entry
         """
         logger.info(
-            "Submitting detected-run to the database: {filename: %s, title: %s, users: %s, "
+            "Submitting detected-run to the database: {filename: %s, title: %s, instrument_name: %s, users: %s, "
             "experiment_number: %s, run_start: %s, run_end: %s, good_frames: %s, raw_frames: %s, "
             "reduction_inputs: %s}",
             filename,
             title,
+            instrument_name,
             users,
             experiment_number,
             run_start,
@@ -174,9 +194,16 @@ class DBUpdater:
             reduction_inputs,
         )
         session = self.session_maker_func()
+        instrument = session.query(Instrument).filter_by(instrument_name=instrument_name).first()
+        if instrument is None:
+            instrument = Instrument(instrument_name=instrument_name)
+            session.add(instrument)
+            session.commit()
+
         run = Run(
             filename=filename,
             title=title,
+            instrument=instrument.id,
             users=users,
             experiment_number=experiment_number,
             run_start=run_start,
@@ -201,11 +228,12 @@ class DBUpdater:
         session.commit()
 
         logger.info(
-            "Submitted detected-run to the database successfully: {filename: %s, title: %s, users: %s, "
-            "experiment_number: %s, run_start: %s, run_end: %s, good_frames: %s, raw_frames: %s, "
+            "Submitted detected-run to the database successfully: {filename: %s, title: %s, instrument_name: %s, "
+            "users: %s, experiment_number: %s, run_start: %s, run_end: %s, good_frames: %s, raw_frames: %s, "
             "reduction_inputs: %s}",
             filename,
             title,
+            instrument_name,
             users,
             experiment_number,
             run_start,

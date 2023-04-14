@@ -4,7 +4,8 @@
 import unittest
 from unittest import mock
 
-from job_controller.database.db_updater import DBUpdater, RunReduction, Reduction, Run, Script
+
+from job_controller.database.db_updater import DBUpdater, RunReduction, Reduction, Run, Script, Instrument
 
 
 class DBUpdaterTests(unittest.TestCase):
@@ -19,9 +20,64 @@ class DBUpdaterTests(unittest.TestCase):
         self.db_updater.session_maker_func = self.session_maker_func
 
     @mock.patch("job_controller.database.db_updater.Reduction")
-    def test_add_detected_run(self, reduction_mock):
+    def test_add_detected_run_when_instrument_not_found(self, reduction_mock):
         filename = mock.MagicMock()
         title = mock.MagicMock()
+        instrument_name = mock.MagicMock()
+        experiment_number = mock.MagicMock()
+        users = mock.MagicMock()
+        run_start = mock.MagicMock()
+        run_end = mock.MagicMock()
+        good_frames = mock.MagicMock()
+        raw_frames = mock.MagicMock()
+        reduction_inputs = mock.MagicMock()
+        self.mock_session.query(Instrument).filter_by(instrument_name=instrument_name).first = mock.MagicMock(
+            return_value=None)
+
+        self.db_updater.add_detected_run(
+            filename=filename,
+            title=title,
+            instrument_name=instrument_name,
+            users=users,
+            experiment_number=experiment_number,
+            run_start=run_start,
+            run_end=run_end,
+            good_frames=good_frames,
+            raw_frames=raw_frames,
+            reduction_inputs=reduction_inputs,
+        )
+
+        instrument = Instrument(
+            instrument_name=instrument_name
+        )
+
+        run = Run(
+            filename=filename,
+            title=title,
+            instrument=instrument.id,
+            users=users,
+            experiment_number=experiment_number,
+            run_start=run_start,
+            run_end=run_end,
+            good_frames=good_frames,
+            raw_frames=raw_frames,
+        )
+        self.assertEqual(self.mock_session.add.call_args_list[0][0][0], instrument)
+        self.assertEqual(self.mock_session.add.call_args_list[1][0][0], run)
+        reduction = self.mock_session.add.call_args_list[2][0][0]
+        self.assertEqual(reduction, reduction_mock.return_value)
+        self.assertEqual(
+            self.mock_session.add.call_args_list[3][0][0], RunReduction(run=run.id, reduction=reduction.id)
+        )
+        self.assertEqual(self.mock_session.add.call_count, 4)
+        self.mock_session.commit.assert_has_calls([mock.call(), mock.call(), mock.call()])
+        self.assertEqual(self.mock_session.commit.call_count, 3)
+
+    @mock.patch("job_controller.database.db_updater.Reduction")
+    def test_add_detected_run_when_instrument_found(self, reduction_mock):
+        filename = mock.MagicMock()
+        title = mock.MagicMock()
+        instrument_name = mock.MagicMock()
         experiment_number = mock.MagicMock()
         users = mock.MagicMock()
         run_start = mock.MagicMock()
@@ -33,6 +89,7 @@ class DBUpdaterTests(unittest.TestCase):
         self.db_updater.add_detected_run(
             filename=filename,
             title=title,
+            instrument_name=instrument_name,
             users=users,
             experiment_number=experiment_number,
             run_start=run_start,
