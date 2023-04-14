@@ -4,6 +4,7 @@ A general utilities module for code that may or may not be reused throughout thi
 import logging
 import os
 import sys
+from pathlib import Path
 from typing import List
 from kubernetes import config  # type: ignore[import]
 from kubernetes.config import ConfigException  # type: ignore[import]
@@ -53,3 +54,23 @@ def load_kubernetes_config() -> None:
             config.load_kube_config(config_file=kubeconfig_path)
         else:
             config.load_kube_config()
+
+
+def ensure_ceph_path_exists(ceph_path_str: str) -> str:
+    """
+    Takes a path that is intended to be on ceph and ensures that it will be correct for what we should mount and
+    apply output to.
+    :param ceph_path_str: Is the string path to where we should output to ceph
+    :return: The corrected path for output to ceph path
+    """
+    ceph_path = Path(ceph_path_str)
+    if not ceph_path.exists():
+        rb_folder = ceph_path.parent
+        if not rb_folder.exists():
+            # Set parent to unknown
+            rb_folder = rb_folder.with_name("unknown")
+            ceph_path = rb_folder.joinpath(ceph_path.name)
+        if not ceph_path.exists():
+            ceph_path.mkdir(parents=True, exist_ok=True)
+
+    return str(ceph_path)

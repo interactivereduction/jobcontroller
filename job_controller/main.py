@@ -13,7 +13,7 @@ from job_controller.job_watcher import JobWatcher
 from job_controller.job_creator import JobCreator
 from job_controller.script_aquisition import acquire_script
 from job_controller.topic_consumer import TopicConsumer
-from job_controller.utils import create_ceph_path, logger
+from job_controller.utils import create_ceph_path, logger, ensure_ceph_path_exists
 
 
 class JobController:
@@ -73,6 +73,7 @@ class JobController:
                 reduction_id=db_reduction_id,
                 instrument=instrument_name,
             )
+            ceph_path = ensure_ceph_path_exists(ceph_path)
             job = self.job_creator.spawn_job(
                 job_name=job_name,
                 script=script,
