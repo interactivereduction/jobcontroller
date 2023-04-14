@@ -40,6 +40,7 @@ class Run(Base):  # type: ignore[valid-type, misc]
     good_frames = Column(Integer)
     raw_frames = Column(Integer)
     reductions = relationship("RunReduction", back_populates="run_relationship")
+    instrument_relationship = relationship("Instrument")
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Run):
@@ -117,7 +118,9 @@ class RunReduction(Base):  # type: ignore[valid-type, misc]
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunReduction):
-            return self.run == other.run and self.reduction == other.reduction
+            return (self.run == other.run and self.reduction == other.reduction) \
+                   or (self.run_relationship == other.run_relationship
+                       and self.reduction_relationship == other.reduction_relationship)
         return False
 
 
@@ -197,13 +200,10 @@ class DBUpdater:
         instrument = session.query(Instrument).filter_by(instrument_name=instrument_name).first()
         if instrument is None:
             instrument = Instrument(instrument_name=instrument_name)
-            session.add(instrument)
-            session.commit()
 
         run = Run(
             filename=filename,
             title=title,
-            instrument=instrument.id,
             users=users,
             experiment_number=experiment_number,
             run_start=run_start,
@@ -211,6 +211,7 @@ class DBUpdater:
             good_frames=good_frames,
             raw_frames=raw_frames,
         )
+        run.instrument_relationship = instrument
         reduction = Reduction(
             reduction_start=None,
             reduction_end=None,
@@ -219,11 +220,8 @@ class DBUpdater:
             script=None,
             reduction_outputs=None,
         )
-        session.add(run)
-        session.add(reduction)
-        session.commit()
         # Now create the run_reduction entry and add it
-        run_reduction = RunReduction(run=run.id, reduction=reduction.id)
+        run_reduction = RunReduction(run_relationship=run, reduction_relationship=reduction)
         session.add(run_reduction)
         session.commit()
 
@@ -279,13 +277,11 @@ class DBUpdater:
         script = session.query(Script).filter_by(script=reduction_script).first()
         if script is None:
             script = Script(script=reduction_script)
-            session.add(script)
-            session.commit()
 
         reduction = session.query(Reduction).filter_by(id=db_reduction_id).one()
         reduction.reduction_state = str(state)
         reduction.reduction_inputs = reduction_inputs
-        reduction.script = script.id
+        reduction.script_relationship = script
         reduction.reduction_outputs = str(output_files)
         reduction.reduction_status_message = status_message
         session.commit()
