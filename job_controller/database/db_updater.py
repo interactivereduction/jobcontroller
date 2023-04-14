@@ -150,7 +150,7 @@ class DBUpdater:
         self.runs_reductions_table = RunReduction()
         self.script_table = Script()
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-locals
     def add_detected_run(
         self,
         filename: str,
@@ -299,6 +299,4 @@ class DBUpdater:
             output_files,
             reduction_script,
         )
-
-
-# pylint: enable=too-many-arguments
+# pylint: enable=too-many-arguments, too-many-locals

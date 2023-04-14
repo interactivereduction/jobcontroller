@@ -101,6 +101,7 @@ class DBUpdaterTests(unittest.TestCase):
         run = Run(
             filename=filename,
             title=title,
+            instrument=self.mock_session.query(Instrument).filter_by(instrument_name=instrument_name).first().id,
             users=users,
             experiment_number=experiment_number,
             run_start=run_start,
