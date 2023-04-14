@@ -32,7 +32,8 @@ class DBUpdaterTests(unittest.TestCase):
         raw_frames = mock.MagicMock()
         reduction_inputs = mock.MagicMock()
         self.mock_session.query(Instrument).filter_by(instrument_name=instrument_name).first = mock.MagicMock(
-            return_value=None)
+            return_value=None
+        )
 
         self.db_updater.add_detected_run(
             filename=filename,
@@ -47,9 +48,7 @@ class DBUpdaterTests(unittest.TestCase):
             reduction_inputs=reduction_inputs,
         )
 
-        instrument = Instrument(
-            instrument_name=instrument_name
-        )
+        instrument = Instrument(instrument_name=instrument_name)
 
         run = Run(
             filename=filename,
