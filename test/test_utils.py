@@ -5,7 +5,7 @@ from unittest import mock
 
 from kubernetes.config import ConfigException
 
-from job_controller.utils import load_kubernetes_config
+from job_controller.utils import load_kubernetes_config, ensure_ceph_path_exists
 
 
 class UtilTests(unittest.TestCase):
@@ -43,3 +43,12 @@ class UtilTests(unittest.TestCase):
 
         kubernetes_config.load_incluster_config.assert_called_once_with()
         kubernetes_config.load_kube_config.assert_called_once_with()
+
+    def test_ensure_ceph_path_exists(self):
+        initial_path = "/tmp/ceph/mari/RBNumber/RB99999999/autoreduced/"
+
+        end_path = ensure_ceph_path_exists(initial_path)
+
+        self.assertEqual(end_path, "/tmp/ceph/mari/RBNumber/unknown/autoreduced")
+        os.removedirs("/tmp/ceph/mari/RBNumber/unknown/autoreduced")
+
