@@ -64,7 +64,7 @@ class Script(Base):  # type: ignore[valid-type, misc]
 
     __tablename__ = "scripts"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    script = Column(String)
+    script = Column(String, unique=True)
     reductions = relationship("Reduction", back_populates="script_relationship")
 
     def __eq__(self, other: Any) -> bool:
@@ -128,7 +128,7 @@ class Instrument(Base):  # type: ignore[valid-type, misc]
 
     __tablename__ = "instruments"
     id = Column(Integer, primary_key=True)
-    instrument_name = Column(String)
+    instrument_name = Column(String, unique=True)
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Instrument):
