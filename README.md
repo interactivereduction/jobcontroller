@@ -12,6 +12,7 @@ The software responsible for controlling the creation of Jobs, and notifying the
 Expects the following environment variables to be set when running:
 
 - "KAFKA_IP": ip to kafka broker
+- "IR_IP": ip to the IR-API
 - "DB_IP": ip for database
 - "DB_USERNAME": Username for database
 - "DB_PASSWORD": Password for database
