@@ -9,7 +9,7 @@ class State(Enum):  # pylint: disable=too-many-ancestors
     The State Enum for reduction status
     """
 
-    Successful = "Successful"
-    Unsuccessful = "Unsuccessful"
-    Error = "Error"
-    NotStarted = "NotStarted"
+    SUCCESSFUL = "Successful"
+    UNSUCCESSFUL = "Unsuccessful"
+    ERROR = "Error"
+    NOT_STARTED = "NotStarted"

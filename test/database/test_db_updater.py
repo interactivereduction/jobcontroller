@@ -135,7 +135,7 @@ class DBUpdaterTests(unittest.TestCase):
         self.assertEqual(reduction_mock.reduction_state, str(state))
         self.assertEqual(reduction_mock.reduction_inputs, reduction_inputs)
         self.assertEqual(
-            reduction_mock.script_relationship,
+            reduction_mock.script,
             self.mock_session.query(Script).filter_by(script=reduction_script).first(),
         )
         self.assertEqual(reduction_mock.reduction_outputs, str(output_files))
@@ -167,7 +167,7 @@ class DBUpdaterTests(unittest.TestCase):
         reduction_mock = self.mock_session.query(Reduction).filter_by(id=db_reduction_id).one()
         self.assertEqual(reduction_mock.reduction_state, str(state))
         self.assertEqual(reduction_mock.reduction_inputs, reduction_inputs)
-        self.assertEqual(reduction_mock.script_relationship, script)
+        self.assertEqual(reduction_mock.script, script)
         self.assertEqual(reduction_mock.reduction_outputs, str(output_files))
         self.assertEqual(reduction_mock.reduction_status_message, status_message)
 

@@ -31,7 +31,7 @@ class Run(Base):  # type: ignore[valid-type, misc]
     __tablename__ = "runs"
     id = Column(Integer, primary_key=True, autoincrement=True)
     filename = Column(String)
-    instrument = Column(Integer, ForeignKey("instruments.id"))
+    instrument_id = Column(Integer, ForeignKey("instruments.id"))
     title = Column(String)
     users = Column(String)
     experiment_number = Column(Integer)
@@ -40,20 +40,20 @@ class Run(Base):  # type: ignore[valid-type, misc]
     good_frames = Column(Integer)
     raw_frames = Column(Integer)
     reductions = relationship("RunReduction", back_populates="run_relationship")
-    instrument_relationship = relationship("Instrument")
+    instrument = relationship("Instrument")
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Run):
             return (
-                self.filename == other.filename
-                and self.title == other.title
-                and self.instrument == other.instrument
-                and self.users == other.users
-                and self.experiment_number == other.experiment_number
-                and self.run_start == other.run_start
-                and self.run_end == other.run_end
-                and self.good_frames == other.good_frames
-                and self.raw_frames == other.raw_frames
+                    self.filename == other.filename
+                    and self.title == other.title
+                    and self.instrument_id == other.instrument_id
+                    and self.users == other.users
+                    and self.experiment_number == other.experiment_number
+                    and self.run_start == other.run_start
+                    and self.run_end == other.run_end
+                    and self.good_frames == other.good_frames
+                    and self.raw_frames == other.raw_frames
             )
         return False
 
@@ -86,21 +86,21 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
     reduction_state = Column(State)
     reduction_status_message = Column(String)
     reduction_inputs = Column(JSONB)
-    script = Column(Integer, ForeignKey("scripts.id"))
-    script_relationship = relationship("Script", back_populates="reductions")
+    script_id = Column(Integer, ForeignKey("scripts.id"))
+    script = relationship("Script", back_populates="reductions")
     reduction_outputs = Column(String)
     run_reduction_relationship = relationship("RunReduction", back_populates="reduction_relationship")
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Reduction):
             return (
-                self.reduction_start == other.reduction_start
-                and self.reduction_end == other.reduction_end
-                and self.reduction_state == other.reduction_state
-                and self.reduction_status_message == other.reduction_status_message
-                and self.reduction_inputs == other.reduction_inputs
-                and self.script == other.script
-                and self.reduction_outputs == other.reduction_outputs
+                    self.reduction_start == other.reduction_start
+                    and self.reduction_end == other.reduction_end
+                    and self.reduction_state == other.reduction_state
+                    and self.reduction_status_message == other.reduction_status_message
+                    and self.reduction_inputs == other.reduction_inputs
+                    and self.script_id == other.script_id
+                    and self.reduction_outputs == other.reduction_outputs
             )
         return False
 
@@ -212,7 +212,7 @@ class DBUpdater:
             good_frames=good_frames,
             raw_frames=raw_frames,
         )
-        run.instrument_relationship = instrument
+        run.instrument = instrument
         reduction = Reduction(
             reduction_start=None,
             reduction_end=None,
@@ -282,7 +282,7 @@ class DBUpdater:
         reduction = session.query(Reduction).filter_by(id=db_reduction_id).one()
         reduction.reduction_state = str(state)
         reduction.reduction_inputs = reduction_inputs
-        reduction.script_relationship = script
+        reduction.script = script
         reduction.reduction_outputs = str(output_files)
         reduction.reduction_status_message = status_message
         session.commit()

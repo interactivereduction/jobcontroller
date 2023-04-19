@@ -145,7 +145,7 @@ class JobWatcherTest(unittest.TestCase):
         )
         self.db_updater.add_completed_run.assert_called_once_with(
             db_reduction_id=self.db_reduction_id,
-            state=State.Successful,
+            state=State.SUCCESSFUL,
             status_message="",
             output_files=[],
             reduction_script=self.job_script,
@@ -167,7 +167,7 @@ class JobWatcherTest(unittest.TestCase):
         )
         self.db_updater.add_completed_run.assert_called_once_with(
             db_reduction_id=self.db_reduction_id,
-            state=State.Unsuccessful,
+            state=State.UNSUCCESSFUL,
             status_message="Expecting value: line 1 column 12 (char 11)",
             output_files=[],
             reduction_script=self.job_script,
