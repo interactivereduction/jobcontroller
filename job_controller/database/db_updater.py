@@ -45,15 +45,15 @@ class Run(Base):  # type: ignore[valid-type, misc]
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Run):
             return (
-                    self.filename == other.filename
-                    and self.title == other.title
-                    and self.instrument_id == other.instrument_id
-                    and self.users == other.users
-                    and self.experiment_number == other.experiment_number
-                    and self.run_start == other.run_start
-                    and self.run_end == other.run_end
-                    and self.good_frames == other.good_frames
-                    and self.raw_frames == other.raw_frames
+                self.filename == other.filename
+                and self.title == other.title
+                and self.instrument_id == other.instrument_id
+                and self.users == other.users
+                and self.experiment_number == other.experiment_number
+                and self.run_start == other.run_start
+                and self.run_end == other.run_end
+                and self.good_frames == other.good_frames
+                and self.raw_frames == other.raw_frames
             )
         return False
 
@@ -94,13 +94,13 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Reduction):
             return (
-                    self.reduction_start == other.reduction_start
-                    and self.reduction_end == other.reduction_end
-                    and self.reduction_state == other.reduction_state
-                    and self.reduction_status_message == other.reduction_status_message
-                    and self.reduction_inputs == other.reduction_inputs
-                    and self.script_id == other.script_id
-                    and self.reduction_outputs == other.reduction_outputs
+                self.reduction_start == other.reduction_start
+                and self.reduction_end == other.reduction_end
+                and self.reduction_state == other.reduction_state
+                and self.reduction_status_message == other.reduction_status_message
+                and self.reduction_inputs == other.reduction_inputs
+                and self.script_id == other.script_id
+                and self.reduction_outputs == other.reduction_outputs
             )
         return False
 
