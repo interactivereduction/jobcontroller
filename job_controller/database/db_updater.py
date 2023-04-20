@@ -57,6 +57,13 @@ class Run(Base):  # type: ignore[valid-type, misc]
             )
         return False
 
+    def __repr__(self):
+        return (
+            f"<Run(id={self.id}, filename={self.filename}, instrument_id={self.instrument_id}, title={self.title},"
+            f" users={self.users}, experiment_number={self.experiment_number}, run_start={self.run_start},"
+            f" run_end={self.run_end}, good_frames={self.good_frames}, raw_frames={self.raw_frames})>"
+        )
+
 
 class Script(Base):  # type: ignore[valid-type, misc]
     """
@@ -72,6 +79,9 @@ class Script(Base):  # type: ignore[valid-type, misc]
         if isinstance(other, Script):
             return self.script == other.script
         return False
+
+    def __repr__(self):
+        return f"<Script(id={self.id}, script={self.script})>"
 
 
 class Reduction(Base):  # type: ignore[valid-type, misc]
@@ -104,6 +114,14 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
             )
         return False
 
+    def __repr__(self):
+        return (
+            f"<Reduction(id={self.id}, reduction_start={self.reduction_start}, reduction_end={self.reduction_end},"
+            f" reduction_state={self.reduction_state}, reduction_status_message={self.reduction_status_message},"
+            f" reduction_inputs={self.reduction_inputs}, script_id={self.script_id},"
+            f" reduction_outputs={self.reduction_outputs})>"
+        )
+
 
 class RunReduction(Base):  # type: ignore[valid-type, misc]
     """
@@ -124,6 +142,9 @@ class RunReduction(Base):  # type: ignore[valid-type, misc]
             )
         return False
 
+    def __repr__(self):
+        return f"<RunReduction(run={self.run}, reduction={self.reduction})>"
+
 
 class Instrument(Base):  # type: ignore[valid-type, misc]
     """
@@ -138,6 +159,9 @@ class Instrument(Base):  # type: ignore[valid-type, misc]
         if isinstance(other, Instrument):
             return self.instrument_name == other.instrument_name
         return False
+
+    def __repr__(self):
+        return f"<Instrument(id={self.id}, instrument_name={self.instrument_name})>"
 
 
 class DBUpdater:
