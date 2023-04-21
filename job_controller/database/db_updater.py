@@ -13,6 +13,7 @@ from sqlalchemy import (  # type: ignore[attr-defined]
     DateTime,
     ForeignKey,
     QueuePool,
+    Enum,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship, sessionmaker, declarative_base  # type: ignore[attr-defined]
@@ -31,7 +32,7 @@ class Run(Base):  # type: ignore[valid-type, misc]
     __tablename__ = "runs"
     id = Column(Integer, primary_key=True, autoincrement=True)
     filename = Column(String)
-    instrument = Column(Integer, ForeignKey("instruments.id"))
+    instrument_id = Column(Integer, ForeignKey("instruments.id"))
     title = Column(String)
     users = Column(String)
     experiment_number = Column(Integer)
@@ -40,14 +41,14 @@ class Run(Base):  # type: ignore[valid-type, misc]
     good_frames = Column(Integer)
     raw_frames = Column(Integer)
     reductions = relationship("RunReduction", back_populates="run_relationship")
-    instrument_relationship = relationship("Instrument")
+    instrument = relationship("Instrument")
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Run):
             return (
                 self.filename == other.filename
                 and self.title == other.title
-                and self.instrument == other.instrument
+                and self.instrument_id == other.instrument_id
                 and self.users == other.users
                 and self.experiment_number == other.experiment_number
                 and self.run_start == other.run_start
@@ -73,7 +74,7 @@ class Script(Base):  # type: ignore[valid-type, misc]
     __tablename__ = "scripts"
     id = Column(Integer, primary_key=True, autoincrement=True)
     script = Column(String, unique=True)
-    reductions = relationship("Reduction", back_populates="script_relationship")
+    reductions = relationship("Reduction", back_populates="script")
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Script):
@@ -93,11 +94,11 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
     id = Column(Integer, primary_key=True, autoincrement=True)
     reduction_start = Column(DateTime)
     reduction_end = Column(DateTime)
-    reduction_state = Column(State)
+    reduction_state = Column(Enum(State))
     reduction_status_message = Column(String)
     reduction_inputs = Column(JSONB)
-    script = Column(Integer, ForeignKey("scripts.id"))
-    script_relationship = relationship("Script", back_populates="reductions")
+    script_id = Column(Integer, ForeignKey("scripts.id"))
+    script = relationship("Script", back_populates="reductions")
     reduction_outputs = Column(String)
     run_reduction_relationship = relationship("RunReduction", back_populates="reduction_relationship")
 
@@ -109,7 +110,7 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
                 and self.reduction_state == other.reduction_state
                 and self.reduction_status_message == other.reduction_status_message
                 and self.reduction_inputs == other.reduction_inputs
-                and self.script == other.script
+                and self.script_id == other.script_id
                 and self.reduction_outputs == other.reduction_outputs
             )
         return False
@@ -129,21 +130,21 @@ class RunReduction(Base):  # type: ignore[valid-type, misc]
     """
 
     __tablename__ = "runs_reductions"
-    run = Column(Integer, ForeignKey("runs.id"), primary_key=True)
-    reduction = Column(Integer, ForeignKey("reductions.id"), primary_key=True)
+    run_id = Column(Integer, ForeignKey("runs.id"), primary_key=True)
+    reduction_id = Column(Integer, ForeignKey("reductions.id"), primary_key=True)
     run_relationship = relationship("Run", back_populates="reductions")
     reduction_relationship = relationship("Reduction", back_populates="run_reduction_relationship")
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunReduction):
-            return (self.run == other.run and self.reduction == other.reduction) or (
+            return (self.run_id == other.run_id and self.reduction_id == other.reduction_id) or (
                 self.run_relationship == other.run_relationship
                 and self.reduction_relationship == other.reduction_relationship
             )
         return False
 
     def __repr__(self):
-        return f"<RunReduction(run={self.run}, reduction={self.reduction})>"
+        return f"<RunReduction(run={self.run_id}, reduction={self.reduction_id})>"
 
 
 class Instrument(Base):  # type: ignore[valid-type, misc]
@@ -221,52 +222,52 @@ class DBUpdater:
             raw_frames,
             reduction_inputs,
         )
-        session = self.session_maker_func()
-        instrument = session.query(Instrument).filter_by(instrument_name=instrument_name).first()
-        if instrument is None:
-            instrument = Instrument(instrument_name=instrument_name)
+        with self.session_maker_func() as session:
+            instrument = session.query(Instrument).filter_by(instrument_name=instrument_name).first()
+            if instrument is None:
+                instrument = Instrument(instrument_name=instrument_name)
 
-        run = Run(
-            filename=filename,
-            title=title,
-            users=users,
-            experiment_number=experiment_number,
-            run_start=run_start,
-            run_end=run_end,
-            good_frames=good_frames,
-            raw_frames=raw_frames,
-        )
-        run.instrument_relationship = instrument
-        reduction = Reduction(
-            reduction_start=None,
-            reduction_end=None,
-            reduction_state=None,
-            reduction_inputs=reduction_inputs,
-            script=None,
-            reduction_outputs=None,
-        )
-        # Now create the run_reduction entry and add it
-        run_reduction = RunReduction(run_relationship=run, reduction_relationship=reduction)
-        session.add(run_reduction)
-        session.commit()
+            run = Run(
+                filename=filename,
+                title=title,
+                users=users,
+                experiment_number=experiment_number,
+                run_start=run_start,
+                run_end=run_end,
+                good_frames=good_frames,
+                raw_frames=raw_frames,
+            )
+            run.instrument = instrument
+            reduction = Reduction(
+                reduction_start=None,
+                reduction_end=None,
+                reduction_state=None,
+                reduction_inputs=reduction_inputs,
+                script=None,
+                reduction_outputs=None,
+            )
+            # Now create the run_reduction entry and add it
+            run_reduction = RunReduction(run_relationship=run, reduction_relationship=reduction)
+            session.add(run_reduction)
+            session.commit()
 
-        logger.info(
-            "Submitted detected-run to the database successfully: {filename: %s, title: %s, instrument_name: %s, "
-            "users: %s, experiment_number: %s, run_start: %s, run_end: %s, good_frames: %s, raw_frames: %s, "
-            "reduction_inputs: %s}",
-            filename,
-            title,
-            instrument_name,
-            users,
-            experiment_number,
-            run_start,
-            run_end,
-            good_frames,
-            raw_frames,
-            reduction_inputs,
-        )
+            logger.info(
+                "Submitted detected-run to the database successfully: {filename: %s, title: %s, instrument_name: %s, "
+                "users: %s, experiment_number: %s, run_start: %s, run_end: %s, good_frames: %s, raw_frames: %s, "
+                "reduction_inputs: %s}",
+                filename,
+                title,
+                instrument_name,
+                users,
+                experiment_number,
+                run_start,
+                run_end,
+                good_frames,
+                raw_frames,
+                reduction_inputs,
+            )
 
-        return int(reduction.id)
+            return int(reduction.id)
 
     def add_completed_run(
         self,
@@ -298,28 +299,28 @@ class DBUpdater:
             output_files,
             reduction_script,
         )
-        session = self.session_maker_func()
-        script = session.query(Script).filter_by(script=reduction_script).first()
-        if script is None:
-            script = Script(script=reduction_script)
+        with self.session_maker_func() as session:
+            script = session.query(Script).filter_by(script=reduction_script).first()
+            if script is None:
+                script = Script(script=reduction_script)
 
-        reduction = session.query(Reduction).filter_by(id=db_reduction_id).one()
-        reduction.reduction_state = str(state)
-        reduction.reduction_inputs = reduction_inputs
-        reduction.script_relationship = script
-        reduction.reduction_outputs = str(output_files)
-        reduction.reduction_status_message = status_message
-        session.commit()
-        logger.info(
-            "Submitted completed-run to the database successfully: {id: %s, reduction_inputs: %s, state: %s, "
-            "status_message: %s, output_files: %s, reduction_script: %s}",
-            db_reduction_id,
-            reduction_inputs,
-            str(state),
-            status_message,
-            output_files,
-            reduction_script,
-        )
+            reduction = session.query(Reduction).filter_by(id=db_reduction_id).one()
+            reduction.reduction_state = state
+            reduction.reduction_inputs = reduction_inputs
+            reduction.script = script
+            reduction.reduction_outputs = str(output_files)
+            reduction.reduction_status_message = status_message
+            session.commit()
+            logger.info(
+                "Submitted completed-run to the database successfully: {id: %s, reduction_inputs: %s, state: %s, "
+                "status_message: %s, output_files: %s, reduction_script: %s}",
+                db_reduction_id,
+                reduction_inputs,
+                str(state),
+                status_message,
+                output_files,
+                reduction_script,
+            )
 
 
 # pylint: enable=too-many-arguments, too-many-locals

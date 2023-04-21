@@ -145,7 +145,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         output_files = job_output.get("output_files", [])
         self.db_updater.add_completed_run(
             db_reduction_id=self.db_reduction_id,
-            state=status,
+            state=State[status.upper()],
             status_message=status_message,
             output_files=output_files,
             reduction_script=self.job_script,

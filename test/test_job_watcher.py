@@ -18,7 +18,7 @@ class JobWatcherTest(unittest.TestCase):
         self.db_reduction_id = mock.MagicMock()
         self.job_script = mock.MagicMock()
         self.reduction_inputs = mock.MagicMock()
-        self.jobw = JobWatcher(
+        self.job_watcher = JobWatcher(
             job_name=self.job_name,
             namespace=self.namespace,
             kafka_ip=self.kafka_ip,
@@ -45,7 +45,7 @@ class JobWatcherTest(unittest.TestCase):
         pod.metadata.name = output
         k8s_client.CoreV1Api.return_value.list_namespaced_pod.return_value.items = [pod]
 
-        return_value = self.jobw.grab_pod_name_from_job_name_in_namespace(self.job_name, self.namespace)
+        return_value = self.job_watcher.grab_pod_name_from_job_name_in_namespace(self.job_name, self.namespace)
 
         self.assertEqual(str(return_value), str(output))
 
@@ -59,11 +59,11 @@ class JobWatcherTest(unittest.TestCase):
         def raise_exception(_):
             raise Exception("EVERYTHING IS ON FIRE")  # pylint: disable=broad-exception-raised
 
-        self.jobw.process_event = mock.MagicMock(side_effect=raise_exception)
+        self.job_watcher.process_event = mock.MagicMock(side_effect=raise_exception)
         event = mock.MagicMock()
         watch_.stream.return_value = [event]
 
-        self.jobw.watch()
+        self.job_watcher.watch()
 
         watch_.stream.assert_called_once_with(v1.list_job_for_all_namespaces)
         logger.error.assert_called_once_with(
@@ -75,45 +75,45 @@ class JobWatcherTest(unittest.TestCase):
     def test_watch_analyzes_events_from_watch_stream(self, k8s_client, k8s_watch):
         v1 = k8s_client.BatchV1Api.return_value
         watch_ = k8s_watch.Watch.return_value
-        self.jobw.process_event = mock.MagicMock()
+        self.job_watcher.process_event = mock.MagicMock()
         event = mock.MagicMock()
         watch_.stream.return_value = [event]
 
-        self.jobw.watch()
+        self.job_watcher.watch()
 
         watch_.stream.assert_called_once_with(v1.list_job_for_all_namespaces)
-        self.jobw.process_event.assert_called_once_with(event)
+        self.job_watcher.process_event.assert_called_once_with(event)
 
     def test_process_event_on_success_calls_success(self):
         event = mock.MagicMock()
-        self.jobw.job_name = "mari0-asfn"
+        self.job_watcher.job_name = "mari0-asfn"
         event.__getitem__.return_value.metadata.name = "mari0-asfn-132"
         event.__getitem__.return_value.status.succeeded = 1
-        self.jobw.process_event_success = mock.MagicMock()
+        self.job_watcher.process_event_success = mock.MagicMock()
 
-        self.jobw.process_event(event)
+        self.job_watcher.process_event(event)
 
-        self.jobw.process_event_success.assert_called_once_with()
+        self.job_watcher.process_event_success.assert_called_once_with()
 
     def test_process_event_on_failures_calls_failure(self):
         event = mock.MagicMock()
-        self.jobw.job_name = "mari0-asfn"
+        self.job_watcher.job_name = "mari0-asfn"
         event.__getitem__.return_value.metadata.name = "mari0-asfn-132"
         event.__getitem__.return_value.status.failed = 1
-        self.jobw.process_event_failed = mock.MagicMock()
+        self.job_watcher.process_event_failed = mock.MagicMock()
 
-        self.jobw.process_event(event)
+        self.job_watcher.process_event(event)
 
-        self.jobw.process_event_failed.assert_called_once_with(event.__getitem__.return_value)
+        self.job_watcher.process_event_failed.assert_called_once_with(event.__getitem__.return_value)
 
     @mock.patch("job_controller.job_watcher.client")
     def test_process_event_success_grabs_pod_name_using_grab_pod_name_from_job_name_in_namespace(self, _):
-        self.jobw.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value="pod_name")
-        self.jobw.notify_kafka = mock.MagicMock()
+        self.job_watcher.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value="pod_name")
+        self.job_watcher.notify_kafka = mock.MagicMock()
 
-        self.jobw.process_event_success()
+        self.job_watcher.process_event_success()
 
-        self.jobw.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(
+        self.job_watcher.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(
             job_name=self.job_name, job_namespace=self.namespace
         )
 
@@ -121,31 +121,31 @@ class JobWatcherTest(unittest.TestCase):
     def test_process_event_success_grabs_pod_name_using_grab_pod_name_from_job_name_in_namespace_raises_when_none(
         self, _
     ):
-        self.jobw.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value=None)
-        self.jobw.notify_kafka = mock.MagicMock()
+        self.job_watcher.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value=None)
+        self.job_watcher.notify_kafka = mock.MagicMock()
 
-        self.assertRaises(TypeError, self.jobw.process_event_success)
+        self.assertRaises(TypeError, self.job_watcher.process_event_success)
 
-        self.jobw.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(
+        self.job_watcher.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(
             job_name=self.job_name, job_namespace=self.namespace
         )
 
     @mock.patch("job_controller.job_watcher.client")
     def test_process_event_success_passed_penultimate_log_line_to_notify_kafka_as_data(self, k8s_client):
-        self.jobw.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value="pod_name")
-        self.jobw.notify_kafka = mock.MagicMock()
+        self.job_watcher.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value="pod_name")
+        self.job_watcher.notify_kafka = mock.MagicMock()
         k8s_client.CoreV1Api.return_value.read_namespaced_pod_log.return_value = (
-            '4th to last\n3rd to last\n{"status": "Successful", "output_files": [], "status_message": ""}\n'
+            '4th to last\n3rd to last\n{"status": "SUCCESSFUL", "output_files": [], "status_message": ""}\n'
         )
 
-        self.jobw.process_event_success()
+        self.job_watcher.process_event_success()
 
-        self.jobw.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(
+        self.job_watcher.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(
             job_name=self.job_name, job_namespace=self.namespace
         )
         self.db_updater.add_completed_run.assert_called_once_with(
             db_reduction_id=self.db_reduction_id,
-            state=State.Successful,
+            state=State.SUCCESSFUL,
             status_message="",
             output_files=[],
             reduction_script=self.job_script,
@@ -154,20 +154,20 @@ class JobWatcherTest(unittest.TestCase):
 
     @mock.patch("job_controller.job_watcher.client")
     def test_process_event_success_handles_errors_where_penultimate_line_of_logs_is_not_valid_json(self, k8s_client):
-        self.jobw.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value="pod_name")
-        self.jobw.notify_kafka = mock.MagicMock()
+        self.job_watcher.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value="pod_name")
+        self.job_watcher.notify_kafka = mock.MagicMock()
         k8s_client.CoreV1Api.return_value.read_namespaced_pod_log.return_value = (
             '4th to last\n3rd to last\n{"status": Not valid json, "output_files": [], "status_message": ""}\n'
         )
 
-        self.jobw.process_event_success()
+        self.job_watcher.process_event_success()
 
-        self.jobw.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(
+        self.job_watcher.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(
             job_name=self.job_name, job_namespace=self.namespace
         )
         self.db_updater.add_completed_run.assert_called_once_with(
             db_reduction_id=self.db_reduction_id,
-            state=State.Unsuccessful,
+            state=State.UNSUCCESSFUL,
             status_message="Expecting value: line 1 column 12 (char 11)",
             output_files=[],
             reduction_script=self.job_script,
