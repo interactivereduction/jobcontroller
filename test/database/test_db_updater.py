@@ -6,6 +6,7 @@ from unittest import mock
 
 
 from job_controller.database.db_updater import DBUpdater, RunReduction, Reduction, Run, Script, Instrument
+from job_controller.database.state_enum import State
 
 
 class DBUpdaterTests(unittest.TestCase):
@@ -15,7 +16,8 @@ class DBUpdaterTests(unittest.TestCase):
         self.username = mock.MagicMock()
         self.password = mock.MagicMock()
         self.mock_session = mock.MagicMock()
-        self.session_maker_func = mock.MagicMock(return_value=self.mock_session)
+        self.session_maker_func = mock.MagicMock()
+        self.session_maker_func.return_value.__enter__.return_value = self.mock_session
         self.db_updater = DBUpdater(self.ip, self.username, self.password)
         self.db_updater.session_maker_func = self.session_maker_func
 
