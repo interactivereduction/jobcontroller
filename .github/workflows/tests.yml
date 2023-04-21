@@ -18,7 +18,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install .[test]
       - name: Run pytest
-        run: pytest . -ignore=test/database/test_db_updater_integration.py
+        run: pytest . --ignore=test/database/test_db_updater_integration.py
 
   integration:
     runs-on: ubuntu-latest
