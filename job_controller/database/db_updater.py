@@ -58,7 +58,7 @@ class Run(Base):  # type: ignore[valid-type, misc]
             )
         return False
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"<Run(id={self.id}, filename={self.filename}, instrument_id={self.instrument_id}, title={self.title},"
             f" users={self.users}, experiment_number={self.experiment_number}, run_start={self.run_start},"
@@ -81,7 +81,7 @@ class Script(Base):  # type: ignore[valid-type, misc]
             return self.script == other.script
         return False
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Script(id={self.id}, script={self.script})>"
 
 
@@ -115,7 +115,7 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
             )
         return False
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"<Reduction(id={self.id}, reduction_start={self.reduction_start}, reduction_end={self.reduction_end},"
             f" reduction_state={self.reduction_state}, reduction_status_message={self.reduction_status_message},"
@@ -143,7 +143,7 @@ class RunReduction(Base):  # type: ignore[valid-type, misc]
             )
         return False
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<RunReduction(run={self.run_id}, reduction={self.reduction_id})>"
 
 
@@ -161,7 +161,7 @@ class Instrument(Base):  # type: ignore[valid-type, misc]
             return self.instrument_name == other.instrument_name
         return False
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Instrument(id={self.id}, instrument_name={self.instrument_name})>"
 
 
