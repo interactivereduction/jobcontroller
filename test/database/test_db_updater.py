@@ -4,7 +4,6 @@
 import unittest
 from unittest import mock
 
-
 from job_controller.database.db_updater import DBUpdater, RunReduction, Reduction, Run, Script, Instrument
 
 
@@ -15,7 +14,8 @@ class DBUpdaterTests(unittest.TestCase):
         self.username = mock.MagicMock()
         self.password = mock.MagicMock()
         self.mock_session = mock.MagicMock()
-        self.session_maker_func = mock.MagicMock(return_value=self.mock_session)
+        self.session_maker_func = mock.MagicMock()
+        self.session_maker_func.return_value.__enter__.return_value = self.mock_session
         self.db_updater = DBUpdater(self.ip, self.username, self.password)
         self.db_updater.session_maker_func = self.session_maker_func
 
@@ -53,7 +53,7 @@ class DBUpdaterTests(unittest.TestCase):
         run = Run(
             filename=filename,
             title=title,
-            instrument_relationship=instrument,
+            instrument=instrument,
             users=users,
             experiment_number=experiment_number,
             run_start=run_start,
@@ -132,10 +132,10 @@ class DBUpdaterTests(unittest.TestCase):
         )
 
         reduction_mock = self.mock_session.query(Reduction).filter_by(id=db_reduction_id).one()
-        self.assertEqual(reduction_mock.reduction_state, str(state))
+        self.assertEqual(reduction_mock.reduction_state, state)
         self.assertEqual(reduction_mock.reduction_inputs, reduction_inputs)
         self.assertEqual(
-            reduction_mock.script_relationship,
+            reduction_mock.script,
             self.mock_session.query(Script).filter_by(script=reduction_script).first(),
         )
         self.assertEqual(reduction_mock.reduction_outputs, str(output_files))
@@ -165,9 +165,9 @@ class DBUpdaterTests(unittest.TestCase):
         script = Script(script=reduction_script)
 
         reduction_mock = self.mock_session.query(Reduction).filter_by(id=db_reduction_id).one()
-        self.assertEqual(reduction_mock.reduction_state, str(state))
+        self.assertEqual(reduction_mock.reduction_state, state)
         self.assertEqual(reduction_mock.reduction_inputs, reduction_inputs)
-        self.assertEqual(reduction_mock.script_relationship, script)
+        self.assertEqual(reduction_mock.script, script)
         self.assertEqual(reduction_mock.reduction_outputs, str(output_files))
         self.assertEqual(reduction_mock.reduction_status_message, status_message)
 
