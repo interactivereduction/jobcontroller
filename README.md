@@ -68,6 +68,9 @@ To run the tests:
 pytest .
 ```
 
+The integration tests require a postgres database to be running at localhost:5432 with a database called `interactive-reduction`
+the tables do not need to be created.
+
 Example kafka messages:
 ```
 {"filepath": "/test/path/to/MARI0.nxs", "experiment_number": "0", "instrument": "MARI"}
