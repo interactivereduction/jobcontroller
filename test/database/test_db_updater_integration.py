@@ -1,9 +1,10 @@
 """
 DB updater integration tests. Requires a postgres database at localhost:5432 with password: password
 """
+# pylint: disable=redefined-outer-name, too-many-arguments, redefined-argument-from-local,
 from datetime import datetime
 
-import pytest as pytest
+import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, joinedload
 
@@ -38,11 +39,15 @@ END = datetime.now()
 
 @pytest.fixture
 def instrument_fix():
+    """Instrument fixture"""
     return Instrument(instrument_name="mari", id=1)
 
 
 @pytest.fixture
 def run_fix():
+    """
+    Run fixture
+    """
     return Run(
         filename="foo.nxs",
         experiment_number=123,
@@ -59,11 +64,13 @@ def run_fix():
 
 @pytest.fixture
 def run_reduction_fix():
+    """RunReduction fixture"""
     return RunReduction(run_id=1, reduction_id=1)
 
 
 @pytest.fixture
 def reduction_fix():
+    """Reduction fixture"""
     return Reduction(
         reduction_start=None,
         reduction_end=None,
@@ -129,7 +136,7 @@ def test_add_detected_run_when_instrument_exists(
     assert run_reduction_fix == run_reduction
 
 
-def test_add_completed_run(db_updater, session, instrument_fix, run_fix, reduction_fix, run_reduction_fix):
+def test_add_completed_run(db_updater, session, run_fix, reduction_fix):
     """
     Test the add_completed_run method. It should update the reduction's inputs, state, status message,
     outputs, and associated script in the database.

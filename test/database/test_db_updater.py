@@ -4,9 +4,7 @@
 import unittest
 from unittest import mock
 
-
 from job_controller.database.db_updater import DBUpdater, RunReduction, Reduction, Run, Script, Instrument
-from job_controller.database.state_enum import State
 
 
 class DBUpdaterTests(unittest.TestCase):
