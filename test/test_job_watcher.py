@@ -153,7 +153,7 @@ class JobWatcherTest(unittest.TestCase):
             reduction_script=self.job_script,
             reduction_inputs=self.reduction_inputs,
             reduction_start=k8s_client.CoreV1Api.return_value.read_namespaced_pod.return_value.status.start_time,
-            reduction_end=None
+            reduction_end=None,
         )
 
     @mock.patch("job_controller.job_watcher.client")
@@ -178,5 +178,5 @@ class JobWatcherTest(unittest.TestCase):
             reduction_script=self.job_script,
             reduction_inputs=self.reduction_inputs,
             reduction_start=k8s_client.CoreV1Api.return_value.read_namespaced_pod.return_value.status.start_time,
-            reduction_end=None
+            reduction_end=None,
         )
