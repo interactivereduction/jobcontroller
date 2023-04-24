@@ -123,7 +123,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             reduction_script=self.job_script,
             reduction_inputs=self.reduction_inputs,
             reduction_end=end,
-            reduction_start=start
+            reduction_start=start,
         )
 
     def process_event_success(self) -> None:
@@ -172,7 +172,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             reduction_script=self.job_script,
             reduction_inputs=self.reduction_inputs,
             reduction_end=end,
-            reduction_start=start
+            reduction_start=start,
         )
 
     @staticmethod

@@ -278,7 +278,7 @@ class DBUpdater:
         output_files: List[str],
         reduction_script: str,
         reduction_start: str,
-        reduction_end: str
+        reduction_end: str,
     ) -> None:
         """
         This function submits data to the database from what is initially available on completed-runs kafka topic
