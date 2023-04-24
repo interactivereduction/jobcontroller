@@ -1,7 +1,6 @@
 # pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring
 
 import unittest
-from unittest import mock
 from unittest.mock import patch, Mock
 
 from job_controller.script_aquisition import acquire_script, apply_json_output
