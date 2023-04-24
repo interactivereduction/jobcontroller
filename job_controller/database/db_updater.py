@@ -243,7 +243,7 @@ class DBUpdater:
                 reduction_end=None,
                 reduction_state=None,
                 reduction_inputs=reduction_inputs,
-                script=None,
+                script_id=None,
                 reduction_outputs=None,
             )
             # Now create the run_reduction entry and add it
