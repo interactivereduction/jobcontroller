@@ -3,7 +3,7 @@ Watch a kubernetes job, and when it ends notify a kafka topic
 """
 import json
 from json import JSONDecodeError
-from typing import Any, Optional, Dict
+from typing import Any, Optional, Dict, Tuple
 
 from kubernetes import client, watch  # type: ignore[import]
 from kubernetes.client import V1Job  # type: ignore[import]
@@ -90,7 +90,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 # Job failed
                 self.process_event_failed(job)
 
-    def _find_start_and_end_of_job(self):
+    def _find_start_and_end_of_job(self) -> Tuple[str, str]:
         pod_name = self.grab_pod_name_from_job_name_in_namespace(job_name=self.job_name, job_namespace=self.namespace)
         if pod_name is None:
             raise TypeError(
