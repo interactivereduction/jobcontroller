@@ -68,7 +68,7 @@ def ensure_ceph_path_exists(ceph_path_str: str) -> str:
         logger.info("Ceph path does not exist: %s", ceph_path_str)
         rb_folder = ceph_path.parent
         if not rb_folder.exists():
-            logger.info("RBFolder does not exist, setting RBNumber folder to unknown")
+            logger.info("RBFolder (%s) does not exist, setting RBNumber folder to unknown", str(rb_folder))
             # Set parent to unknown
             rb_folder = rb_folder.with_name("unknown")
             ceph_path = rb_folder.joinpath(ceph_path.name)
