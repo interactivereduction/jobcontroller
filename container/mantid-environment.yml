@@ -6,3 +6,4 @@ channels:
 
 dependencies:
   - mantid=6.6.0
+  - requests
