@@ -146,8 +146,16 @@ def test_add_completed_run(db_updater, session, run_fix, reduction_fix):
         session_.add_all([run_fix, reduction_fix, reduction_fix])
         session_.commit()
 
-    db_updater.add_completed_run(1, {"ei": "auto"}, State.SUCCESSFUL, "status message", ["file 1", "file 2"],
-                                 "print()", "2023-04-24 14:50:11.000000", "2023-04-24 14:50:12.000000")
+    db_updater.add_completed_run(
+        1,
+        {"ei": "auto"},
+        State.SUCCESSFUL,
+        "status message",
+        ["file 1", "file 2"],
+        "print()",
+        "2023-04-24 14:50:11.000000",
+        "2023-04-24 14:50:12.000000",
+    )
 
     with session() as session_:
         reduction = (
