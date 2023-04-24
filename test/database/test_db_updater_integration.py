@@ -169,5 +169,5 @@ def test_add_completed_run(db_updater, session, run_fix, reduction_fix):
     assert reduction.reduction_status_message == "status message"
     assert reduction.reduction_outputs == "['file 1', 'file 2']"
     assert reduction.script.script == "print()"
-    assert reduction.reduction_start == "2023-04-24 14:50:11.000000"
-    assert reduction.reduction_end == "2023-04-24 14:50:12.000000"
+    assert reduction.reduction_start == datetime(2023, 4, 24, 14, 50, 11)
+    assert reduction.reduction_end == datetime(2023, 4, 24, 14, 50, 12)
