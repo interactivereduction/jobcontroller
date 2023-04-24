@@ -6,7 +6,7 @@ from unittest import mock
 from job_controller.script_aquisition import acquire_script, apply_json_output
 
 
-class UtilsTest(unittest.TestCase):
+class ScriptAquisitionTest(unittest.TestCase):
     def test_acquire_script(self):
         ir_api_ip = mock.MagicMock()
         filename = mock.MagicMock()
