@@ -2,24 +2,37 @@
 
 import unittest
 from unittest import mock
+from unittest.mock import patch, Mock
 
 from job_controller.script_aquisition import acquire_script, apply_json_output
 
 
 class UtilsTest(unittest.TestCase):
-    def test_acquire_script(self):
-        ir_api_ip = mock.MagicMock()
-        filename = mock.MagicMock()
-        reduction_id = mock.MagicMock()
-        instrument = mock.MagicMock()
 
-        output = acquire_script(filename, ir_api_ip, reduction_id, instrument)
+    @patch("job_controller.script_aquisition.requests")
+    def test_acquire_script_success(self, mock_requests):
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"value": "some value"}
+        mock_requests.get.return_value = mock_response
 
-        expected_output = (
-            "output = []\nprint('Performing run for file: " + str(filename) + "...')\nimport json\n\n"
+        out = acquire_script("", 1, "")
+        assert out == (
+            "some value\n"
+            "import json\n"
+            "\n"
             "print(json.dumps({'status': 'Successful', 'status_message': '', 'output_files': output}))\n"
         )
-        self.assertEqual(expected_output, output)
+
+    @patch("job_controller.script_aquisition.requests")
+    def test_acquire_script_failure(self, mock_requests):
+        mock_response = Mock()
+        mock_requests.get.return_value = mock_response
+        mock_response.status = 500
+
+        acquire_script("", 1, "")
+
+        mock_response.raise_for_status.assert_called_once()
 
     def test_apply_json_output(self):
         input_script = "hi, I am an input script\n"
