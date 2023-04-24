@@ -11,7 +11,7 @@ def acquire_script(ir_api_host: str, reduction_id: int, instrument: str) -> str:
     :return: str, the script for the reduction
     """
     # Currently unused but will be used in the future
-    response = requests.get(f"http://{ir_api_host}/instrument/{instrument}/script?reduction_id={reduction_id}")
+    response = requests.get(f"http://{ir_api_host}/instrument/{instrument}/script?reduction_id={reduction_id}", timeout=30)
     if response.status_code == 200:
         return apply_json_output(response.json()["value"])
     else:
