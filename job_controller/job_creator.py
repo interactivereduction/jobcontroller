@@ -43,7 +43,7 @@ class JobCreator:
                             {
                                 "name": job_name,
                                 "image": "ghcr.io/interactivereduction/runner@"
-                                "sha256:231d92480ee9338104836a83d89de0bd6c09cf3f7c1154cb99eeb643e1b58e94",
+                                "sha256:c18868a1aecfee5cc4b91ff55944b1104636d99865e0b9dc789c9d16e54a73a3",
                                 "command": ["python"],
                                 "args": ["-c", script],
                                 "volumeMounts": [
