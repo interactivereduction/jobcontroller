@@ -28,10 +28,10 @@ class UtilsTest(unittest.TestCase):
         mock_response = Mock()
         mock_requests.get.return_value = mock_response
         mock_response.status = 500
+        with self.assertRaises(Exception):
+            acquire_script("", 1, "")
 
-        acquire_script("", 1, "")
-
-        mock_response.raise_for_status.assert_called_once()
+            mock_response.raise_for_status.assert_called_once()
 
     def test_apply_json_output(self):
         input_script = "hi, I am an input script\n"

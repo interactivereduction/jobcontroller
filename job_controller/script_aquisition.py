@@ -16,7 +16,9 @@ def acquire_script(ir_api_host: str, reduction_id: int, instrument: str) -> str:
     )
     if response.status_code != 200:
         response.raise_for_status()
-
+        # raise_for_status will only raise a httperror for a httperror, this will raise for everything else that isn't
+        # a 200 or a script return
+        raise RuntimeError(f"Script was never returned, due to unexpected status code {response.status_code}")
     return apply_json_output(response.json()["value"])
 
 
