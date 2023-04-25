@@ -9,8 +9,8 @@ from job_controller.script_aquisition import acquire_script, apply_json_output
 class ScriptAquisitionTest(unittest.TestCase):
     @patch("job_controller.script_aquisition.requests")
     def test_acquire_script_success(self, mock_requests):
-        mock_response.status_code = 200
         mock_response = Mock()
+        mock_response.status_code = 200
         mock_response.json.return_value = {"value": "some value"}
         mock_requests.get.return_value = mock_response
 
