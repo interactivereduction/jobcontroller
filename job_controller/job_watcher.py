@@ -90,7 +90,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 # Job failed
                 self.process_event_failed(job)
 
-    def _find_start_and_end_of_job(self) -> Tuple[str, str]:
+    def _find_start_and_end_of_job(self) -> Tuple[Any, Optional[Any]]:
         pod_name = self.grab_pod_name_from_job_name_in_namespace(job_name=self.job_name, job_namespace=self.namespace)
         if pod_name is None:
             raise TypeError(
