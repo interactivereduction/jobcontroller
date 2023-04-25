@@ -27,7 +27,7 @@ class JobController:
         db_username = os.environ.get("DB_USERNAME", "")
         db_password = os.environ.get("DB_PASSWORD", "")
         self.db_updater = DBUpdater(ip=db_ip, username=db_username, password=db_password)
-        self.ir_api_host = "irapi.ir.svc.cluster.local"
+        self.ir_api_host = os.environ.get("IR_API", "ir-api-service.ir.svc.cluster.local:80")
         self.kafka_ip = os.environ.get("KAFKA_IP", "")
         self.reduce_user_id = os.environ.get("REDUCE_USER_ID", "")
         self.consumer = TopicConsumer(self.on_message, broker_ip=self.kafka_ip)
@@ -68,7 +68,6 @@ class JobController:
                 reduction_inputs=additional_values,
             )
             script = acquire_script(
-                filename=filename,
                 ir_api_host=self.ir_api_host,
                 reduction_id=db_reduction_id,
                 instrument=instrument_name,
