@@ -3,7 +3,7 @@ Watch a kubernetes job, and when it ends notify a kafka topic
 """
 import json
 from json import JSONDecodeError
-from typing import Any, Optional, Dict
+from typing import Any, Optional, Dict, Tuple
 
 from kubernetes import client, watch  # type: ignore[import]
 from kubernetes.client import V1Job  # type: ignore[import]
@@ -90,6 +90,23 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 # Job failed
                 self.process_event_failed(job)
 
+    def _find_start_and_end_of_job(self) -> Tuple[Any, Optional[Any]]:
+        pod_name = self.grab_pod_name_from_job_name_in_namespace(job_name=self.job_name, job_namespace=self.namespace)
+        if pod_name is None:
+            raise TypeError(
+                f"Pod name can't be None, {self.job_name} name and {self.namespace} "
+                f"namespace returned None when looking for a pod."
+            )
+        v1_core = client.CoreV1Api()
+        pod = v1_core.read_namespaced_pod(pod_name, self.namespace)
+        start_time = pod.status.start_time
+        end_time = None
+        for container_status in pod.status.container_statuses:
+            if container_status.state.terminated:
+                end_time = container_status.state.terminated.finished_at
+                break
+        return start_time, end_time
+
     def process_event_failed(self, job: V1Job) -> None:
         """
         Process the event that failed, and notify kafka
@@ -97,6 +114,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         :return:
         """
         logger.info("Job %s has %s, with message: %s", self.job_name, job.status.phase, job.status.message)
+        start, end = self._find_start_and_end_of_job()
         self.db_updater.add_completed_run(
             db_reduction_id=self.db_reduction_id,
             state=State(State.ERROR),
@@ -104,6 +122,8 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             output_files=[],
             reduction_script=self.job_script,
             reduction_inputs=self.reduction_inputs,
+            reduction_end=str(end),
+            reduction_start=start,
         )
 
     def process_event_success(self) -> None:
@@ -143,6 +163,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         status = job_output.get("status", "Unsuccessful")
         status_message = job_output.get("status_message", "")
         output_files = job_output.get("output_files", [])
+        start, end = self._find_start_and_end_of_job()
         self.db_updater.add_completed_run(
             db_reduction_id=self.db_reduction_id,
             state=State[status.upper()],
@@ -150,6 +171,8 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             output_files=output_files,
             reduction_script=self.job_script,
             reduction_inputs=self.reduction_inputs,
+            reduction_end=str(end),
+            reduction_start=start,
         )
 
     @staticmethod

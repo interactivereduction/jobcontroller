@@ -113,9 +113,10 @@ class JobWatcherTest(unittest.TestCase):
 
         self.job_watcher.process_event_success()
 
-        self.job_watcher.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(
+        self.job_watcher.grab_pod_name_from_job_name_in_namespace.assert_called_with(
             job_name=self.job_name, job_namespace=self.namespace
         )
+        self.assertEqual(self.job_watcher.grab_pod_name_from_job_name_in_namespace.call_count, 2)
 
     @mock.patch("job_controller.job_watcher.client")
     def test_process_event_success_grabs_pod_name_using_grab_pod_name_from_job_name_in_namespace_raises_when_none(
@@ -140,9 +141,10 @@ class JobWatcherTest(unittest.TestCase):
 
         self.job_watcher.process_event_success()
 
-        self.job_watcher.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(
+        self.job_watcher.grab_pod_name_from_job_name_in_namespace.assert_called_with(
             job_name=self.job_name, job_namespace=self.namespace
         )
+        self.assertEqual(self.job_watcher.grab_pod_name_from_job_name_in_namespace.call_count, 2)
         self.db_updater.add_completed_run.assert_called_once_with(
             db_reduction_id=self.db_reduction_id,
             state=State.SUCCESSFUL,
@@ -150,6 +152,8 @@ class JobWatcherTest(unittest.TestCase):
             output_files=[],
             reduction_script=self.job_script,
             reduction_inputs=self.reduction_inputs,
+            reduction_start=k8s_client.CoreV1Api.return_value.read_namespaced_pod.return_value.status.start_time,
+            reduction_end=str(None),
         )
 
     @mock.patch("job_controller.job_watcher.client")
@@ -162,9 +166,10 @@ class JobWatcherTest(unittest.TestCase):
 
         self.job_watcher.process_event_success()
 
-        self.job_watcher.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(
+        self.job_watcher.grab_pod_name_from_job_name_in_namespace.assert_called_with(
             job_name=self.job_name, job_namespace=self.namespace
         )
+        self.assertEqual(self.job_watcher.grab_pod_name_from_job_name_in_namespace.call_count, 2)
         self.db_updater.add_completed_run.assert_called_once_with(
             db_reduction_id=self.db_reduction_id,
             state=State.UNSUCCESSFUL,
@@ -172,4 +177,6 @@ class JobWatcherTest(unittest.TestCase):
             output_files=[],
             reduction_script=self.job_script,
             reduction_inputs=self.reduction_inputs,
+            reduction_start=k8s_client.CoreV1Api.return_value.read_namespaced_pod.return_value.status.start_time,
+            reduction_end=str(None),
         )
