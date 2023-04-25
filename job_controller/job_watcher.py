@@ -100,7 +100,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         v1_core = client.CoreV1Api()
         pod = v1_core.read_namespaced_pod(pod_name, self.namespace)
         start_time = pod.status.start_time
-        end_time = None
+        end_time = ""
         for container_status in pod.status.container_statuses:
             if container_status.state.terminated:
                 end_time = container_status.state.terminated.finished_at
