@@ -243,7 +243,7 @@ class DBUpdater:
                 reduction_end=None,
                 reduction_state=None,
                 reduction_inputs=reduction_inputs,
-                script=None,
+                script_id=None,
                 reduction_outputs=None,
             )
             # Now create the run_reduction entry and add it
@@ -277,6 +277,8 @@ class DBUpdater:
         status_message: str,
         output_files: List[str],
         reduction_script: str,
+        reduction_start: str,
+        reduction_end: str,
     ) -> None:
         """
         This function submits data to the database from what is initially available on completed-runs kafka topic
@@ -287,6 +289,8 @@ class DBUpdater:
         example was unsuccessful or an error, it would have the reason/error message.
         :param output_files: The files output from the reduction job
         :param reduction_script: The script used in the reduction
+        :param reduction_start: The time the pod running the reduction started working
+        :param reduction_end: The time the pod running the reduction stopped working
         :return:
         """
         logger.info(
@@ -310,6 +314,8 @@ class DBUpdater:
             reduction.script = script
             reduction.reduction_outputs = str(output_files)
             reduction.reduction_status_message = status_message
+            reduction.reduction_start = reduction_start
+            reduction.reduction_end = reduction_end
             session.commit()
             logger.info(
                 "Submitted completed-run to the database successfully: {id: %s, reduction_inputs: %s, state: %s, "

@@ -65,12 +65,15 @@ def ensure_ceph_path_exists(ceph_path_str: str) -> str:
     """
     ceph_path = Path(ceph_path_str)
     if not ceph_path.exists():
+        logger.info("Ceph path does not exist: %s", ceph_path_str)
         rb_folder = ceph_path.parent
         if not rb_folder.exists():
+            logger.info("RBFolder (%s) does not exist, setting RBNumber folder to unknown", str(rb_folder))
             # Set parent to unknown
             rb_folder = rb_folder.with_name("unknown")
             ceph_path = rb_folder.joinpath(ceph_path.name)
         if not ceph_path.exists():
+            logger.info("Attempting to create ceph path: %s", str(ceph_path))
             ceph_path.mkdir(parents=True, exist_ok=True)
 
     return str(ceph_path)

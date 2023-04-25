@@ -6,7 +6,7 @@ from unittest.mock import patch, Mock
 from job_controller.script_aquisition import acquire_script, apply_json_output
 
 
-class UtilsTest(unittest.TestCase):
+class ScriptAquisitionTest(unittest.TestCase):
     @patch("job_controller.script_aquisition.requests")
     def test_acquire_script_success(self, mock_requests):
         mock_response = Mock()
