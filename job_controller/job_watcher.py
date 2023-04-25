@@ -100,7 +100,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         v1_core = client.CoreV1Api()
         pod = v1_core.read_namespaced_pod(pod_name, self.namespace)
         start_time = pod.status.start_time
-        end_time = ""
+        end_time = None
         for container_status in pod.status.container_statuses:
             if container_status.state.terminated:
                 end_time = container_status.state.terminated.finished_at
@@ -122,7 +122,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             output_files=[],
             reduction_script=self.job_script,
             reduction_inputs=self.reduction_inputs,
-            reduction_end=end,
+            reduction_end=str(end),
             reduction_start=start,
         )
 
@@ -171,7 +171,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             output_files=output_files,
             reduction_script=self.job_script,
             reduction_inputs=self.reduction_inputs,
-            reduction_end=end,
+            reduction_end=str(end),
             reduction_start=start,
         )
 
