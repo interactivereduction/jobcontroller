@@ -2,6 +2,7 @@
 
 ![License: GPL-3.0](https://img.shields.io/github/license/InteractiveReduction/jobcontroller)
 ![Build: passing](https://img.shields.io/github/actions/workflow/status/interactivereduction/jobcontroller/tests.yml?branch=main)
+[![codecov](https://codecov.io/github/interactivereduction/jobcontroller/branch/main/graph/badge.svg?token=XR6PCJ1VR8)](https://codecov.io/github/interactivereduction/jobcontroller)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/PyCQA/pylint)
 
