@@ -9,7 +9,7 @@ from job_controller.main import JobCreator
 class JobCreatorTest(unittest.TestCase):
     @mock.patch("job_controller.job_creator.load_kubernetes_config")
     def test_init_calls_load_cluster_config(self, load_kubernetes_config):
-        JobCreator()
+        JobCreator("")
 
         load_kubernetes_config.assert_called_once_with()
 
@@ -21,7 +21,8 @@ class JobCreatorTest(unittest.TestCase):
         job_name = mock.MagicMock()
         job_namespace = mock.MagicMock()
         user_id = mock.MagicMock()
-        k8s = JobCreator()
+        runner_sha = mock.MagicMock()
+        k8s = JobCreator(runner_sha)
 
         k8s.spawn_job(
             job_name=job_name, job_namespace=job_namespace, script=script, ceph_path=ceph_path, user_id=user_id
@@ -36,7 +37,8 @@ class JobCreatorTest(unittest.TestCase):
 
         pod_container = k8s_pod_call_kwargs["spec"]["template"]["spec"]["containers"][0]
         self.assertEqual(pod_container["name"], job_name)
-        self.assertEqual(["-c", script], pod_container["args"])
+        self.assertEqual(f"ghcr.io/interactivereduction/runner@sha256:{runner_sha}", pod_container["image"])
+        self.assertEqual([script], pod_container["args"])
         self.assertEqual(len(pod_container["volumeMounts"]), 2)
         self.assertIn({"name": "archive-mount", "mountPath": "/archive"}, pod_container["volumeMounts"])
         self.assertIn({"name": "ceph-mount", "mountPath": "/output"}, pod_container["volumeMounts"])

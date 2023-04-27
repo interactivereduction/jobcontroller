@@ -13,6 +13,7 @@ class JobControllerTest(unittest.TestCase):
     @mock.patch("job_controller.main.JobCreator")
     @mock.patch("job_controller.main.TopicConsumer")
     def setUp(self, _, __, ___):
+        os.environ["RUNNER_SHA"] = "literally_anything"
         self.joc = JobController()
 
     @mock.patch("job_controller.main.JobCreator")
@@ -25,6 +26,23 @@ class JobControllerTest(unittest.TestCase):
         self.assertEqual(JobController().kafka_ip, "random_ip_address_from_kafka")
 
         os.environ.pop("KAFKA_IP")
+
+    @mock.patch("job_controller.main.JobCreator")
+    @mock.patch("job_controller.main.TopicConsumer")
+    def test_job_controller_gets_runner_sha_from_env(self, _, job_creator):
+        runner_sha = mock.MagicMock()
+        os.environ["RUNNER_SHA"] = str(runner_sha)
+
+        JobController()
+
+        job_creator.assert_called_once_with(runner_sha=str(runner_sha))
+
+    @mock.patch("job_controller.main.JobCreator")
+    @mock.patch("job_controller.main.TopicConsumer")
+    def test_job_controller_raises_if_runner_sha_not_set(self, _, __):
+        os.environ.pop("RUNNER_SHA")
+
+        self.assertRaises(OSError, JobController)
 
     @mock.patch("job_controller.main.JobWatcher")
     @mock.patch("job_controller.main.acquire_script")
