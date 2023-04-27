@@ -20,6 +20,7 @@ class JobCreator:
         load_kubernetes_config()
         self.runner_sha = runner_sha
 
+    # pylint: disable=too-many-arguments
     def spawn_job(self, job_name: str, script: str, ceph_path: str, job_namespace: str, user_id: str) -> str:
         """
         Takes the meta_data from the kafka message and uses that dictionary for generating the deployment of the pod.
