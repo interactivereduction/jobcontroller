@@ -26,12 +26,15 @@ class JobController:
         db_ip = os.environ.get("DB_IP", "")
         db_username = os.environ.get("DB_USERNAME", "")
         db_password = os.environ.get("DB_PASSWORD", "")
+        runner_sha = os.environ.get("RUNNER_SHA", None)
+        if runner_sha is None:
+            raise OSError("RUNNER_SHA not set in the environment, please add it.")
         self.db_updater = DBUpdater(ip=db_ip, username=db_username, password=db_password)
         self.ir_api_host = os.environ.get("IR_API", "ir-api-service.ir.svc.cluster.local:80")
         self.kafka_ip = os.environ.get("KAFKA_IP", "")
         self.reduce_user_id = os.environ.get("REDUCE_USER_ID", "")
         self.consumer = TopicConsumer(self.on_message, broker_ip=self.kafka_ip)
-        self.job_creator = JobCreator()
+        self.job_creator = JobCreator(runner_sha=runner_sha)
         self.ir_k8s_api = "ir-jobs"
 
     def on_message(self, message: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
