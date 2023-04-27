@@ -11,7 +11,7 @@ class JobCreator:
     This class is responsible for loading the kubernetes config and handling methods for creating new pods.
     """
 
-    def __init__(self, runner_sha) -> None:
+    def __init__(self, runner_sha: str) -> None:
         """
         Takes the runner_sha and ensures that the kubernetes config is loaded before continuing.
         :param runner_sha: The sha256 used for the runner, often made by the runner.D file in this repo's container
