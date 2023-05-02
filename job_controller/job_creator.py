@@ -1,6 +1,8 @@
 """
 Communicate to a kubernetes API to spawn a pod with the metadata passed by kafka message to the RunMaker
 """
+import os
+
 from kubernetes import client  # type: ignore[import]
 
 from job_controller.utils import logger, load_kubernetes_config
@@ -34,6 +36,7 @@ class JobCreator:
         :return: The response for the actual job's name
         """
         logger.info("Spawning job: %s", job_name)
+        rb_folder = os.path.dirname(ceph_path)
         job = client.V1Job(
             api_version="batch/v1",
             kind="Job",
@@ -60,7 +63,7 @@ class JobCreator:
                         "tolerations": [{"key": "queue-worker", "effect": "NoSchedule", "operator": "Exists"}],
                         "volumes": [
                             {"name": "archive-mount", "hostPath": {"type": "Directory", "path": "/archive"}},
-                            {"name": "ceph-mount", "hostPath": {"type": "Directory", "path": ceph_path}},
+                            {"name": "ceph-mount", "hostPath": {"type": "Directory", "path": rb_folder}},
                         ],
                     },
                 },
