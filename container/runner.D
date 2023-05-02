@@ -7,6 +7,9 @@ RUN apt-get update && apt-get install libgl1 -y
 COPY ./container/mantid-environment.yml .
 RUN mamba env create -f mantid-environment.yml
 
+# Install custom properties
+COPY ./container/Mantid.user.properties /root/.mantid/Mantid.user.properties
+
 # Make sure the environment is activated:
 RUN conda init bash
 RUN echo "conda activate mantid" > ~/.bashrc
