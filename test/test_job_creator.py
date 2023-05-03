@@ -32,6 +32,10 @@ class JobCreatorTest(unittest.TestCase):
         pod_metadata = k8s_pod_call_kwargs["metadata"]
         self.assertEqual(pod_metadata["name"], job_name)
 
+        pod_spec = k8s_pod_call_kwargs["spec"]
+        self.assertEqual(pod_spec["backoffLimit"], 1)
+        self.assertEqual(pod_spec["ttlSecondsAfterFinished"], 21600)
+
         security_context = k8s_pod_call_kwargs["spec"]["template"]["spec"]["security_context"]
         self.assertEqual({"runAsUser": user_id}, security_context)
 
