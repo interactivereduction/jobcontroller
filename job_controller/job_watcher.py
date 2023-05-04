@@ -113,12 +113,13 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         :param job: The job that has failed
         :return:
         """
-        logger.info("Job %s has %s, with message: %s", self.job_name, job.status.phase, job.status.message)
+        message = job.status.conditions[0].message
+        logger.info("Job %s has failed, with message: %s", self.job_name, message)
         start, end = self._find_start_and_end_of_job()
         self.db_updater.add_completed_run(
             db_reduction_id=self.db_reduction_id,
             state=State(State.ERROR),
-            status_message=job.status.message,
+            status_message=message,
             output_files=[],
             reduction_script=self.job_script,
             reduction_inputs=self.reduction_inputs,
