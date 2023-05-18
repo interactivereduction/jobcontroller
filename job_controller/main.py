@@ -8,11 +8,13 @@ import uuid
 from pathlib import Path
 from typing import Dict, Any
 
+import asyncio
+
 from job_controller.database.db_updater import DBUpdater
 from job_controller.job_watcher import JobWatcher
 from job_controller.job_creator import JobCreator
 from job_controller.script_aquisition import acquire_script
-from job_controller.topic_consumer import TopicConsumer
+from job_controller.station_consumer import StationConsumer, create_station_consumer
 from job_controller.utils import create_ceph_path, logger, ensure_ceph_path_exists
 
 
@@ -31,11 +33,18 @@ class JobController:
             raise OSError("RUNNER_SHA not set in the environment, please add it.")
         self.db_updater = DBUpdater(ip=db_ip, username=db_username, password=db_password)
         self.ir_api_host = os.environ.get("IR_API", "ir-api-service.ir.svc.cluster.local:80")
-        self.kafka_ip = os.environ.get("KAFKA_IP", "")
+        self.broker_ip = os.environ.get("BROKER_IP", "")
         self.reduce_user_id = os.environ.get("REDUCE_USER_ID", "")
-        self.consumer = TopicConsumer(self.on_message, broker_ip=self.kafka_ip)
+        self.consumer_username = os.environ.get("CONSUMER_USERNAME", "")
+        self.consumer_password = os.environ.get("CONSUMER_PASSWORD", "")
         self.job_creator = JobCreator(runner_sha=runner_sha)
         self.ir_k8s_api = "ir-jobs"
+
+    async def _init(self):
+        consumer_outputs = await asyncio.gather(create_station_consumer(self.on_message, broker_ip=self.broker_ip,
+                                                                        username=self.consumer_username,
+                                                                        password=self.consumer_password))
+        self.consumer = consumer_outputs[0]
 
     def on_message(self, message: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
         """
@@ -104,7 +113,7 @@ class JobController:
         watcher = JobWatcher(
             job_name,
             self.ir_k8s_api,
-            self.kafka_ip,
+            self.broker_ip,
             ceph_path,
             self.db_updater,
             db_reduction_id,
@@ -113,20 +122,21 @@ class JobController:
         )
         threading.Thread(target=watcher.watch).start()
 
-    def run(self) -> None:
+    async def run(self) -> None:
         """
         This is effectively the main method of the program and starts the consumer
         """
-        self.consumer.start_consuming()
+        await self.consumer.start_consuming()
 
 
-def main() -> None:
+async def main() -> None:
     """
     This is the main function that will run the entire software
     """
     job_controller = JobController()
-    job_controller.run()
+    await job_controller._init()
+    await job_controller.run()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

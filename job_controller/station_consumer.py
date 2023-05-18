@@ -1,7 +1,17 @@
 import json
-from typing import Callable, Dict
+from typing import Callable, Dict, Union
+
+from memphis import Memphis, MemphisError
+from memphis.consumer import Consumer
 
 from job_controller.utils import logger
+
+
+async def create_station_consumer(message_callback: Callable[[Dict[str, str]], None], broker_ip: str, username: str,
+                            password: str):
+    consumer = StationConsumer(message_callback, broker_ip, username, password)
+    await consumer._init()
+    return consumer
 
 
 class StationConsumer:
@@ -9,18 +19,31 @@ class StationConsumer:
     This class is responsible for running the listener for Kafka, and requesting the correct response from the
     JobController
     """
-
-    def __init__(self, message_callback: Callable[[Dict[str, str]], None], broker_ip: str) -> None:
+    def __init__(self, message_callback: Callable[[Dict[str, str]], None], broker_ip: str, username: str,
+                       password: str) -> None:
         self.message_callback = message_callback
-        self.consumer = await memphis.consumer(
+        self.broker_ip = broker_ip
+        self.memphis_username = username
+        self.memphis_password = password
+        self.memphis = Memphis()
+
+    async def _init(self):
+        await self.connect_to_broker()
+        self.consumer: Union[Consumer, MemphisError] = await self.memphis.consumer(
             station_name="requested-jobs",
             consumer_name="jobcontroller",
-            pull_interval="100",  # ms
-            generate_random_suffix=True,
+            generate_random_suffix=True
         )
-        self.consumer.set_context()
-        logger.info("Connecting to kafka using the ip: %s", broker_ip)
-        self.consumer.subscribe(["detected-runs"])
+        if self.consumer is MemphisError:
+            raise self.consumer
+        logger.info("Connected to memphis using the ip: %s", self.broker_ip)
+
+    async def connect_to_broker(self):
+        await self.memphis.connect(
+            host=self.broker_ip,
+            username=self.memphis_username,
+            password=self.memphis_password,
+        )
 
     async def _message_handler(self, msgs, error, _):
         """
@@ -43,10 +66,17 @@ class StationConsumer:
         if error:
             logger.error(error)
 
-    def start_consuming(self, run_once: bool = False) -> None:
+    async def start_consuming(self, run_once: bool = False) -> None:
         run = True
         while run:
             if run_once:
                 run = False
 
-            self.consumer.consume(self._message_handler)
+            if not self.memphis.is_connection_active:
+                # Not connected so attempt to reconnect
+                await self.connect_to_broker()
+
+            try:
+                self.consumer.consume(self._message_handler)
+            except MemphisError as error:
+                logger.error("Memphis error occurred: %s", error)
