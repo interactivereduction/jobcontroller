@@ -7,8 +7,9 @@ from memphis.consumer import Consumer
 from job_controller.utils import logger
 
 
-async def create_station_consumer(message_callback: Callable[[Dict[str, str]], None], broker_ip: str, username: str,
-                            password: str):
+async def create_station_consumer(
+    message_callback: Callable[[Dict[str, str]], None], broker_ip: str, username: str, password: str
+):
     consumer = StationConsumer(message_callback, broker_ip, username, password)
     await consumer._init()
     return consumer
@@ -19,8 +20,10 @@ class StationConsumer:
     This class is responsible for running the listener for Kafka, and requesting the correct response from the
     JobController
     """
-    def __init__(self, message_callback: Callable[[Dict[str, str]], None], broker_ip: str, username: str,
-                       password: str) -> None:
+
+    def __init__(
+        self, message_callback: Callable[[Dict[str, str]], None], broker_ip: str, username: str, password: str
+    ) -> None:
         self.message_callback = message_callback
         self.broker_ip = broker_ip
         self.memphis_username = username
@@ -30,9 +33,7 @@ class StationConsumer:
     async def _init(self):
         await self.connect_to_broker()
         self.consumer: Union[Consumer, MemphisError] = await self.memphis.consumer(
-            station_name="requested-jobs",
-            consumer_name="jobcontroller",
-            generate_random_suffix=True
+            station_name="requested-jobs", consumer_name="jobcontroller", generate_random_suffix=True
         )
         if self.consumer is MemphisError:
             raise self.consumer

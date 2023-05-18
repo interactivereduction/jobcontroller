@@ -41,9 +41,14 @@ class JobController:
         self.ir_k8s_api = "ir-jobs"
 
     async def _init(self):
-        consumer_outputs = await asyncio.gather(create_station_consumer(self.on_message, broker_ip=self.broker_ip,
-                                                                        username=self.consumer_username,
-                                                                        password=self.consumer_password))
+        consumer_outputs = await asyncio.gather(
+            create_station_consumer(
+                self.on_message,
+                broker_ip=self.broker_ip,
+                username=self.consumer_username,
+                password=self.consumer_password,
+            )
+        )
         self.consumer = consumer_outputs[0]
 
     def on_message(self, message: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
