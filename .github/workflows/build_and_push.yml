@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build and Push Docker Images
 
 on:
   push:
@@ -27,9 +27,16 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build and push Docker image
+    - name: Build and push jobcontroller Docker image
       uses: docker/build-push-action@v2
       with:
-        context: .
+        context: ./container/jobcontroller.D
         push: true
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/jobcontroller:${{ github.sha }}
+
+    - name: Build and push runner Docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: ./container/runner.D
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/runner:${{ github.sha }}
