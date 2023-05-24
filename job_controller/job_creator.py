@@ -39,7 +39,7 @@ class JobCreator:
             kind="Job",
             metadata={"name": job_name},
             spec={
-                "backoffLimit": 1,
+                "backoffLimit": 0,
                 "ttlSecondsAfterFinished": 21600,  # 6 hours
                 "template": {
                     "spec": {
