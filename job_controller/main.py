@@ -106,7 +106,7 @@ class JobController:
     ) -> None:
         """
         Start a thread with a pod manager to maintain looking at these pods that have been created, checking for it
-        to finish every 1 millisecond, when it dies, do the job of sending a message to the kafka topic determining
+        to finish every 1 millisecond, when it dies, do the job of sending a message to the message broker determining
         the end of the runstate, and the output result.
         :param job_name: The name of the job that was created by the k8s api
         :param ceph_path: The path that was mounted in the container for the jobs that were created

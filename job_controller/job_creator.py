@@ -1,5 +1,5 @@
 """
-Communicate to a kubernetes API to spawn a pod with the metadata passed by kafka message to the RunMaker
+Communicate to a kubernetes API to spawn a pod with the metadata passed by message to the RunMaker
 """
 from kubernetes import client  # type: ignore[import]
 
@@ -23,7 +23,7 @@ class JobCreator:
     # pylint: disable=too-many-arguments
     def spawn_job(self, job_name: str, script: str, ceph_path: str, job_namespace: str, user_id: str) -> str:
         """
-        Takes the meta_data from the kafka message and uses that dictionary for generating the deployment of the pod.
+        Takes the meta_data from the message and uses that dictionary for generating the deployment of the pod.
         :param job_name: The name that the job should be created as
         :param script: The script that should be executed
         :param ceph_path: The path to which that should be mounted at /output in the job, this is expected to be the

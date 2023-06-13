@@ -52,9 +52,9 @@ class StationConsumer:
 
     async def _message_handler(self, msgs, error, _):
         """
-        Handles
+        Handles messages from the message broker
         :param msgs: A iterator for a batch of messages that need to be processed
-        :param error:
+        :param error: An error from the message broker.
         :param _: context of the messages
         :return:
         """
