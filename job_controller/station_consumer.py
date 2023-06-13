@@ -1,3 +1,4 @@
+import asyncio
 import json
 from typing import Callable, Dict, Union
 
@@ -33,7 +34,10 @@ class StationConsumer:
     async def _init(self):
         await self.connect_to_broker()
         self.consumer: Union[Consumer, MemphisError] = await self.memphis.consumer(
-            station_name="requested-jobs", consumer_name="jobcontroller", generate_random_suffix=True
+            station_name="requested-jobs",
+            consumer_name="jobcontroller",
+            consumer_group="jobcontrollers",
+            generate_random_suffix=True
         )
         if self.consumer is MemphisError:
             raise self.consumer
@@ -79,5 +83,6 @@ class StationConsumer:
 
             try:
                 self.consumer.consume(self._message_handler)
+                await asyncio.wait(asyncio.all_tasks())
             except MemphisError as error:
                 logger.error("Memphis error occurred: %s", error)
