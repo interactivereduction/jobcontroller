@@ -8,6 +8,7 @@ dependencies = [
     "psycopg2==2.9.6",
     "SQLAlchemy==2.0.13"
     "memphis-py==1.0.1",
+    "protobuf==4.23.1"
 ]
 
 [project.urls]
