@@ -37,7 +37,7 @@ class StationConsumer:
             station_name="requested-jobs",
             consumer_name="jobcontroller",
             consumer_group="jobcontrollers",
-            generate_random_suffix=True
+            generate_random_suffix=True,
         )
         if self.consumer is MemphisError:
             raise self.consumer
