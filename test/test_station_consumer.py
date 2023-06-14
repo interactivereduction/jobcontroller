@@ -1,4 +1,4 @@
-# pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring
+# pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring, protected-access
 
 import unittest
 from unittest import mock
@@ -46,15 +46,15 @@ class StationConsumerTest(unittest.TestCase):
         error_message = mock.MagicMock()
         memphis.consumer.return_value = MemphisError(error_message)
 
-        async def assertRaisesAsync(async_function, expected_exception, expected_error_message, *args, **kwargs):
+        async def assert_raises_async(async_function, expected_exception, expected_error_message, *args, **kwargs):
             try:
                 await async_function(*args, **kwargs)
-            except expected_exception as e:
-                self.assertEqual(expected_error_message, e)
+            except expected_exception as error:
+                self.assertEqual(expected_error_message, error)
                 return
             raise AssertionError("Passed async function did not raise")
 
-        await assertRaisesAsync(
+        await assert_raises_async(
             create_station_consumer,
             MemphisError,
             expected_error_message=error_message,

@@ -151,7 +151,7 @@ class JobControllerTest(unittest.TestCase):
         threading.Thread.return_value.start.assert_called_once_with()
 
     async def test_run_class_starts_consuming(self):
-        await self.joc._init()
+        await self.joc._init()  # pylint: disable=protected-access
         await self.joc.run()
 
         self.joc.consumer.start_consuming.assert_called_once_with()

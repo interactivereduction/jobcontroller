@@ -14,11 +14,11 @@ from job_controller.database.db_updater import DBUpdater
 from job_controller.job_watcher import JobWatcher
 from job_controller.job_creator import JobCreator
 from job_controller.script_aquisition import acquire_script
-from job_controller.station_consumer import StationConsumer, create_station_consumer
+from job_controller.station_consumer import create_station_consumer
 from job_controller.utils import create_ceph_path, logger, ensure_ceph_path_exists
 
 
-class JobController:
+class JobController:  # pylint: disable=too-many-instance-attributes
     """
     This is the JobController class that will communicate between the consumer and the kubernetes API, it effectively
     functions as a main class.
@@ -49,7 +49,7 @@ class JobController:
                 password=self.consumer_password,
             )
         )
-        self.consumer = consumer_outputs[0]
+        self.consumer = consumer_outputs[0]  # pylint: disable=attribute-defined-outside-init
 
     def on_message(self, message: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
         """
@@ -139,7 +139,7 @@ async def main() -> None:
     This is the main function that will run the entire software
     """
     job_controller = JobController()
-    await job_controller._init()
+    await job_controller._init()  # pylint: disable=protected-access
     await job_controller.run()
 
 

@@ -1,3 +1,6 @@
+"""
+The module is aimed to consume from a station on Memphis using the create_station_consumer
+"""
 import asyncio
 import json
 from typing import Callable, Dict, Union
@@ -11,8 +14,17 @@ from job_controller.utils import logger
 async def create_station_consumer(
     message_callback: Callable[[Dict[str, str]], None], broker_ip: str, username: str, password: str
 ):
+    """
+    The method that can be called to create a StationConsumer and ensure that ._init is called before the consumer is
+    used.
+    :param message_callback: A callback callable function that will be passed to the StationConsumer
+    :param broker_ip: The ip passed to the StationConsumer
+    :param username: The station username passed to the StationConsumer
+    :param password: The station password passed to the StationConsumer
+    :return: A fully initialised object of the StationConsumer
+    """
     consumer = StationConsumer(message_callback, broker_ip, username, password)
-    await consumer._init()
+    await consumer._init()  # pylint: disable=protected-access
     return consumer
 
 
@@ -44,6 +56,10 @@ class StationConsumer:
         logger.info("Connected to memphis using the ip: %s", self.broker_ip)
 
     async def connect_to_broker(self):
+        """
+        Function to be called when not already connected to the broker, can be called again, later.
+        :return:
+        """
         await self.memphis.connect(
             host=self.broker_ip,
             username=self.memphis_username,
@@ -72,6 +88,11 @@ class StationConsumer:
             logger.error(error)
 
     async def start_consuming(self, run_once: bool = False) -> None:
+        """
+        The function that will start consuming from a memphis station
+        :param run_once: Should this only run once or run until there is a raised exception or interrupt.
+        :return: None
+        """
         run = True
         while run:
             if run_once:
