@@ -45,12 +45,14 @@ class StationConsumer:
 
     async def _init(self):
         await self.connect_to_broker()
+        # pylint: disable=attribute-defined-outside-ini
         self.consumer: Union[Consumer, MemphisError] = await self.memphis.consumer(
             station_name="requested-jobs",
             consumer_name="jobcontroller",
             consumer_group="jobcontrollers",
             generate_random_suffix=True,
         )
+        # pylint: enable=attribute-defined-outside-ini
         if self.consumer is MemphisError:
             raise self.consumer
         logger.info("Connected to memphis using the ip: %s", self.broker_ip)
