@@ -11,13 +11,13 @@ from job_controller.main import JobController
 class JobControllerTest(unittest.TestCase):
     @mock.patch("job_controller.main.DBUpdater")
     @mock.patch("job_controller.main.JobCreator")
-    @mock.patch("job_controller.main.StationConsumer")
+    @mock.patch("job_controller.main.create_station_consumer")
     def setUp(self, _, __, ___):
         os.environ["RUNNER_SHA"] = "literally_anything"
         self.joc = JobController()
 
     @mock.patch("job_controller.main.JobCreator")
-    @mock.patch("job_controller.main.StationConsumer")
+    @mock.patch("job_controller.main.create_station_consumer")
     def test_job_controller_gets_various_vars_from_env(self, _, __):
         self.assertEqual(self.joc.ir_api_host, "ir-api-service.ir.svc.cluster.local:80")
         self.assertEqual(self.joc.broker_ip, "")
@@ -44,7 +44,7 @@ class JobControllerTest(unittest.TestCase):
         os.environ.pop("CONSUMER_PASSWORD")
 
     @mock.patch("job_controller.main.JobCreator")
-    @mock.patch("job_controller.main.StationConsumer")
+    @mock.patch("job_controller.main.create_station_consumer")
     def test_job_controller_gets_runner_sha_from_env(self, _, job_creator):
         runner_sha = mock.MagicMock()
         os.environ["RUNNER_SHA"] = str(runner_sha)
@@ -54,7 +54,7 @@ class JobControllerTest(unittest.TestCase):
         job_creator.assert_called_once_with(runner_sha=str(runner_sha))
 
     @mock.patch("job_controller.main.JobCreator")
-    @mock.patch("job_controller.main.StationConsumer")
+    @mock.patch("job_controller.main.create_station_consumer")
     def test_job_controller_raises_if_runner_sha_not_set(self, _, __):
         os.environ.pop("RUNNER_SHA")
 
