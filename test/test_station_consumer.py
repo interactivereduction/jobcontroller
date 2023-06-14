@@ -129,11 +129,51 @@ class StationConsumerTest(unittest.TestCase):
 
         logger.error.assert_called_once_with(error)
 
-    async def test_start_consuming_connects_if_connection_not_active(self):
-        pass
+    @mock.patch("job_controller.station_consumer.Memphis")
+    async def test_start_consuming_connects_if_connection_not_active(self, memphis):
+        consumer = await create_station_consumer(
+            message_callback=mock.MagicMock,
+            broker_ip=mock.MagicMock(),
+            username=mock.MagicMock(),
+            password=mock.MagicMock(),
+        )
+        consumer.connect_to_broker = mock.MagicMock()
+        memphis.is_connection_active = False
 
-    async def test_start_consuming_calls_consume_and_passes_message_handler_then_waits(self):
-        pass
+        consumer.start_consuming(run_once=True)
 
-    async def test_if_consume_throws_an_error_is_logged(self):
-        pass
+        consumer.connect_to_broker.assert_called_once_with()
+
+    @mock.patch("job_controller.station_consumer.Memphis")
+    @mock.patch("job_controller.station_consumer.asyncio.wait")
+    async def test_start_consuming_calls_consume_and_passes_message_handler(self, asyncio_wait, _):
+        consumer = await create_station_consumer(
+            message_callback=mock.MagicMock,
+            broker_ip=mock.MagicMock(),
+            username=mock.MagicMock(),
+            password=mock.MagicMock(),
+        )
+        consumer.consume = mock.MagicMock()
+
+        consumer.start_consuming(run_once=True)
+
+        consumer.consume.assert_called_once_with(consumer._message_handler)
+        asyncio_wait.assert_called_once()
+
+    @mock.patch("job_controller.station_consumer.Memphis")
+    @mock.patch("job_controller.station_consumer.logger")
+    async def test_if_consume_throws_an_error_is_logged(self, logger, _):
+        def raise_(ex):
+            raise ex
+        consumer = await create_station_consumer(
+            message_callback=mock.MagicMock,
+            broker_ip=mock.MagicMock(),
+            username=mock.MagicMock(),
+            password=mock.MagicMock(),
+        )
+        consumer.consume = lambda: raise_(MemphisError("Problem!"))
+
+        consumer.start_consuming(run_once=True)
+
+        logger.error.assert_called_once_with("Memphis error occurred: %s", "Problem!")
+
