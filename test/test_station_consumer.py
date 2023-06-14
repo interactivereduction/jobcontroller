@@ -165,6 +165,7 @@ class StationConsumerTest(unittest.TestCase):
     async def test_if_consume_throws_an_error_is_logged(self, logger, _):
         def raise_(ex):
             raise ex
+
         consumer = await create_station_consumer(
             message_callback=mock.MagicMock,
             broker_ip=mock.MagicMock(),
@@ -176,4 +177,3 @@ class StationConsumerTest(unittest.TestCase):
         consumer.start_consuming(run_once=True)
 
         logger.error.assert_called_once_with("Memphis error occurred: %s", "Problem!")
-
