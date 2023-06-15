@@ -111,8 +111,7 @@ class StationConsumerTest(asynctest.TestCase):
 
     @pytest.mark.asyncio
     async def test_message_handler_handles_json_decode_error(self):
-        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) \
-                as _:
+        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) as _:
             message = "}broken-json{"
             message_mock = AwaitableNonAsyncMagicMock()
             message_mock.get_data.return_value = message
@@ -131,8 +130,7 @@ class StationConsumerTest(asynctest.TestCase):
 
     @pytest.mark.asyncio
     async def test_ensure_ack_is_called_per_msg(self):
-        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) \
-                as _:
+        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) as _:
             msg1 = AwaitableNonAsyncMagicMock()
             msg1.get_data.return_value = "{}"
             msg2 = AwaitableNonAsyncMagicMock()
@@ -170,8 +168,7 @@ class StationConsumerTest(asynctest.TestCase):
     @pytest.mark.asyncio
     async def test_start_consuming_connects_if_connection_not_active(self):
         with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) as memphis:
-            with mock.patch("job_controller.station_consumer.asyncio.wait", new=AwaitableNonAsyncMagicMock()) as \
-                    _:
+            with mock.patch("job_controller.station_consumer.asyncio.wait", new=AwaitableNonAsyncMagicMock()) as _:
                 consumer = await create_station_consumer(
                     message_callback=mock.MagicMock,
                     broker_ip=mock.MagicMock(),
@@ -189,8 +186,9 @@ class StationConsumerTest(asynctest.TestCase):
     @pytest.mark.asyncio
     async def test_start_consuming_calls_consume_and_passes_message_handler(self):
         with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) as _:
-            with mock.patch("job_controller.station_consumer.asyncio.wait", new=AwaitableNonAsyncMagicMock()) as \
-                    asyncio_wait:
+            with mock.patch(
+                "job_controller.station_consumer.asyncio.wait", new=AwaitableNonAsyncMagicMock()
+            ) as asyncio_wait:
                 consumer = await create_station_consumer(
                     message_callback=mock.MagicMock,
                     broker_ip=mock.MagicMock(),
@@ -208,6 +206,7 @@ class StationConsumerTest(asynctest.TestCase):
     async def test_if_consume_throws_an_error_is_logged(self):
         def raise_(ex):
             raise ex
+
         with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) as _:
             with mock.patch("job_controller.station_consumer.logger") as logger:
                 consumer = await create_station_consumer(
