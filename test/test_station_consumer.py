@@ -2,7 +2,7 @@
 
 from unittest import mock
 
-import asynctest as asynctest
+import asynctest
 import pytest
 from memphis import MemphisError
 
