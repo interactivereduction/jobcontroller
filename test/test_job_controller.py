@@ -5,10 +5,12 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+import pytest
+
 from job_controller.main import JobController
 
 
-class JobControllerTest(unittest.TestCase):
+class JobControllerTest(unittest.IsolatedAsyncioTestCase):
     @mock.patch("job_controller.main.DBUpdater")
     @mock.patch("job_controller.main.JobCreator")
     @mock.patch("job_controller.main.create_station_consumer")
@@ -150,6 +152,7 @@ class JobControllerTest(unittest.TestCase):
         threading.Thread.assert_called_once_with(target=job_watcher.return_value.watch)
         threading.Thread.return_value.start.assert_called_once_with()
 
+    @pytest.mark.asyncio
     async def test_run_class_starts_consuming(self):
         await self.joc._init()  # pylint: disable=protected-access
         await self.joc.run()

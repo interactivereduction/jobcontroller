@@ -53,7 +53,7 @@ class StationConsumer:
             generate_random_suffix=True,
         )
         # pylint: enable=attribute-defined-outside-init
-        if self.consumer is MemphisError:
+        if isinstance(self.consumer, MemphisError):
             raise self.consumer
         logger.info("Connected to memphis using the ip: %s", self.broker_ip)
 

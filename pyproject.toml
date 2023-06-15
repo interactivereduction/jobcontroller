@@ -24,7 +24,9 @@ formatting = [
 
 test = [
     "pytest==7.3.1",
-    "pytest-cov==4.1.0"
+    "pytest-cov==4.0.0",
+    "pytest-asyncio==0.21.0",
+    "asynctest==0.12.3"
 ]
 
 code-inspection = [
@@ -39,4 +41,4 @@ code-inspection = [
 packages = ["job_controller"]
 
 [tool.coverage.run]
-concurrency = ["gevent"]
+concurrency = ["asyncio"]
