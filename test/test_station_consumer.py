@@ -28,8 +28,7 @@ class AwaitableNonAsyncMagicMock(MagicMock):
 class StationConsumerTest(asynctest.TestCase):
     @pytest.mark.asyncio
     async def test_consumer_is_made_and_connects_with_passed_values(self):
-        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) \
-                as memphis:
+        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) as memphis:
             memphis.is_connection_active = True
             broker_ip = mock.MagicMock()
             username = mock.MagicMock()
@@ -43,8 +42,7 @@ class StationConsumerTest(asynctest.TestCase):
 
     @pytest.mark.asyncio
     async def test_consumer_subscribes_using_memphis_consumer(self):
-        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) \
-                as memphis:
+        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) as memphis:
             broker_ip = mock.MagicMock()
             username = mock.MagicMock()
             password = mock.MagicMock()
@@ -62,8 +60,7 @@ class StationConsumerTest(asynctest.TestCase):
 
     @pytest.mark.asyncio
     async def test_consumer_throwing_memphis_error_is_raised(self):
-        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) \
-                as memphis:
+        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) as memphis:
             broker_ip = mock.MagicMock()
             username = mock.MagicMock()
             password = mock.MagicMock()
@@ -96,8 +93,7 @@ class StationConsumerTest(asynctest.TestCase):
 
     @pytest.mark.asyncio
     async def test_message_handler_decodes_string_into_dict_correctly(self):
-        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) \
-                as _:
+        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) as _:
             message = '{"filepath": "/test/path/to/file.txt", "experiment_number": "RB000001", "instrument": "INTER"}'
             message_mock = AwaitableNonAsyncMagicMock()
             message_mock.get_data.return_value = message
