@@ -1,7 +1,5 @@
 # pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring, protected-access
-import asyncio
-import unittest
-from asyncio import Future
+
 from typing import Iterator, Any
 from unittest import mock
 from unittest.mock import AsyncMock
@@ -9,7 +7,7 @@ from unittest.mock import AsyncMock
 import asynctest as asynctest
 import pytest
 from asynctest import MagicMock
-from memphis import MemphisError, Memphis
+from memphis import MemphisError
 
 from job_controller.station_consumer import create_station_consumer
 
@@ -112,104 +110,116 @@ class StationConsumerTest(asynctest.TestCase):
             )
 
     @pytest.mark.asyncio
-    @mock.patch("job_controller.station_consumer.Memphis", new=AsyncMock)
-    async def test_message_handler_handles_json_decode_error(self, _):
-        message = "}broken-json{"
-        msgs = [message]
+    async def test_message_handler_handles_json_decode_error(self):
+        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) \
+                as _:
+            message = "}broken-json{"
+            message_mock = AwaitableNonAsyncMagicMock()
+            message_mock.get_data.return_value = message
+            msgs = [message_mock]
 
-        consumer = await create_station_consumer(
-            message_callback=mock.MagicMock,
-            broker_ip=mock.MagicMock(),
-            username=mock.MagicMock(),
-            password=mock.MagicMock(),
-        )
+            consumer = await create_station_consumer(
+                message_callback=mock.MagicMock,
+                broker_ip=mock.MagicMock(),
+                username=mock.MagicMock(),
+                password=mock.MagicMock(),
+            )
 
-        consumer.message_callback = mock.MagicMock()
-        consumer._message_handler(msgs, None, None)
-        consumer.message_callback.assert_not_called()
-
-    @pytest.mark.asyncio
-    @mock.patch("job_controller.station_consumer.Memphis", new=AsyncMock)
-    async def test_ensure_ack_is_called_per_msg(self, _):
-        msg1 = mock.MagicMock()
-        msg2 = mock.MagicMock()
-        msgs = [msg1, msg2]
-
-        consumer = await create_station_consumer(
-            message_callback=mock.MagicMock,
-            broker_ip=mock.MagicMock(),
-            username=mock.MagicMock(),
-            password=mock.MagicMock(),
-        )
-        consumer._message_handler(msgs, None, None)
-        msg1.ack.assert_called_once_with()
-        msg2.ack.assert_called_once_with()
+            consumer.message_callback = mock.MagicMock()
+            await consumer._message_handler(msgs, None, None)
+            consumer.message_callback.assert_not_called()
 
     @pytest.mark.asyncio
-    @mock.patch("job_controller.station_consumer.Memphis", new=AsyncMock)
-    @mock.patch("job_controller.station_consumer.logger")
-    async def test_if_error_sent_to_message_handler_it_logs(self, logger, _):
-        msgs = mock.MagicMock()
-        error = mock.MagicMock()
+    async def test_ensure_ack_is_called_per_msg(self):
+        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) \
+                as _:
+            msg1 = AwaitableNonAsyncMagicMock()
+            msg1.get_data.return_value = "{}"
+            msg2 = AwaitableNonAsyncMagicMock()
+            msg2.get_data.return_value = "{}"
+            msgs = [msg1, msg2]
 
-        consumer = await create_station_consumer(
-            message_callback=mock.MagicMock,
-            broker_ip=mock.MagicMock(),
-            username=mock.MagicMock(),
-            password=mock.MagicMock(),
-        )
-        consumer._message_handler(msgs, error, None)
+            consumer = await create_station_consumer(
+                message_callback=mock.MagicMock,
+                broker_ip=mock.MagicMock(),
+                username=mock.MagicMock(),
+                password=mock.MagicMock(),
+            )
 
-        logger.error.assert_called_once_with(error)
-
-    @pytest.mark.asyncio
-    @mock.patch("job_controller.station_consumer.Memphis", new=AsyncMock)
-    async def test_start_consuming_connects_if_connection_not_active(self, memphis):
-        consumer = await create_station_consumer(
-            message_callback=mock.MagicMock,
-            broker_ip=mock.MagicMock(),
-            username=mock.MagicMock(),
-            password=mock.MagicMock(),
-        )
-        consumer.connect_to_broker = mock.MagicMock()
-        memphis.is_connection_active = False
-
-        consumer.start_consuming(run_once=True)
-
-        consumer.connect_to_broker.assert_called_once_with()
+            await consumer._message_handler(msgs, None, None)
+            msg1.ack.assert_called_once_with()
+            msg2.ack.assert_called_once_with()
 
     @pytest.mark.asyncio
-    @mock.patch("job_controller.station_consumer.Memphis", new=AsyncMock)
-    @mock.patch("job_controller.station_consumer.asyncio.wait")
-    async def test_start_consuming_calls_consume_and_passes_message_handler(self, asyncio_wait, _):
-        consumer = await create_station_consumer(
-            message_callback=mock.MagicMock,
-            broker_ip=mock.MagicMock(),
-            username=mock.MagicMock(),
-            password=mock.MagicMock(),
-        )
-        consumer.consume = mock.MagicMock()
+    async def test_if_error_sent_to_message_handler_it_logs(self):
+        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) as _:
+            with mock.patch("job_controller.station_consumer.logger") as logger:
+                msgs = mock.MagicMock()
+                error = mock.MagicMock()
 
-        consumer.start_consuming(run_once=True)
+                consumer = await create_station_consumer(
+                    message_callback=mock.MagicMock,
+                    broker_ip=mock.MagicMock(),
+                    username=mock.MagicMock(),
+                    password=mock.MagicMock(),
+                )
+                await consumer._message_handler(msgs, error, None)
 
-        consumer.consume.assert_called_once_with(consumer._message_handler)
-        asyncio_wait.assert_called_once()
+                logger.error.assert_called_once_with(error)
 
     @pytest.mark.asyncio
-    @mock.patch("job_controller.station_consumer.Memphis", new=AsyncMock)
-    @mock.patch("job_controller.station_consumer.logger")
-    async def test_if_consume_throws_an_error_is_logged(self, logger, _):
+    async def test_start_consuming_connects_if_connection_not_active(self):
+        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) as memphis:
+            with mock.patch("job_controller.station_consumer.asyncio.wait", new=AwaitableNonAsyncMagicMock()) as \
+                    _:
+                consumer = await create_station_consumer(
+                    message_callback=mock.MagicMock,
+                    broker_ip=mock.MagicMock(),
+                    username=mock.MagicMock(),
+                    password=mock.MagicMock(),
+                )
+                consumer.consumer = mock.MagicMock()
+                consumer.connect_to_broker = AwaitableNonAsyncMagicMock()
+                memphis().is_connection_active = False
+
+                await consumer.start_consuming(run_once=True)
+
+                consumer.connect_to_broker.assert_called_once_with()
+
+    @pytest.mark.asyncio
+    async def test_start_consuming_calls_consume_and_passes_message_handler(self):
+        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) as _:
+            with mock.patch("job_controller.station_consumer.asyncio.wait", new=AwaitableNonAsyncMagicMock()) as \
+                    asyncio_wait:
+                consumer = await create_station_consumer(
+                    message_callback=mock.MagicMock,
+                    broker_ip=mock.MagicMock(),
+                    username=mock.MagicMock(),
+                    password=mock.MagicMock(),
+                )
+                consumer.consumer = mock.MagicMock()
+
+                await consumer.start_consuming(run_once=True)
+
+                consumer.consumer.consume.assert_called_once_with(consumer._message_handler)
+                asyncio_wait.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_if_consume_throws_an_error_is_logged(self):
         def raise_(ex):
             raise ex
+        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) as _:
+            with mock.patch("job_controller.station_consumer.logger") as logger:
+                consumer = await create_station_consumer(
+                    message_callback=mock.MagicMock,
+                    broker_ip=mock.MagicMock(),
+                    username=mock.MagicMock(),
+                    password=mock.MagicMock(),
+                )
+                memphis_error = MemphisError("Problem!")
+                consumer.consumer = mock.MagicMock()
+                consumer.consumer.consume = lambda _: raise_(memphis_error)
 
-        consumer = await create_station_consumer(
-            message_callback=mock.MagicMock,
-            broker_ip=mock.MagicMock(),
-            username=mock.MagicMock(),
-            password=mock.MagicMock(),
-        )
-        consumer.consume = lambda: raise_(MemphisError("Problem!"))
+                await consumer.start_consuming(run_once=True)
 
-        consumer.start_consuming(run_once=True)
-
-        logger.error.assert_called_once_with("Memphis error occurred: %s", "Problem!")
+                logger.error.assert_called_once_with("Memphis error occurred: %s", memphis_error)
