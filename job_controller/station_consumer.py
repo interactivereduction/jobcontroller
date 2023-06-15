@@ -3,29 +3,13 @@ The module is aimed to consume from a station on Memphis using the create_statio
 """
 import asyncio
 import json
-from typing import Callable, Dict, Union
+from typing import Callable, Dict, Union, Any, List
 
-from memphis import Memphis, MemphisError
-from memphis.consumer import Consumer
+from memphis import Memphis, MemphisError  # type: ignore
+from memphis.consumer import Consumer  # type: ignore
+from memphis.message import Message
 
 from job_controller.utils import logger
-
-
-async def create_station_consumer(
-    message_callback: Callable[[Dict[str, str]], None], broker_ip: str, username: str, password: str
-):
-    """
-    The method that can be called to create a StationConsumer and ensure that ._init is called before the consumer is
-    used.
-    :param message_callback: A callback callable function that will be passed to the StationConsumer
-    :param broker_ip: The ip passed to the StationConsumer
-    :param username: The station username passed to the StationConsumer
-    :param password: The station password passed to the StationConsumer
-    :return: A fully initialised object of the StationConsumer
-    """
-    consumer = StationConsumer(message_callback, broker_ip, username, password)
-    await consumer._init()  # pylint: disable=protected-access
-    return consumer
 
 
 class StationConsumer:
@@ -43,7 +27,7 @@ class StationConsumer:
         self.memphis_password = password
         self.memphis = Memphis()
 
-    async def _init(self):
+    async def _init(self) -> None:
         await self.connect_to_broker()
         # pylint: disable=attribute-defined-outside-init
         self.consumer: Union[Consumer, MemphisError] = await self.memphis.consumer(
@@ -57,7 +41,7 @@ class StationConsumer:
             raise self.consumer
         logger.info("Connected to memphis using the ip: %s", self.broker_ip)
 
-    async def connect_to_broker(self):
+    async def connect_to_broker(self) -> None:
         """
         Function to be called when not already connected to the broker, can be called again, later.
         :return:
@@ -68,7 +52,7 @@ class StationConsumer:
             password=self.memphis_password,
         )
 
-    async def _message_handler(self, msgs, error, _):
+    async def _message_handler(self, msgs: List[Message], error: Exception, _: Dict[Any, Any]) -> None:
         """
         Handles messages from the message broker
         :param msgs: A iterator for a batch of messages that need to be processed
@@ -109,3 +93,20 @@ class StationConsumer:
                 await asyncio.wait(asyncio.all_tasks())
             except MemphisError as error:
                 logger.error("Memphis error occurred: %s", error)
+
+
+async def create_station_consumer(
+    message_callback: Callable[[Dict[str, str]], None], broker_ip: str, username: str, password: str
+) -> StationConsumer:
+    """
+    The method that can be called to create a StationConsumer and ensure that ._init is called before the consumer is
+    used.
+    :param message_callback: A callback callable function that will be passed to the StationConsumer
+    :param broker_ip: The ip passed to the StationConsumer
+    :param username: The station username passed to the StationConsumer
+    :param password: The station password passed to the StationConsumer
+    :return: A fully initialised object of the StationConsumer
+    """
+    consumer = StationConsumer(message_callback, broker_ip, username, password)
+    await consumer._init()  # pylint: disable=protected-access
+    return consumer

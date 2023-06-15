@@ -40,7 +40,7 @@ class JobController:  # pylint: disable=too-many-instance-attributes
         self.job_creator = JobCreator(runner_sha=runner_sha)
         self.ir_k8s_api = "ir-jobs"
 
-    async def _init(self):
+    async def _init(self) -> None:
         self.consumer = await create_station_consumer(  # pylint: disable=attribute-defined-outside-init
             self.on_message,
             broker_ip=self.broker_ip,
