@@ -42,11 +42,11 @@ class JobController:  # pylint: disable=too-many-instance-attributes
 
     async def _init(self):
         self.consumer = await create_station_consumer(  # pylint: disable=attribute-defined-outside-init
-                self.on_message,
-                broker_ip=self.broker_ip,
-                username=self.consumer_username,
-                password=self.consumer_password,
-            )
+            self.on_message,
+            broker_ip=self.broker_ip,
+            username=self.consumer_username,
+            password=self.consumer_password,
+        )
 
     def on_message(self, message: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
         """
