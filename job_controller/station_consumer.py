@@ -7,7 +7,7 @@ from typing import Callable, Dict, Union, Any, List
 
 from memphis import Memphis, MemphisError  # type: ignore
 from memphis.consumer import Consumer  # type: ignore
-from memphis.message import Message
+from memphis.message import Message  # type: ignore
 
 from job_controller.utils import logger
 
