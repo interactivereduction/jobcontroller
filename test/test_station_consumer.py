@@ -1,26 +1,13 @@
 # pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring, protected-access
 
-from typing import Iterator, Any
 from unittest import mock
-from unittest.mock import AsyncMock
 
 import asynctest as asynctest
 import pytest
-from asynctest import MagicMock
 from memphis import MemphisError
 
 from job_controller.station_consumer import create_station_consumer
-
-
-class AwaitableMock(AsyncMock):
-    def __await__(self) -> Iterator[Any]:
-        self.await_count += 1
-        return iter([])
-
-
-class AwaitableNonAsyncMagicMock(MagicMock):
-    def __await__(self) -> Iterator[Any]:
-        return iter([])
+from test.utils import AwaitableNonAsyncMagicMock
 
 
 class StationConsumerTest(asynctest.TestCase):

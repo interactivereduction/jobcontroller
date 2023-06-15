@@ -8,6 +8,7 @@ from unittest import mock
 import pytest
 
 from job_controller.main import JobController
+from test.utils import AwaitableNonAsyncMagicMock
 
 
 class JobControllerTest(unittest.IsolatedAsyncioTestCase):
@@ -154,7 +155,10 @@ class JobControllerTest(unittest.IsolatedAsyncioTestCase):
 
     @pytest.mark.asyncio
     async def test_run_class_starts_consuming(self):
-        await self.joc._init()  # pylint: disable=protected-access
-        await self.joc.run()
+        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) as _:
+            await self.joc._init()  # pylint: disable=protected-access
+            self.joc.consumer = AwaitableNonAsyncMagicMock()
 
-        self.joc.consumer.start_consuming.assert_called_once_with()
+            await self.joc.run()
+
+            self.joc.consumer.start_consuming.assert_called_once_with()

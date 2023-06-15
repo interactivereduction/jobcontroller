@@ -41,15 +41,12 @@ class JobController:  # pylint: disable=too-many-instance-attributes
         self.ir_k8s_api = "ir-jobs"
 
     async def _init(self):
-        consumer_outputs = await asyncio.gather(
-            create_station_consumer(
+        self.consumer = await create_station_consumer(  # pylint: disable=attribute-defined-outside-init
                 self.on_message,
                 broker_ip=self.broker_ip,
                 username=self.consumer_username,
                 password=self.consumer_password,
             )
-        )
-        self.consumer = consumer_outputs[0]  # pylint: disable=attribute-defined-outside-init
 
     def on_message(self, message: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
         """
