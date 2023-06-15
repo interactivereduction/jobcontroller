@@ -11,7 +11,6 @@ from test.utils import AwaitableNonAsyncMagicMock  # pylint: disable=wrong-impor
 from job_controller.main import JobController
 
 
-
 class JobControllerTest(unittest.IsolatedAsyncioTestCase):
     @mock.patch("job_controller.main.DBUpdater")
     @mock.patch("job_controller.main.JobCreator")
