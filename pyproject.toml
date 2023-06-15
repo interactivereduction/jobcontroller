@@ -39,6 +39,3 @@ code-inspection = [
 
 [tool.setuptools]
 packages = ["job_controller"]
-
-[tool.coverage.run]
-concurrency = ["asyncio"]
