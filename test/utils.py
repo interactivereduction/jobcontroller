@@ -1,3 +1,5 @@
+# pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring, too-many-ancestors
+
 from typing import Iterator, Any
 from unittest.mock import AsyncMock
 
