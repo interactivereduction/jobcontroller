@@ -131,14 +131,21 @@ class JobController:  # pylint: disable=too-many-instance-attributes
         await self.consumer.start_consuming()
 
 
-async def main() -> None:
+async def run_jobcontroller() -> None:
     """
-    This is the main function that will run the entire software
+    This is the async function that will run the jobcontroller
     """
     job_controller = JobController()
     await job_controller._init()  # pylint: disable=protected-access
     await job_controller.run()
 
 
+def main() -> None:
+    """
+    This is the function that runs the JobController software suite
+    """
+    asyncio.run(run_jobcontroller())
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
