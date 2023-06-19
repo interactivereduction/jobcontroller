@@ -70,12 +70,14 @@ class StationConsumer:
                 logger.error("Error attempting to decode JSON: %s", str(exception))
                 continue
             await msg.ack()
-        if error:
+        # If error and not an error caused by no messages being present, then log.
+        if error and not str(error) == 'memphis: Memphis: TimeoutError':
             logger.error(error)
 
     async def start_consuming(self, run_once: bool = False) -> None:
         """
-        The function that will start consuming from a memphis station
+        The function that will start consuming from a memphis station, and when the memphis consumer exits for any
+        reason, starts consuming again.
         :param run_once: Should this only run once or run until there is a raised exception or interrupt.
         :return: None
         """
@@ -89,6 +91,7 @@ class StationConsumer:
                 await self.connect_to_broker()
 
             try:
+                # Start the consumer consume loop and wait for it to return
                 self.consumer.consume(self._message_handler)
                 await asyncio.wait(asyncio.all_tasks())
             except MemphisError as error:
