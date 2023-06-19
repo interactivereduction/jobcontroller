@@ -71,7 +71,7 @@ class StationConsumer:
                 continue
             await msg.ack()
         # If error and not an error caused by no messages being present, then log.
-        if error and not str(error) == 'memphis: Memphis: TimeoutError':
+        if error and not str(error) == "memphis: Memphis: TimeoutError":
             logger.error(error)
 
     async def start_consuming(self, run_once: bool = False) -> None:
