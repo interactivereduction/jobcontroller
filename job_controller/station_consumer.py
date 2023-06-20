@@ -31,7 +31,7 @@ class StationConsumer:
         await self.connect_to_broker()
         # pylint: disable=attribute-defined-outside-init
         self.consumer: Union[Consumer, MemphisError] = await self.memphis.consumer(
-            station_name="requested-jobs",
+            station_name="scheduled-jobs",
             consumer_name="jobcontroller",
             consumer_group="jobcontrollers",
             generate_random_suffix=True,
