@@ -6,7 +6,7 @@ dependencies = [
     "confluent-kafka==2.1.1",
     "kubernetes==25.3.0",
     "psycopg2==2.9.6",
-    "SQLAlchemy==2.0.13"
+    "SQLAlchemy==2.0.17"
 ]
 
 [project.urls]
