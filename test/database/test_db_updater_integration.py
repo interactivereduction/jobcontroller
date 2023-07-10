@@ -155,7 +155,7 @@ def test_add_completed_run(db_updater, session, run_fix, reduction_fix):
         "print()",
         "2023-04-24 14:50:11.000000",
         "2023-04-24 14:50:12.000000",
-        "logs"
+        "logs",
     )
 
     with session() as session_:

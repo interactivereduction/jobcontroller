@@ -134,7 +134,7 @@ class DBUpdaterTests(unittest.TestCase):
             reduction_script=reduction_script,
             reduction_start=reduction_start,
             reduction_end=reduction_end,
-            reduction_logs=reduction_logs
+            reduction_logs=reduction_logs,
         )
 
         reduction_mock = self.mock_session.query(Reduction).filter_by(id=db_reduction_id).one()
@@ -174,7 +174,7 @@ class DBUpdaterTests(unittest.TestCase):
             reduction_script=reduction_script,
             reduction_start=reduction_start,
             reduction_end=reduction_end,
-            reduction_logs=reduction_logs
+            reduction_logs=reduction_logs,
         )
 
         script = Script(script=reduction_script)
