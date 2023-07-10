@@ -195,5 +195,6 @@ class JobWatcherTest(unittest.TestCase):
         return_value = self.job_watcher.get_logs()
 
         self.assertEqual(return_value, str(client.CoreV1Api.return_value.read_namespaced_pod_log.return_value))
-        client.CoreV1Api.return_value.read_namespaced_pod_log.assert_called_once_with(name="pod_name",
-                                                                                      namespace=namespace)
+        client.CoreV1Api.return_value.read_namespaced_pod_log.assert_called_once_with(
+            name="pod_name", namespace=namespace
+        )
