@@ -107,7 +107,11 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 break
         return start_time, end_time
 
-    def get_logs(self):
+    def get_logs(self) -> str:
+        """
+        Retrieves the logs from the job that is being watched, usually most useful after a job has finished.
+        :return: The entirety of the logs from the pod.
+        """
         pod_name = self.grab_pod_name_from_job_name_in_namespace(job_name=self.job_name, job_namespace=self.namespace)
         if pod_name is None:
             raise TypeError(
