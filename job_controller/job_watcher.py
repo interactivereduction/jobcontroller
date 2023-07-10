@@ -119,7 +119,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 f"namespace returned None when looking for a pod."
             )
         v1_core = client.CoreV1Api()
-        return v1_core.read_namespaced_pod_log(name=pod_name, namespace=self.namespace)
+        return str(v1_core.read_namespaced_pod_log(name=pod_name, namespace=self.namespace))
 
     def process_event_failed(self, job: V1Job) -> None:
         """

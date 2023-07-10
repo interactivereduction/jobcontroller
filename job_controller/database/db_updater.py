@@ -122,7 +122,7 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
             f"<Reduction(id={self.id}, reduction_start={self.reduction_start}, reduction_end={self.reduction_end},"
             f" reduction_state={self.reduction_state}, reduction_status_message={self.reduction_status_message},"
             f" reduction_inputs={self.reduction_inputs}, script_id={self.script_id},"
-            f" reduction_outputs={self.reduction_outputs}), logs={self.logs[0:20]}>"
+            f" reduction_outputs={self.reduction_outputs}), logs={str(self.logs)[0:20]}>"
         )
 
 
