@@ -2,7 +2,7 @@
 This module is responsible for holding the SQL Classes that SQLAlchemy will use and then formatting the SQL queries
 via SQLAlchemy via pre-made functions.
 """
-
+import textwrap
 from typing import Any, Dict, List
 
 from sqlalchemy import (  # type: ignore[attr-defined]
@@ -306,8 +306,8 @@ class DBUpdater:
             str(state),
             status_message,
             output_files,
-            reduction_script[0:20],
-            reduction_logs[0:20],
+            textwrap.shorten(reduction_script, width=20, placeholder="..."),
+            textwrap.shorten(reduction_logs, width=20, placeholder="..."),
         )
         with self.session_maker_func() as session:
             script = session.query(Script).filter_by(script=reduction_script).first()
@@ -332,8 +332,8 @@ class DBUpdater:
                 str(state),
                 status_message,
                 output_files,
-                reduction_script[0:20],
-                reduction_logs[0:20],
+                textwrap.shorten(reduction_script, width=20, placeholder="..."),
+                textwrap.shorten(reduction_logs, width=20, placeholder="..."),
             )
 
 
