@@ -307,7 +307,7 @@ class DBUpdater:
             status_message,
             output_files,
             reduction_script[0:20],
-            reduction_logs[0:20]
+            reduction_logs[0:20],
         )
         with self.session_maker_func() as session:
             script = session.query(Script).filter_by(script=reduction_script).first()
@@ -333,7 +333,7 @@ class DBUpdater:
                 status_message,
                 output_files,
                 reduction_script[0:20],
-                reduction_logs[0:20]
+                reduction_logs[0:20],
             )
 
 

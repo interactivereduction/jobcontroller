@@ -136,7 +136,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             reduction_inputs=self.reduction_inputs,
             reduction_end=str(end),
             reduction_start=start,
-            reduction_logs=logs[0:-3]  # Send every log except for the last 2.
+            reduction_logs=logs[0:-3],  # Send every log except for the last 2.
         )
 
     def process_event_success(self) -> None:
@@ -179,7 +179,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             reduction_inputs=self.reduction_inputs,
             reduction_end=str(end),
             reduction_start=start,
-            reduction_logs=logs[0:-3]  # Send every log except for the last 2.
+            reduction_logs=logs[0:-3],  # Send every log except for the last 2.
         )
 
     @staticmethod
