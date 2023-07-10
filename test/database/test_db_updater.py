@@ -123,6 +123,7 @@ class DBUpdaterTests(unittest.TestCase):
         reduction_script = mock.MagicMock()
         reduction_start = mock.MagicMock()
         reduction_end = mock.MagicMock()
+        reduction_logs = mock.MagicMock()
 
         self.db_updater.add_completed_run(
             db_reduction_id=db_reduction_id,
@@ -133,6 +134,7 @@ class DBUpdaterTests(unittest.TestCase):
             reduction_script=reduction_script,
             reduction_start=reduction_start,
             reduction_end=reduction_end,
+            reduction_logs=reduction_logs,
         )
 
         reduction_mock = self.mock_session.query(Reduction).filter_by(id=db_reduction_id).one()
@@ -146,6 +148,7 @@ class DBUpdaterTests(unittest.TestCase):
         self.assertEqual(reduction_mock.reduction_status_message, status_message)
         self.assertEqual(reduction_mock.reduction_start, reduction_start)
         self.assertEqual(reduction_mock.reduction_end, reduction_end)
+        self.assertEqual(reduction_mock.logs, reduction_logs)
 
         self.mock_session.commit.assert_has_calls([mock.call()])
         self.assertEqual(self.mock_session.commit.call_count, 1)
@@ -159,6 +162,7 @@ class DBUpdaterTests(unittest.TestCase):
         reduction_script = mock.MagicMock()
         reduction_start = mock.MagicMock()
         reduction_end = mock.MagicMock()
+        reduction_logs = mock.MagicMock()
         self.mock_session.query(Script).filter_by(script=reduction_script).first.return_value = None
 
         self.db_updater.add_completed_run(
@@ -170,6 +174,7 @@ class DBUpdaterTests(unittest.TestCase):
             reduction_script=reduction_script,
             reduction_start=reduction_start,
             reduction_end=reduction_end,
+            reduction_logs=reduction_logs,
         )
 
         script = Script(script=reduction_script)
@@ -182,6 +187,7 @@ class DBUpdaterTests(unittest.TestCase):
         self.assertEqual(reduction_mock.reduction_status_message, status_message)
         self.assertEqual(reduction_mock.reduction_start, reduction_start)
         self.assertEqual(reduction_mock.reduction_end, reduction_end)
+        self.assertEqual(reduction_mock.logs, reduction_logs)
 
         self.mock_session.commit.assert_has_calls([mock.call()])
         self.assertEqual(self.mock_session.commit.call_count, 1)
