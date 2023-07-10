@@ -110,14 +110,13 @@ class JobWatcherTest(unittest.TestCase):
     def test_process_event_success_grabs_pod_name_using_grab_pod_name_from_job_name_in_namespace(self, _):
         self.job_watcher.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value="pod_name")
         self.job_watcher.notify_kafka = mock.MagicMock()
-        self.job_watcher.get_logs = mock.MagicMock()
 
         self.job_watcher.process_event_success()
 
         self.job_watcher.grab_pod_name_from_job_name_in_namespace.assert_called_with(
             job_name=self.job_name, job_namespace=self.namespace
         )
-        self.assertEqual(self.job_watcher.grab_pod_name_from_job_name_in_namespace.call_count, 1)
+        self.assertEqual(self.job_watcher.grab_pod_name_from_job_name_in_namespace.call_count, 2)
 
     @mock.patch("job_controller.job_watcher.client")
     def test_process_event_success_grabs_pod_name_using_grab_pod_name_from_job_name_in_namespace_raises_when_none(
@@ -155,8 +154,6 @@ class JobWatcherTest(unittest.TestCase):
             reduction_inputs=self.reduction_inputs,
             reduction_start=k8s_client.CoreV1Api.return_value.read_namespaced_pod.return_value.status.start_time,
             reduction_end=str(None),
-            reduction_logs='4th to last\n3rd to last\n{"status": "SUCCESSFUL", "output_files": [], '
-            '"status_message": ""',
         )
 
     @mock.patch("job_controller.job_watcher.client")
@@ -182,19 +179,4 @@ class JobWatcherTest(unittest.TestCase):
             reduction_inputs=self.reduction_inputs,
             reduction_start=k8s_client.CoreV1Api.return_value.read_namespaced_pod.return_value.status.start_time,
             reduction_end=str(None),
-            reduction_logs='4th to last\n3rd to last\n{"status": Not valid json, "output_files": [], '
-            '"status_message": ""',
-        )
-
-    @mock.patch("job_controller.job_watcher.client")
-    def test_get_logs(self, client):
-        namespace = mock.MagicMock()
-        self.job_watcher.namespace = namespace
-        self.job_watcher.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value="pod_name")
-
-        return_value = self.job_watcher.get_logs()
-
-        self.assertEqual(return_value, str(client.CoreV1Api.return_value.read_namespaced_pod_log.return_value))
-        client.CoreV1Api.return_value.read_namespaced_pod_log.assert_called_once_with(
-            name="pod_name", namespace=namespace
         )

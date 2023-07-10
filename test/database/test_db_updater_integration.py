@@ -155,7 +155,6 @@ def test_add_completed_run(db_updater, session, run_fix, reduction_fix):
         "print()",
         "2023-04-24 14:50:11.000000",
         "2023-04-24 14:50:12.000000",
-        "logs",
     )
 
     with session() as session_:
@@ -172,4 +171,3 @@ def test_add_completed_run(db_updater, session, run_fix, reduction_fix):
     assert reduction.script.script == "print()"
     assert reduction.reduction_start == datetime(2023, 4, 24, 14, 50, 11)
     assert reduction.reduction_end == datetime(2023, 4, 24, 14, 50, 12)
-    assert reduction.logs == "logs"

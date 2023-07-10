@@ -107,27 +107,12 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 break
         return start_time, end_time
 
-    def get_logs(self) -> str:
-        """
-        Retrieves the logs from the job that is being watched, usually most useful after a job has finished.
-        :return: The entirety of the logs from the pod.
-        """
-        pod_name = self.grab_pod_name_from_job_name_in_namespace(job_name=self.job_name, job_namespace=self.namespace)
-        if pod_name is None:
-            raise TypeError(
-                f"Pod name can't be None, {self.job_name} name and {self.namespace} "
-                f"namespace returned None when looking for a pod."
-            )
-        v1_core = client.CoreV1Api()
-        return str(v1_core.read_namespaced_pod_log(name=pod_name, namespace=self.namespace))
-
     def process_event_failed(self, job: V1Job) -> None:
         """
         Process the event that failed, and notify kafka
         :param job: The job that has failed
         :return:
         """
-        logs = self.get_logs()
         message = job.status.conditions[0].message
         logger.info("Job %s has failed, with message: %s", self.job_name, message)
         start, end = self._find_start_and_end_of_job()
@@ -140,7 +125,6 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             reduction_inputs=self.reduction_inputs,
             reduction_end=str(end),
             reduction_start=start,
-            reduction_logs=logs[0:-2],  # Send every log except for the last 1.
         )
 
     def process_event_success(self) -> None:
@@ -148,7 +132,14 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         Process a successful event, grab the required data and logged output that will notify kafka
         :return:
         """
-        logs = self.get_logs()
+        pod_name = self.grab_pod_name_from_job_name_in_namespace(job_name=self.job_name, job_namespace=self.namespace)
+        if pod_name is None:
+            raise TypeError(
+                f"Pod name can't be None, {self.job_name} name and {self.namespace} "
+                f"namespace returned None when looking for a pod."
+            )
+        v1_core = client.CoreV1Api()
+        logs = v1_core.read_namespaced_pod_log(name=pod_name, namespace=self.namespace)
         output = logs.split("\n")[-2]  # Get second last line (last line is empty)
         logger.info("Job %s has been completed with output: %s", self.job_name, output)
         # Convert message from JSON string to python dict
@@ -183,7 +174,6 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             reduction_inputs=self.reduction_inputs,
             reduction_end=str(end),
             reduction_start=start,
-            reduction_logs=logs[0:-2],  # Send every log except for the last 1.
         )
 
     @staticmethod
