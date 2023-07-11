@@ -243,7 +243,7 @@ class DBUpdater:
             reduction = Reduction(
                 reduction_start=None,
                 reduction_end=None,
-                reduction_state=None,
+                reduction_state=State.NOT_STARTED,
                 reduction_inputs=reduction_inputs,
                 script_id=None,
                 reduction_outputs=None,

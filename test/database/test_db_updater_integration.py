@@ -74,7 +74,7 @@ def reduction_fix():
     return Reduction(
         reduction_start=None,
         reduction_end=None,
-        reduction_state=None,
+        reduction_state=State.NOT_STARTED,
         reduction_status_message=None,
         reduction_inputs={"ei": "auto"},
         id=1,
