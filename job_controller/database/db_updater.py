@@ -328,4 +328,5 @@ class DBUpdater:
                 textwrap.shorten(reduction_script, width=10, placeholder="..."),
             )
 
+
 # pylint: enable=too-many-arguments, too-many-locals
