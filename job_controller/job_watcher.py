@@ -140,11 +140,11 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 f"namespace returned None when looking for a pod."
             )
         v1_core = client.CoreV1Api()
-        logs = v1_core.read_namespaced_pod_log(name=pod_name, namespace=self.namespace)
-        output = logs.split("\n")[-2]  # Get second last line (last line is empty)
-        logger.info("Job %s has been completed with output: %s", self.job_name, output)
         # Convert message from JSON string to python dict
         try:
+            logs = v1_core.read_namespaced_pod_log(name=pod_name, namespace=self.namespace)
+            output = logs.split("\n")[-2]  # Get second last line (last line is empty)
+            logger.info("Job %s has been completed with output: %s", self.job_name, output)
             job_output = json.loads(output)
         except JSONDecodeError as exception:
             logger.error("Last message from job is not a JSON string")
