@@ -66,9 +66,10 @@ class JobWatcherTest(unittest.TestCase):
         self.job_watcher.watch()
 
         watch_.stream.assert_called_once_with(v1.list_job_for_all_namespaces)
-        logger.error.assert_called_once_with(
-            "Job watching failed due to an exception: %s", str(Exception("EVERYTHING IS ON FIRE"))
-        )
+        logger.error.assert_called_once()
+        logger.error.call_args_list[0]("JobWatcher for job %s failed", str(self.job_watcher.job_name))
+        logger.exception.assert_called_once()
+        logger.exception.call_args_list[0](Exception("EVERYTHING IS ON FIRE"))
 
     @mock.patch("job_controller.job_watcher.watch")
     @mock.patch("job_controller.job_watcher.client")

@@ -70,7 +70,8 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             for event in watch_.stream(v1.list_job_for_all_namespaces):
                 self.process_event(event)
         except Exception as exception:  # pylint: disable=broad-exception-caught
-            logger.error("Job watching failed due to an exception: %s", str(exception))
+            logger.error("JobWatcher for job %s failed", self.job_name)
+            logger.exception(exception)
             return
         logger.info("Ending JobWatcher for job %s", self.job_name)
 
@@ -139,14 +140,15 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 f"namespace returned None when looking for a pod."
             )
         v1_core = client.CoreV1Api()
-        logs = v1_core.read_namespaced_pod_log(name=pod_name, namespace=self.namespace)
-        output = logs.split("\n")[-2]  # Get second last line (last line is empty)
-        logger.info("Job %s has been completed with output: %s", self.job_name, output)
         # Convert message from JSON string to python dict
         try:
+            logs = v1_core.read_namespaced_pod_log(name=pod_name, namespace=self.namespace)
+            output = logs.split("\n")[-2]  # Get second last line (last line is empty)
+            logger.info("Job %s has been completed with output: %s", self.job_name, output)
             job_output = json.loads(output)
         except JSONDecodeError as exception:
-            logger.error("Last message from job is not a JSON string: %s", str(exception))
+            logger.error("Last message from job is not a JSON string")
+            logger.exception(exception)
             job_output = {
                 "status": "Unsuccessful",
                 "output_files": [],
@@ -154,6 +156,15 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             }
         except TypeError as exception:
             logger.error("Last message from job is not a string: %s", str(exception))
+            logger.exception(exception)
+            job_output = {
+                "status": "Unsuccessful",
+                "output_files": [],
+                "status_message": f"{str(exception)}",
+            }
+        except Exception as exception:
+            logger.error("There was a problem recovering the job output")
+            logger.exception(exception)
             job_output = {
                 "status": "Unsuccessful",
                 "output_files": [],
