@@ -50,6 +50,7 @@ class JobControllerTest(unittest.TestCase):
     def test_on_message_calls_spawn_pod_with_message(self, create_ceph_path, acquire_script, _):
         message = mock.MagicMock()
         path = "/tmp/ceph/mari/RBNumber/RB000001/autoreduced"
+        acquire_script.return_value = ("script", "hash")
         create_ceph_path.return_value = path
         if not os.path.exists(path):
             os.makedirs(path)
@@ -96,6 +97,7 @@ class JobControllerTest(unittest.TestCase):
     def test_on_message_sends_the_job_to_the_job_watch(self, ensure_ceph_path_exists, _, acquire_script):
         message = mock.MagicMock()
         self.joc.create_job_watcher = mock.MagicMock()
+        acquire_script.return_value = ("script", "hash")
 
         self.joc.on_message(message)
 
@@ -103,7 +105,8 @@ class JobControllerTest(unittest.TestCase):
             self.joc.job_creator.spawn_job.return_value,
             ensure_ceph_path_exists.return_value,
             self.joc.db_updater.add_detected_run.return_value,
-            acquire_script.return_value,
+            acquire_script.return_value[0],
+            acquire_script.return_value[1],
             message["additional_values"],
         )
 
