@@ -53,5 +53,6 @@ class TopicConsumer:
                 logger.info("Message decoded as: %s", message_obj)
                 self.message_callback(message_obj)
             except json.JSONDecodeError as exception:
-                logger.error("Error attempting to decode JSON: %s", str(exception))
+                logger.error("Error attempting to decode JSON: %s", message_str)
+                logger.exception(exception)
                 continue
