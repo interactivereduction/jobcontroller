@@ -165,7 +165,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 "output_files": [],
                 "status_message": f"{str(exception)}",
             }
-        except Exception as exception:
+        except Exception as exception:  # pylint:disable=broad-exception-caught
             logger.error("There was a problem recovering the job output")
             logger.exception(exception)
             job_output = {
