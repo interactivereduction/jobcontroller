@@ -17,6 +17,7 @@ class JobWatcherTest(unittest.TestCase):
         self.db_updater = mock.MagicMock()
         self.db_reduction_id = mock.MagicMock()
         self.job_script = mock.MagicMock()
+        self.script_sha = mock.MagicMock()
         self.reduction_inputs = mock.MagicMock()
         self.job_watcher = JobWatcher(
             job_name=self.job_name,
@@ -26,12 +27,13 @@ class JobWatcherTest(unittest.TestCase):
             db_updater=self.db_updater,
             db_reduction_id=self.db_reduction_id,
             job_script=self.job_script,
+            script_sha=self.script_sha,
             reduction_inputs=self.reduction_inputs,
         )
 
     @mock.patch("job_controller.job_watcher.load_kubernetes_config")
     def test_ensure_init_load_kube_config(self, load_kube_config):
-        JobWatcher("", "", "", "", mock.MagicMock(), 1, "", {})
+        JobWatcher("", "", "", "", mock.MagicMock(), 1, "", "", {})
 
         load_kube_config.assert_called_once_with()
 

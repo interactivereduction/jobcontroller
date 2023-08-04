@@ -123,6 +123,7 @@ class DBUpdaterTests(unittest.TestCase):
         reduction_script = mock.MagicMock()
         reduction_start = mock.MagicMock()
         reduction_end = mock.MagicMock()
+        script_sha = mock.MagicMock()
 
         self.db_updater.add_completed_run(
             db_reduction_id=db_reduction_id,
@@ -131,6 +132,7 @@ class DBUpdaterTests(unittest.TestCase):
             status_message=status_message,
             output_files=output_files,
             reduction_script=reduction_script,
+            script_sha=script_sha,
             reduction_start=reduction_start,
             reduction_end=reduction_end,
         )
@@ -159,6 +161,7 @@ class DBUpdaterTests(unittest.TestCase):
         reduction_script = mock.MagicMock()
         reduction_start = mock.MagicMock()
         reduction_end = mock.MagicMock()
+        script_sha = mock.MagicMock()
         self.mock_session.query(Script).filter_by(script=reduction_script).first.return_value = None
 
         self.db_updater.add_completed_run(
@@ -168,6 +171,7 @@ class DBUpdaterTests(unittest.TestCase):
             status_message=status_message,
             output_files=output_files,
             reduction_script=reduction_script,
+            script_sha=script_sha,
             reduction_start=reduction_start,
             reduction_end=reduction_end,
         )
