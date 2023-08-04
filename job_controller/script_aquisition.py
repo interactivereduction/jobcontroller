@@ -1,14 +1,14 @@
 """
 Contains the functions for acquiring a script for the reduction workflow
 """
+from typing import Tuple
 import requests
 
 
-def acquire_script(ir_api_host: str, reduction_id: int, instrument: str) -> str:
+def acquire_script(ir_api_host: str, reduction_id: int, instrument: str) -> Tuple[str, str]:
     """
-    The aim of this function is to acquire the script from the IR-API by using the passed filename and ip. The
-    responsibility for figuring out what script is what, and doing the substitution is on the API to figure out.
-    :return: str, the script for the reduction
+    Given the IR-API host, reduction_id, and instrument, return the script object required for reduction
+    :return: Script, the script for the reduction
     """
     # Currently unused but will be used in the future
     response = requests.get(
@@ -19,7 +19,8 @@ def acquire_script(ir_api_host: str, reduction_id: int, instrument: str) -> str:
         # raise_for_status will only raise a httperror for a httperror, this will raise for everything else that isn't
         # a 200 or a script return
         raise RuntimeError(f"Script was never returned, due to unexpected status code {response.status_code}")
-    return apply_json_output(response.json()["value"])
+    response_object = response.json()
+    return apply_json_output(response_object["value"]), response_object.get("sha", None)
 
 
 def apply_json_output(script: str) -> str:
