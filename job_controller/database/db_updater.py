@@ -74,6 +74,7 @@ class Script(Base):  # type: ignore[valid-type, misc]
     __tablename__ = "scripts"
     id = Column(Integer, primary_key=True, autoincrement=True)
     script = Column(String, unique=True)
+    sha = Column(String, nullable=True)
     reductions = relationship("Reduction", back_populates="script")
 
     def __eq__(self, other: Any) -> bool:
@@ -277,6 +278,7 @@ class DBUpdater:
         status_message: str,
         output_files: List[str],
         reduction_script: str,
+        script_sha: str,
         reduction_start: str,
         reduction_end: str,
     ) -> None:
@@ -289,6 +291,7 @@ class DBUpdater:
         example was unsuccessful or an error, it would have the reason/error message.
         :param output_files: The files output from the reduction job
         :param reduction_script: The script used in the reduction
+        :param script_sha: The git sha of the script used in reduction
         :param reduction_start: The time the pod running the reduction started working
         :param reduction_end: The time the pod running the reduction stopped working
         :return:
@@ -306,7 +309,7 @@ class DBUpdater:
         with self.session_maker_func() as session:
             script = session.query(Script).filter_by(script=reduction_script).first()
             if script is None:
-                script = Script(script=reduction_script)
+                script = Script(script=reduction_script, sha=script_sha)
 
             reduction = session.query(Reduction).filter_by(id=db_reduction_id).one()
             reduction.reduction_state = state

@@ -10,7 +10,6 @@ def acquire_script(ir_api_host: str, reduction_id: int, instrument: str) -> Tupl
     Given the IR-API host, reduction_id, and instrument, return the script object required for reduction
     :return: Script, the script for the reduction
     """
-    # Currently unused but will be used in the future
     response = requests.get(
         f"http://{ir_api_host}/instrument/{instrument}/script?reduction_id={reduction_id}", timeout=30
     )
