@@ -27,6 +27,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         db_updater: DBUpdater,
         db_reduction_id: int,
         job_script: str,
+        script_sha: str,
         reduction_inputs: Dict[str, Any],
     ):
         self.job_name = job_name
@@ -36,6 +37,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         self.db_updater = db_updater
         self.db_reduction_id = db_reduction_id
         self.job_script = job_script
+        self.script_sha = script_sha
         self.reduction_inputs = reduction_inputs
         load_kubernetes_config()  # Should already be called in job creator, this is a defensive call.
 
@@ -126,6 +128,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             reduction_inputs=self.reduction_inputs,
             reduction_end=str(end),
             reduction_start=start,
+            script_sha=self.script_sha,
         )
 
     def process_event_success(self) -> None:
@@ -162,7 +165,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 "output_files": [],
                 "status_message": f"{str(exception)}",
             }
-        except Exception as exception:
+        except Exception as exception:  # pylint:disable=broad-exception-caught
             logger.error("There was a problem recovering the job output")
             logger.exception(exception)
             job_output = {
@@ -185,6 +188,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             reduction_inputs=self.reduction_inputs,
             reduction_end=str(end),
             reduction_start=start,
+            script_sha=self.script_sha,
         )
 
     @staticmethod

@@ -153,6 +153,7 @@ def test_add_completed_run(db_updater, session, run_fix, reduction_fix):
         "status message",
         ["file 1", "file 2"],
         "print()",
+        "some sha",
         "2023-04-24 14:50:11.000000",
         "2023-04-24 14:50:12.000000",
     )

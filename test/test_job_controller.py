@@ -69,6 +69,7 @@ class JobControllerTest(unittest.IsolatedAsyncioTestCase):
     def test_on_message_calls_spawn_pod_with_message(self, create_ceph_path, acquire_script, _):
         message = mock.MagicMock()
         path = "/tmp/ceph/mari/RBNumber/RB000001/autoreduced"
+        acquire_script.return_value = ("script", "hash")
         create_ceph_path.return_value = path
         if not os.path.exists(path):
             os.makedirs(path)
@@ -79,7 +80,7 @@ class JobControllerTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn(
             f"run-{Path(message['filepath']).stem}", self.joc.job_creator.spawn_job.call_args.kwargs["job_name"]
         )
-        self.assertEqual(self.joc.job_creator.spawn_job.call_args.kwargs["script"], acquire_script.return_value)
+        self.assertEqual(self.joc.job_creator.spawn_job.call_args.kwargs["script"], acquire_script.return_value[0])
         self.assertEqual(self.joc.job_creator.spawn_job.call_args.kwargs["ceph_path"], create_ceph_path.return_value)
         os.removedirs(path)
 
@@ -112,9 +113,10 @@ class JobControllerTest(unittest.IsolatedAsyncioTestCase):
     @mock.patch("job_controller.main.acquire_script")
     @mock.patch("job_controller.main.create_ceph_path")
     @mock.patch("job_controller.main.ensure_ceph_path_exists")
-    def test_on_message_sends_the_job_to_the_job_watch(self, ensure_ceph_path_exists, _, aquire_script):
+    def test_on_message_sends_the_job_to_the_job_watch(self, ensure_ceph_path_exists, _, acquire_script):
         message = mock.MagicMock()
         self.joc.create_job_watcher = mock.MagicMock()
+        acquire_script.return_value = ("script", "hash")
 
         self.joc.on_message(message)
 
@@ -122,7 +124,8 @@ class JobControllerTest(unittest.IsolatedAsyncioTestCase):
             self.joc.job_creator.spawn_job.return_value,
             ensure_ceph_path_exists.return_value,
             self.joc.db_updater.add_detected_run.return_value,
-            aquire_script.return_value,
+            acquire_script.return_value[0],
+            acquire_script.return_value[1],
             message["additional_values"],
         )
 
@@ -147,6 +150,7 @@ class JobControllerTest(unittest.IsolatedAsyncioTestCase):
             ceph_path="/path/to/ceph/folder/for/output",
             db_reduction_id=1,
             job_script="print('script')",
+            script_sha="some sha",
             reduction_inputs={},
         )
 
