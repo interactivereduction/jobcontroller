@@ -191,7 +191,8 @@ class DBUpdater:
         reduction_inputs: Dict[str, Any],
     ) -> int:
         """
-        This function submits data to the database from what is initially available on detected-runs kafka topic
+        This function submits data to the database from what is initially available on detected-runs message broker
+        station/topic
         :param filename: the filename of the run that needs to be reduced
         :param title: The title of the run file
         :param instrument_name: The name of the instrument for the run
@@ -279,7 +280,8 @@ class DBUpdater:
         reduction_end: str,
     ) -> None:
         """
-        This function submits data to the database from what is initially available on completed-runs kafka topic
+        This function submits data to the database from what is initially available on completed-runs message broker
+        station/topic
         :param db_reduction_id: The ID for the reduction row in the reduction table
         :param reduction_inputs: The inputs used in the reduction script by the IR-API
         :param state: The state of how the run ended

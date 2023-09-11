@@ -8,15 +8,17 @@ import uuid
 from pathlib import Path
 from typing import Dict, Any
 
+import asyncio
+
 from job_controller.database.db_updater import DBUpdater
 from job_controller.job_watcher import JobWatcher
 from job_controller.job_creator import JobCreator
 from job_controller.script_aquisition import acquire_script
-from job_controller.topic_consumer import TopicConsumer
+from job_controller.station_consumer import create_station_consumer
 from job_controller.utils import create_ceph_path, logger, ensure_ceph_path_exists
 
 
-class JobController:
+class JobController:  # pylint: disable=too-many-instance-attributes
     """
     This is the JobController class that will communicate between the consumer and the kubernetes API, it effectively
     functions as a main class.
@@ -31,11 +33,20 @@ class JobController:
             raise OSError("RUNNER_SHA not set in the environment, please add it.")
         self.db_updater = DBUpdater(ip=db_ip, username=db_username, password=db_password)
         self.ir_api_host = os.environ.get("IR_API", "ir-api-service.ir.svc.cluster.local:80")
-        self.kafka_ip = os.environ.get("KAFKA_IP", "")
+        self.broker_ip = os.environ.get("BROKER_IP", "")
         self.reduce_user_id = os.environ.get("REDUCE_USER_ID", "")
-        self.consumer = TopicConsumer(self.on_message, broker_ip=self.kafka_ip)
+        self.consumer_username = os.environ.get("CONSUMER_USERNAME", "")
+        self.consumer_password = os.environ.get("CONSUMER_PASSWORD", "")
         self.job_creator = JobCreator(runner_sha=runner_sha)
         self.ir_k8s_api = "ir-jobs"
+
+    async def _init(self) -> None:
+        self.consumer = await create_station_consumer(  # pylint: disable=attribute-defined-outside-init
+            self.on_message,
+            broker_ip=self.broker_ip,
+            username=self.consumer_username,
+            password=self.consumer_password,
+        )
 
     def on_message(self, message: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
         """
@@ -98,7 +109,7 @@ class JobController:
     ) -> None:
         """
         Start a thread with a pod manager to maintain looking at these pods that have been created, checking for it
-        to finish every 1 millisecond, when it dies, do the job of sending a message to the kafka topic determining
+        to finish every 1 millisecond, when it dies, do the job of sending a message to the message broker determining
         the end of the runstate, and the output result.
         :param job_name: The name of the job that was created by the k8s api
         :param ceph_path: The path that was mounted in the container for the jobs that were created
@@ -111,7 +122,7 @@ class JobController:
         watcher = JobWatcher(
             job_name,
             self.ir_k8s_api,
-            self.kafka_ip,
+            self.broker_ip,
             ceph_path,
             self.db_updater,
             db_reduction_id,
@@ -121,19 +132,27 @@ class JobController:
         )
         threading.Thread(target=watcher.watch).start()
 
-    def run(self) -> None:
+    async def run(self) -> None:
         """
         This is effectively the main method of the program and starts the consumer
         """
-        self.consumer.start_consuming()
+        await self.consumer.start_consuming()
+
+
+async def run_jobcontroller() -> None:
+    """
+    This is the async function that will run the jobcontroller
+    """
+    job_controller = JobController()
+    await job_controller._init()  # pylint: disable=protected-access
+    await job_controller.run()
 
 
 def main() -> None:
     """
-    This is the main function that will run the entire software
+    This is the function that runs the JobController software suite
     """
-    job_controller = JobController()
-    job_controller.run()
+    asyncio.run(run_jobcontroller())
 
 
 if __name__ == "__main__":

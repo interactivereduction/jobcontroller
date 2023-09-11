@@ -1,5 +1,5 @@
 """
-Watch a kubernetes job, and when it ends notify a kafka topic
+Watch a kubernetes job, and when it ends notify a message broker station/topic
 """
 import json
 from json import JSONDecodeError
@@ -15,7 +15,7 @@ from job_controller.utils import logger, load_kubernetes_config
 
 class JobWatcher:  # pylint: disable=too-many-instance-attributes
     """
-    Watch a kubernetes job, and when it ends notify a kafka topic
+    Watch a kubernetes job, and when it ends notify a message broker station/topic
     """
 
     def __init__(  # pylint: disable=too-many-arguments
@@ -62,7 +62,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
     def watch(self) -> None:
         """
         This is the main function responsible for watching a job, and it's responsible for calling the function that
-        will notify kafka.
+        will notify the message broker.
         :return:
         """
         logger.info("Starting JobWatcher for job %s, and in namespace: %s", self.job_name, self.namespace)
@@ -112,7 +112,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
 
     def process_event_failed(self, job: V1Job) -> None:
         """
-        Process the event that failed, and notify kafka
+        Process the event that failed, and notify the message broker
         :param job: The job that has failed
         :return:
         """
@@ -133,7 +133,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
 
     def process_event_success(self) -> None:
         """
-        Process a successful event, grab the required data and logged output that will notify kafka
+        Process a successful event, grab the required data and logged output that will notify the message broker
         :return:
         """
         pod_name = self.grab_pod_name_from_job_name_in_namespace(job_name=self.job_name, job_namespace=self.namespace)
