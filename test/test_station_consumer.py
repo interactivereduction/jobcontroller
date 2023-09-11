@@ -37,7 +37,7 @@ class StationConsumerTest(asynctest.TestCase):
             )
 
             memphis().consumer.assert_called_once_with(
-                station_name="requested-jobs",
+                station_name="scheduled-jobs",
                 consumer_name="jobcontroller",
                 consumer_group="jobcontrollers",
                 generate_random_suffix=True,
@@ -52,7 +52,7 @@ class StationConsumerTest(asynctest.TestCase):
             memphis.MemphisError = MemphisError
 
             async def return_error(station_name, consumer_name, consumer_group, generate_random_suffix):
-                assert station_name == "requested-jobs"
+                assert station_name == "scheduled-jobs"
                 assert consumer_name == "jobcontroller"
                 assert consumer_group == "jobcontrollers"
                 assert generate_random_suffix
