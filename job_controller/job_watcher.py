@@ -27,6 +27,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         db_updater: DBUpdater,
         db_reduction_id: int,
         job_script: str,
+        script_sha: str,
         reduction_inputs: Dict[str, Any],
     ):
         self.job_name = job_name
@@ -36,6 +37,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         self.db_updater = db_updater
         self.db_reduction_id = db_reduction_id
         self.job_script = job_script
+        self.script_sha = script_sha
         self.reduction_inputs = reduction_inputs
         load_kubernetes_config()  # Should already be called in job creator, this is a defensive call.
 
@@ -70,7 +72,8 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             for event in watch_.stream(v1.list_job_for_all_namespaces):
                 self.process_event(event)
         except Exception as exception:  # pylint: disable=broad-exception-caught
-            logger.error("Job watching failed due to an exception: %s", str(exception))
+            logger.error("JobWatcher for job %s failed", self.job_name)
+            logger.exception(exception)
             return
         logger.info("Ending JobWatcher for job %s", self.job_name)
 
@@ -107,27 +110,12 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 break
         return start_time, end_time
 
-    def get_logs(self) -> str:
-        """
-        Retrieves the logs from the job that is being watched, usually most useful after a job has finished.
-        :return: The entirety of the logs from the pod.
-        """
-        pod_name = self.grab_pod_name_from_job_name_in_namespace(job_name=self.job_name, job_namespace=self.namespace)
-        if pod_name is None:
-            raise TypeError(
-                f"Pod name can't be None, {self.job_name} name and {self.namespace} "
-                f"namespace returned None when looking for a pod."
-            )
-        v1_core = client.CoreV1Api()
-        return str(v1_core.read_namespaced_pod_log(name=pod_name, namespace=self.namespace))
-
     def process_event_failed(self, job: V1Job) -> None:
         """
         Process the event that failed, and notify kafka
         :param job: The job that has failed
         :return:
         """
-        logs = self.get_logs()
         message = job.status.conditions[0].message
         logger.info("Job %s has failed, with message: %s", self.job_name, message)
         start, end = self._find_start_and_end_of_job()
@@ -140,7 +128,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             reduction_inputs=self.reduction_inputs,
             reduction_end=str(end),
             reduction_start=start,
-            reduction_logs=logs[0:-2],  # Send every log except for the last 1.
+            script_sha=self.script_sha,
         )
 
     def process_event_success(self) -> None:
@@ -148,14 +136,22 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         Process a successful event, grab the required data and logged output that will notify kafka
         :return:
         """
-        logs = self.get_logs()
-        output = logs.split("\n")[-2]  # Get second last line (last line is empty)
-        logger.info("Job %s has been completed with output: %s", self.job_name, output)
+        pod_name = self.grab_pod_name_from_job_name_in_namespace(job_name=self.job_name, job_namespace=self.namespace)
+        if pod_name is None:
+            raise TypeError(
+                f"Pod name can't be None, {self.job_name} name and {self.namespace} "
+                f"namespace returned None when looking for a pod."
+            )
+        v1_core = client.CoreV1Api()
         # Convert message from JSON string to python dict
         try:
+            logs = v1_core.read_namespaced_pod_log(name=pod_name, namespace=self.namespace)
+            output = logs.split("\n")[-2]  # Get second last line (last line is empty)
+            logger.info("Job %s has been completed with output: %s", self.job_name, output)
             job_output = json.loads(output)
         except JSONDecodeError as exception:
-            logger.error("Last message from job is not a JSON string: %s", str(exception))
+            logger.error("Last message from job is not a JSON string")
+            logger.exception(exception)
             job_output = {
                 "status": "Unsuccessful",
                 "output_files": [],
@@ -163,6 +159,15 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             }
         except TypeError as exception:
             logger.error("Last message from job is not a string: %s", str(exception))
+            logger.exception(exception)
+            job_output = {
+                "status": "Unsuccessful",
+                "output_files": [],
+                "status_message": f"{str(exception)}",
+            }
+        except Exception as exception:  # pylint:disable=broad-exception-caught
+            logger.error("There was a problem recovering the job output")
+            logger.exception(exception)
             job_output = {
                 "status": "Unsuccessful",
                 "output_files": [],
@@ -183,7 +188,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             reduction_inputs=self.reduction_inputs,
             reduction_end=str(end),
             reduction_start=start,
-            reduction_logs=logs[0:-2],  # Send every log except for the last 1.
+            script_sha=self.script_sha,
         )
 
     @staticmethod

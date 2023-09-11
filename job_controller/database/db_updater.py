@@ -74,6 +74,7 @@ class Script(Base):  # type: ignore[valid-type, misc]
     __tablename__ = "scripts"
     id = Column(Integer, primary_key=True, autoincrement=True)
     script = Column(String, unique=True)
+    sha = Column(String, nullable=True)
     reductions = relationship("Reduction", back_populates="script")
 
     def __eq__(self, other: Any) -> bool:
@@ -101,7 +102,6 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
     script = relationship("Script", back_populates="reductions")
     reduction_outputs = Column(String)
     run_reduction_relationship = relationship("RunReduction", back_populates="reduction_relationship")
-    logs = Column(String)
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Reduction):
@@ -113,7 +113,6 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
                 and self.reduction_inputs == other.reduction_inputs
                 and self.script_id == other.script_id
                 and self.reduction_outputs == other.reduction_outputs
-                and self.logs == other.logs
             )
         return False
 
@@ -122,7 +121,7 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
             f"<Reduction(id={self.id}, reduction_start={self.reduction_start}, reduction_end={self.reduction_end},"
             f" reduction_state={self.reduction_state}, reduction_status_message={self.reduction_status_message},"
             f" reduction_inputs={self.reduction_inputs}, script_id={self.script_id},"
-            f" reduction_outputs={self.reduction_outputs}), logs={str(self.logs)[0:20]}>"
+            f" reduction_outputs={self.reduction_outputs})>"
         )
 
 
@@ -176,10 +175,6 @@ class DBUpdater:
         connection_string = f"postgresql+psycopg2://{username}:{password}@{ip}:5432/interactive-reduction"
         engine = create_engine(connection_string, poolclass=QueuePool, pool_size=20, pool_pre_ping=True)
         self.session_maker_func = sessionmaker(bind=engine)
-        self.runs_table = Run()
-        self.reductions_table = Reduction()
-        self.runs_reductions_table = RunReduction()
-        self.script_table = Script()
 
     # pylint: disable=too-many-arguments, too-many-locals
     def add_detected_run(
@@ -243,7 +238,7 @@ class DBUpdater:
             reduction = Reduction(
                 reduction_start=None,
                 reduction_end=None,
-                reduction_state=None,
+                reduction_state=State.NOT_STARTED,
                 reduction_inputs=reduction_inputs,
                 script_id=None,
                 reduction_outputs=None,
@@ -279,9 +274,9 @@ class DBUpdater:
         status_message: str,
         output_files: List[str],
         reduction_script: str,
+        script_sha: str,
         reduction_start: str,
         reduction_end: str,
-        reduction_logs: str,
     ) -> None:
         """
         This function submits data to the database from what is initially available on completed-runs kafka topic
@@ -292,27 +287,25 @@ class DBUpdater:
         example was unsuccessful or an error, it would have the reason/error message.
         :param output_files: The files output from the reduction job
         :param reduction_script: The script used in the reduction
+        :param script_sha: The git sha of the script used in reduction
         :param reduction_start: The time the pod running the reduction started working
         :param reduction_end: The time the pod running the reduction stopped working
-        :param reduction_logs: The logs that were created by the run, will be useful for later review by both us and
-        users.
         :return:
         """
         logger.info(
             "Submitting completed-run to the database: {id: %s, reduction_inputs: %s, state: %s, "
-            "status_message: %s, output_files: %s, reduction_script: %s, logs: %s}",
+            "status_message: %s, output_files: %s, reduction_script: %s}",
             db_reduction_id,
             reduction_inputs,
             str(state),
             status_message,
             output_files,
-            textwrap.shorten(reduction_script, width=20, placeholder="..."),
-            textwrap.shorten(reduction_logs, width=20, placeholder="..."),
+            textwrap.shorten(reduction_script, width=10, placeholder="..."),
         )
         with self.session_maker_func() as session:
             script = session.query(Script).filter_by(script=reduction_script).first()
             if script is None:
-                script = Script(script=reduction_script)
+                script = Script(script=reduction_script, sha=script_sha)
 
             reduction = session.query(Reduction).filter_by(id=db_reduction_id).one()
             reduction.reduction_state = state
@@ -322,18 +315,16 @@ class DBUpdater:
             reduction.reduction_status_message = status_message
             reduction.reduction_start = reduction_start
             reduction.reduction_end = reduction_end
-            reduction.logs = reduction_logs
             session.commit()
             logger.info(
                 "Submitted completed-run to the database successfully: {id: %s, reduction_inputs: %s, state: %s, "
-                "status_message: %s, output_files: %s, reduction_script: %s, reduction_logs: %s}",
+                "status_message: %s, output_files: %s, reduction_script: %s}",
                 db_reduction_id,
                 reduction_inputs,
                 str(state),
                 status_message,
                 output_files,
-                textwrap.shorten(reduction_script, width=20, placeholder="..."),
-                textwrap.shorten(reduction_logs, width=20, placeholder="..."),
+                textwrap.shorten(reduction_script, width=10, placeholder="..."),
             )
 
 

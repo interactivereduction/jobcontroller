@@ -11,16 +11,19 @@ class ScriptAquisitionTest(unittest.TestCase):
     def test_acquire_script_success(self, mock_requests):
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"value": "some value"}
+        mock_response.json.return_value = {"value": "some value", "sha": "some sha"}
         mock_requests.get.return_value = mock_response
 
         out = acquire_script("", 1, "")
-        assert out == (
+
+        expected_value = (
             "some value\n"
             "import json\n"
             "\n"
             "print(json.dumps({'status': 'Successful', 'status_message': '', 'output_files': output}))\n"
-        )
+        ), "some sha"
+
+        assert out == expected_value
 
     @patch("job_controller.script_aquisition.requests")
     def test_acquire_script_failure(self, mock_requests):

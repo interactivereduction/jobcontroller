@@ -74,7 +74,7 @@ def reduction_fix():
     return Reduction(
         reduction_start=None,
         reduction_end=None,
-        reduction_state=None,
+        reduction_state=State.NOT_STARTED,
         reduction_status_message=None,
         reduction_inputs={"ei": "auto"},
         id=1,
@@ -153,9 +153,9 @@ def test_add_completed_run(db_updater, session, run_fix, reduction_fix):
         "status message",
         ["file 1", "file 2"],
         "print()",
+        "some sha",
         "2023-04-24 14:50:11.000000",
         "2023-04-24 14:50:12.000000",
-        "logs",
     )
 
     with session() as session_:
@@ -172,4 +172,3 @@ def test_add_completed_run(db_updater, session, run_fix, reduction_fix):
     assert reduction.script.script == "print()"
     assert reduction.reduction_start == datetime(2023, 4, 24, 14, 50, 11)
     assert reduction.reduction_end == datetime(2023, 4, 24, 14, 50, 12)
-    assert reduction.logs == "logs"

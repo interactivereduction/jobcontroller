@@ -17,6 +17,7 @@ class JobWatcherTest(unittest.TestCase):
         self.db_updater = mock.MagicMock()
         self.db_reduction_id = mock.MagicMock()
         self.job_script = mock.MagicMock()
+        self.script_sha = mock.MagicMock()
         self.reduction_inputs = mock.MagicMock()
         self.job_watcher = JobWatcher(
             job_name=self.job_name,
@@ -26,12 +27,13 @@ class JobWatcherTest(unittest.TestCase):
             db_updater=self.db_updater,
             db_reduction_id=self.db_reduction_id,
             job_script=self.job_script,
+            script_sha=self.script_sha,
             reduction_inputs=self.reduction_inputs,
         )
 
     @mock.patch("job_controller.job_watcher.load_kubernetes_config")
     def test_ensure_init_load_kube_config(self, load_kube_config):
-        JobWatcher("", "", "", "", mock.MagicMock(), 1, "", {})
+        JobWatcher("", "", "", "", mock.MagicMock(), 1, "", "", {})
 
         load_kube_config.assert_called_once_with()
 
@@ -66,9 +68,10 @@ class JobWatcherTest(unittest.TestCase):
         self.job_watcher.watch()
 
         watch_.stream.assert_called_once_with(v1.list_job_for_all_namespaces)
-        logger.error.assert_called_once_with(
-            "Job watching failed due to an exception: %s", str(Exception("EVERYTHING IS ON FIRE"))
-        )
+        logger.error.assert_called_once()
+        logger.error.call_args_list[0]("JobWatcher for job %s failed", str(self.job_watcher.job_name))
+        logger.exception.assert_called_once()
+        logger.exception.call_args_list[0](Exception("EVERYTHING IS ON FIRE"))
 
     @mock.patch("job_controller.job_watcher.watch")
     @mock.patch("job_controller.job_watcher.client")
@@ -110,14 +113,13 @@ class JobWatcherTest(unittest.TestCase):
     def test_process_event_success_grabs_pod_name_using_grab_pod_name_from_job_name_in_namespace(self, _):
         self.job_watcher.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value="pod_name")
         self.job_watcher.notify_kafka = mock.MagicMock()
-        self.job_watcher.get_logs = mock.MagicMock()
 
         self.job_watcher.process_event_success()
 
         self.job_watcher.grab_pod_name_from_job_name_in_namespace.assert_called_with(
             job_name=self.job_name, job_namespace=self.namespace
         )
-        self.assertEqual(self.job_watcher.grab_pod_name_from_job_name_in_namespace.call_count, 1)
+        self.assertEqual(self.job_watcher.grab_pod_name_from_job_name_in_namespace.call_count, 2)
 
     @mock.patch("job_controller.job_watcher.client")
     def test_process_event_success_grabs_pod_name_using_grab_pod_name_from_job_name_in_namespace_raises_when_none(
@@ -152,11 +154,10 @@ class JobWatcherTest(unittest.TestCase):
             status_message="",
             output_files=[],
             reduction_script=self.job_script,
+            script_sha=self.script_sha,
             reduction_inputs=self.reduction_inputs,
             reduction_start=k8s_client.CoreV1Api.return_value.read_namespaced_pod.return_value.status.start_time,
             reduction_end=str(None),
-            reduction_logs='4th to last\n3rd to last\n{"status": "SUCCESSFUL", "output_files": [], '
-            '"status_message": ""',
         )
 
     @mock.patch("job_controller.job_watcher.client")
@@ -179,22 +180,8 @@ class JobWatcherTest(unittest.TestCase):
             status_message="Expecting value: line 1 column 12 (char 11)",
             output_files=[],
             reduction_script=self.job_script,
+            script_sha=self.script_sha,
             reduction_inputs=self.reduction_inputs,
             reduction_start=k8s_client.CoreV1Api.return_value.read_namespaced_pod.return_value.status.start_time,
             reduction_end=str(None),
-            reduction_logs='4th to last\n3rd to last\n{"status": Not valid json, "output_files": [], '
-            '"status_message": ""',
-        )
-
-    @mock.patch("job_controller.job_watcher.client")
-    def test_get_logs(self, client):
-        namespace = mock.MagicMock()
-        self.job_watcher.namespace = namespace
-        self.job_watcher.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value="pod_name")
-
-        return_value = self.job_watcher.get_logs()
-
-        self.assertEqual(return_value, str(client.CoreV1Api.return_value.read_namespaced_pod_log.return_value))
-        client.CoreV1Api.return_value.read_namespaced_pod_log.assert_called_once_with(
-            name="pod_name", namespace=namespace
         )

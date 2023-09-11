@@ -70,7 +70,7 @@ class JobController:
                 raw_frames=raw_frames,
                 reduction_inputs=additional_values,
             )
-            script = acquire_script(
+            script, script_sha = acquire_script(
                 ir_api_host=self.ir_api_host,
                 reduction_id=db_reduction_id,
                 instrument=instrument_name,
@@ -83,12 +83,18 @@ class JobController:
                 job_namespace=self.ir_k8s_api,
                 user_id=self.reduce_user_id,
             )
-            self.create_job_watcher(job, ceph_path, db_reduction_id, script, additional_values)
+            self.create_job_watcher(job, ceph_path, db_reduction_id, script, script_sha, additional_values)
         except Exception as exception:  # pylint: disable=broad-exception-caught
             logger.exception(exception)
 
     def create_job_watcher(  # pylint: disable=too-many-arguments
-        self, job_name: str, ceph_path: str, db_reduction_id: int, job_script: str, reduction_inputs: Dict[str, Any]
+        self,
+        job_name: str,
+        ceph_path: str,
+        db_reduction_id: int,
+        job_script: str,
+        script_sha: str,
+        reduction_inputs: Dict[str, Any],
     ) -> None:
         """
         Start a thread with a pod manager to maintain looking at these pods that have been created, checking for it
@@ -98,6 +104,7 @@ class JobController:
         :param ceph_path: The path that was mounted in the container for the jobs that were created
         :param db_reduction_id: The ID for the reduction's row in the database
         :param job_script: The script used in the reduction
+        :param script_sha: The git sha of the script
         :param reduction_inputs: The inputs that the reduction is using.
         :return:
         """
@@ -109,6 +116,7 @@ class JobController:
             self.db_updater,
             db_reduction_id,
             job_script,
+            script_sha,
             reduction_inputs,
         )
         threading.Thread(target=watcher.watch).start()
