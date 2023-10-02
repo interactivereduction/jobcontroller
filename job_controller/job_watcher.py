@@ -21,6 +21,8 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
     def __init__(  # pylint: disable=too-many-arguments
         self,
         job_name: str,
+        pv_name: str,
+        pvc_name: str,
         namespace: str,
         kafka_ip: str,
         ceph_path: str,
@@ -31,6 +33,8 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         reduction_inputs: Dict[str, Any],
     ):
         self.job_name = job_name
+        self.pv_name = pv_name
+        self.pvc_name = pvc_name
         self.namespace = namespace
         self.kafka_ip = kafka_ip
         self.ceph_path = ceph_path
@@ -92,6 +96,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             elif job.status.failed == 1:
                 # Job failed
                 self.process_event_failed(job)
+        self.clean_up_pv_and_pvc()
 
     def _find_start_and_end_of_job(self) -> Tuple[Any, Optional[Any]]:
         pod_name = self.grab_pod_name_from_job_name_in_namespace(job_name=self.job_name, job_namespace=self.namespace)
@@ -197,3 +202,9 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             logger.error("Delivery failed for message %s: %s", msg.value(), err)
         else:
             logger.info("Delivered message to %s [%s]", msg.topic(), msg.partition())
+
+    def clean_up_pv_and_pvc(self):
+        logger.info("Removing PV %s and PVC %s", self.pv_name, self.pvc_name)
+        client.CoreV1Api().delete_persistent_volume(self.pv_name)
+        client.CoreV1Api().delete_namespaced_persistent_volume_claim(self.pvc_name, self.namespace)
+        logger.info("PV %s and PVC %s have been removed", self.pv_name, self.pvc_name)

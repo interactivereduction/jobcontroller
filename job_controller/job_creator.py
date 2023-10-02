@@ -1,6 +1,8 @@
 """
 Communicate to a kubernetes API to spawn a pod with the metadata passed by message to the RunMaker
 """
+from typing import Tuple
+
 from kubernetes import client  # type: ignore[import]
 
 from job_controller.utils import logger, load_kubernetes_config
@@ -21,7 +23,8 @@ class JobCreator:
         self.runner_sha = runner_sha
 
     # pylint: disable=too-many-arguments
-    def spawn_job(self, job_name: str, script: str, ceph_path: str, job_namespace: str, user_id: str) -> str:
+    def spawn_job(self, job_name: str, script: str, ceph_path: str, job_namespace: str, user_id: str) -> Tuple[str,
+                                                                                                         str, str]:
         """
         Takes the meta_data from the message and uses that dictionary for generating the deployment of the pod.
         :param job_name: The name that the job should be created as
@@ -31,8 +34,24 @@ class JobCreator:
         :param job_namespace: The namespace that the job should be created inside of
         :param user_id: The autoreduce user's user id, this is used primarily for mounting CEPH and will ensure that
         the containers have permission to use the directories required for outputting data.
-        :return: The response for the actual job's name
+        :return: A tuple containing the (job's name, PV name, and PVCs name)
         """
+        logger.info("Creating PV and PVC for: %s", job_name)
+        archive_pv = client.V1PersistentVolume(
+            api_version="",
+            kind="",
+            metadata={},
+            spec={},
+        )
+        archive_pv_response = client.CoreV1Api().create_persistent_volume(archive_pv)
+        archive_pvc = client.V1PersistentVolumeClaim(
+            api_version="",
+            kind="",
+            metadata={},
+            spec={},
+        )
+        archive_pvc_response = client.CoreV1Api().create_namespaced_persistent_volume_claim(namespace=job_namespace,
+                                                                                            body=archive_pvc)
         logger.info("Spawning job: %s", job_name)
         job = client.V1Job(
             api_version="batch/v1",
@@ -67,5 +86,7 @@ class JobCreator:
                 },
             },
         )
-        response = client.BatchV1Api().create_namespaced_job(namespace=job_namespace, body=job)
-        return str(response.metadata.name)
+
+        job_response = client.BatchV1Api().create_namespaced_job(namespace=job_namespace, body=job)
+        return str(job_response.metadata.name), str(archive_pv_response.metadata.name), \
+               str(archive_pvc_response.metadata.name)
