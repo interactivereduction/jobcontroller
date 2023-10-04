@@ -24,7 +24,7 @@ class JobCreator:
 
     # pylint: disable=too-many-arguments
     def spawn_job(self, job_name: str, script: str, ceph_path: str, job_namespace: str, user_id: str) -> Tuple[str,
-                                                                                                         str, str]:
+                                                                                                               str, str]:
         """
         Takes the meta_data from the message and uses that dictionary for generating the deployment of the pod.
         :param job_name: The name that the job should be created as
@@ -38,17 +38,50 @@ class JobCreator:
         """
         logger.info("Creating PV and PVC for: %s", job_name)
         archive_pv = client.V1PersistentVolume(
-            api_version="",
-            kind="",
-            metadata={},
-            spec={},
+            api_version="v1",
+            kind="PersistentVolume",
+            metadata={
+                "annotations": {
+                    "pv.kubernetes.io/provisioned-by": "smb.csi.k8s.io",
+                },
+                "name": f"{job_name}-archive-pv-smb"
+            },
+            spec={
+                "capacity": {
+                    "storage": "1000Gi"
+                },
+                "accessModes": ["ReadOnlyMany"],
+                "persistentVolumeReclaimPolicy": "Retain",
+                "storageClassName": "smb",
+                "mountOptions": ["noserverino", "_netdev", "vers=2.1", "uid=1001", "gid=1001", "dir_mode=0555",
+                                 "file_mode=0444"],
+                "csi": {
+                    "driver": "smb.csi.k8s.io",
+                    "readOnly": True,
+                    "volumeHandle": "archive.ir.svc.cluster.local/share##archive",
+                    "volumeAttributes": {"source": "//isisdatar55.isis.cclrc.ac.uk/inst$/"},
+                    "nodeStageSecretRef": {
+                        "name": "archive-creds",
+                        "namespace": "ir",
+                    }
+                }
+            },
         )
         archive_pv_response = client.CoreV1Api().create_persistent_volume(archive_pv)
         archive_pvc = client.V1PersistentVolumeClaim(
-            api_version="",
-            kind="",
-            metadata={},
-            spec={},
+            api_version="v1",
+            kind="PersistentVolumeClaim",
+            metadata={"name": f"{job_name}-archive-pvc"},
+            spec={
+                "accessModes": ["ReadOnlyMany"],
+                "resources": {
+                    "requests": {
+                        "storage": "1000Gi"
+                    }
+                },
+                "volumeName": f"{job_name}-archive-pv-smb",
+                "storageClassName": "smb"
+            },
         )
         archive_pvc_response = client.CoreV1Api().create_namespaced_persistent_volume_claim(namespace=job_namespace,
                                                                                             body=archive_pvc)
