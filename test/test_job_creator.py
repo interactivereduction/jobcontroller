@@ -48,8 +48,13 @@ class JobCreatorTest(unittest.TestCase):
         self.assertIn({"name": "ceph-mount", "mountPath": "/output"}, pod_container["volumeMounts"])
 
         volumes = k8s_pod_call_kwargs["spec"]["template"]["spec"]["volumes"]
-        self.assertIn({"name": "archive-mount", "persistentVolumeClaim": {"claimName": f"{job_name}-archive-pvc",
-                                                                          "readOnly": True}}, volumes)
+        self.assertIn(
+            {
+                "name": "archive-mount",
+                "persistentVolumeClaim": {"claimName": f"{job_name}-archive-pvc", "readOnly": True},
+            },
+            volumes,
+        )
         self.assertIn({"name": "ceph-mount", "hostPath": {"type": "Directory", "path": ceph_path}}, volumes)
         self.assertEqual(len(volumes), 2)
 
@@ -112,8 +117,10 @@ class JobCreatorTest(unittest.TestCase):
         self.assertEqual(spec["accessModes"], ["ReadOnlyMany"])
         self.assertEqual(spec["persistentVolumeReclaimPolicy"], "Retain")
         self.assertEqual(spec["storageClassName"], "smb")
-        self.assertListEqual(spec["mountOptions"], ["noserverino", "_netdev", "vers=2.1", "uid=1001", "gid=1001",
-                                                    "dir_mode=0555", "file_mode=0444"])
+        self.assertListEqual(
+            spec["mountOptions"],
+            ["noserverino", "_netdev", "vers=2.1", "uid=1001", "gid=1001", "dir_mode=0555", "file_mode=0444"],
+        )
 
         csi = spec["csi"]
         self.assertEqual(csi["driver"], "smb.csi.k8s.io")
