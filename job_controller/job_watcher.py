@@ -216,11 +216,11 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         else:
             logger.info("PV %s does not exist", self.pv_name)
         logger.info("Check PVC %s exists", self.pvc_name)
-        if self.pvc_name in \
-                [ii.metadata.name for ii in v1.list_namespaced_persistent_volume_claim(self.namespace).items]:
+        if self.pvc_name in [
+            ii.metadata.name for ii in v1.list_namespaced_persistent_volume_claim(self.namespace).items
+        ]:
             logger.info("PVC %s exists, removing", self.pvc_name)
             v1.delete_namespaced_persistent_volume_claim(self.pvc_name, self.namespace)
             logger.info("PVC %s removed", self.pvc_name)
         else:
             logger.info("PVC %s does not exist", self.pvc_name)
-

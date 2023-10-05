@@ -101,7 +101,7 @@ class JobController:  # pylint: disable=too-many-instance-attributes
     def create_job_watcher(  # pylint: disable=too-many-arguments
         self,
         job_name: str,
-        pv: str, 
+        pv: str,
         pvc: str,
         ceph_path: str,
         db_reduction_id: int,
