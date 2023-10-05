@@ -113,7 +113,7 @@ class JobCreator:
                         "tolerations": [{"key": "queue-worker", "effect": "NoSchedule", "operator": "Exists"}],
                         "volumes": [
                             {"name": "archive-mount",
-                             "persistentVolumeClaim": {"claimName": f"{job_name}-archive-pv-smb", "readOnly": True}},
+                             "persistentVolumeClaim": {"claimName": f"{job_name}-archive-pvc", "readOnly": True}},
                             {"name": "ceph-mount", "hostPath": {"type": "Directory", "path": ceph_path}},
                         ],
                     },

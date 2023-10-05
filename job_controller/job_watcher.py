@@ -78,6 +78,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         except Exception as exception:  # pylint: disable=broad-exception-caught
             logger.error("JobWatcher for job %s failed", self.job_name)
             logger.exception(exception)
+            self.clean_up_pv_and_pvc()
             return
         logger.info("Ending JobWatcher for job %s", self.job_name)
 
@@ -93,10 +94,11 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             if job.status.succeeded == 1:
                 # Job passed
                 self.process_event_success()
+                self.clean_up_pv_and_pvc()
             elif job.status.failed == 1:
                 # Job failed
                 self.process_event_failed(job)
-        self.clean_up_pv_and_pvc()
+                self.clean_up_pv_and_pvc()
 
     def _find_start_and_end_of_job(self) -> Tuple[Any, Optional[Any]]:
         pod_name = self.grab_pod_name_from_job_name_in_namespace(job_name=self.job_name, job_namespace=self.namespace)
@@ -204,7 +206,21 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             logger.info("Delivered message to %s [%s]", msg.topic(), msg.partition())
 
     def clean_up_pv_and_pvc(self):
-        logger.info("Removing PV %s and PVC %s", self.pv_name, self.pvc_name)
-        client.CoreV1Api().delete_persistent_volume(self.pv_name)
-        client.CoreV1Api().delete_namespaced_persistent_volume_claim(self.pvc_name, self.namespace)
-        logger.info("PV %s and PVC %s have been removed", self.pv_name, self.pvc_name)
+        logger.info("Removing PVCs and PVs")
+        v1 = client.CoreV1Api()
+        logger.info("Check PV %s exists", self.pv_name)
+        if self.pv_name in [ii.metadata.name for ii in v1.list_persistent_volume().items]:
+            logger.info("PV %s exists, removing", self.pv_name)
+            v1.delete_persistent_volume(self.pv_name)
+            logger.info("PV %s removed", self.pv_name)
+        else:
+            logger.info("PV %s does not exist", self.pv_name)
+        logger.info("Check PVC %s exists", self.pvc_name)
+        if self.pvc_name in \
+                [ii.metadata.name for ii in v1.list_namespaced_persistent_volume_claim(self.namespace).items]:
+            logger.info("PVC %s exists, removing", self.pvc_name)
+            v1.delete_namespaced_persistent_volume_claim(self.pvc_name, self.namespace)
+            logger.info("PVC %s removed", self.pvc_name)
+        else:
+            logger.info("PVC %s does not exist", self.pvc_name)
+
