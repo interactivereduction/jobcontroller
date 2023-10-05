@@ -11,6 +11,8 @@ class JobWatcherTest(unittest.TestCase):
     @mock.patch("job_controller.job_watcher.load_kubernetes_config")
     def setUp(self, _):
         self.job_name = mock.MagicMock()
+        self.pv_name = mock.MagicMock()
+        self.pvc_name = mock.MagicMock()
         self.namespace = mock.MagicMock()
         self.kafka_ip = mock.MagicMock()
         self.ceph_path = mock.MagicMock()
@@ -21,6 +23,8 @@ class JobWatcherTest(unittest.TestCase):
         self.reduction_inputs = mock.MagicMock()
         self.job_watcher = JobWatcher(
             job_name=self.job_name,
+            pv_name=self.pv_name,
+            pvc_name=self.pvc_name,
             namespace=self.namespace,
             kafka_ip=self.kafka_ip,
             ceph_path=self.ceph_path,
@@ -33,7 +37,7 @@ class JobWatcherTest(unittest.TestCase):
 
     @mock.patch("job_controller.job_watcher.load_kubernetes_config")
     def test_ensure_init_load_kube_config(self, load_kube_config):
-        JobWatcher("", "", "", "", mock.MagicMock(), 1, "", "", {})
+        JobWatcher("", "", "", "", "", "", mock.MagicMock(), 1, "", "", {})
 
         load_kube_config.assert_called_once_with()
 

@@ -115,13 +115,19 @@ class JobControllerTest(unittest.IsolatedAsyncioTestCase):
     @mock.patch("job_controller.main.ensure_ceph_path_exists")
     def test_on_message_sends_the_job_to_the_job_watch(self, ensure_ceph_path_exists, _, acquire_script):
         message = mock.MagicMock()
+        job_name = mock.MagicMock()
+        pv_name = mock.MagicMock()
+        pvc_name = mock.MagicMock()
+        self.joc.job_creator.spawn_job = mock.MagicMock(return_value=(job_name, pv_name, pvc_name))
         self.joc.create_job_watcher = mock.MagicMock()
         acquire_script.return_value = ("script", "hash")
 
         self.joc.on_message(message)
 
         self.joc.create_job_watcher.assert_called_once_with(
-            self.joc.job_creator.spawn_job.return_value,
+            job_name,
+            pv_name,
+            pvc_name,
             ensure_ceph_path_exists.return_value,
             self.joc.db_updater.add_detected_run.return_value,
             acquire_script.return_value[0],
@@ -147,6 +153,8 @@ class JobControllerTest(unittest.IsolatedAsyncioTestCase):
     def test_create_job_watchers_spins_off_new_thread_with_jobwatcher(self, threading, job_watcher):
         self.joc.create_job_watcher(
             job_name="job",
+            pv="pv",
+            pvc="pvc",
             ceph_path="/path/to/ceph/folder/for/output",
             db_reduction_id=1,
             job_script="print('script')",
