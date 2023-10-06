@@ -216,4 +216,6 @@ class JobWatcherTest(unittest.TestCase):
 
         self.job_watcher.clean_up_pv_and_pvc()
 
-        client.CoreV1Api.return_value.delete_namespaced_persistent_volume_claim.assert_called_once_with(pvc_name, self.job_watcher.namespace)
+        client.CoreV1Api.return_value.delete_namespaced_persistent_volume_claim.assert_called_once_with(
+            pvc_name, self.job_watcher.namespace
+        )
