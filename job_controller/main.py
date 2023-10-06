@@ -87,20 +87,22 @@ class JobController:  # pylint: disable=too-many-instance-attributes
                 instrument=instrument_name,
             )
             ceph_path = ensure_ceph_path_exists(ceph_path)
-            job = self.job_creator.spawn_job(
+            job, pv, pvc = self.job_creator.spawn_job(
                 job_name=job_name,
                 script=script,
                 ceph_path=ceph_path,
                 job_namespace=self.ir_k8s_api,
                 user_id=self.reduce_user_id,
             )
-            self.create_job_watcher(job, ceph_path, db_reduction_id, script, script_sha, additional_values)
+            self.create_job_watcher(job, pv, pvc, ceph_path, db_reduction_id, script, script_sha, additional_values)
         except Exception as exception:  # pylint: disable=broad-exception-caught
             logger.exception(exception)
 
     def create_job_watcher(  # pylint: disable=too-many-arguments
         self,
         job_name: str,
+        pv: str,
+        pvc: str,
         ceph_path: str,
         db_reduction_id: int,
         job_script: str,
@@ -121,6 +123,8 @@ class JobController:  # pylint: disable=too-many-instance-attributes
         """
         watcher = JobWatcher(
             job_name,
+            pv,
+            pvc,
             self.ir_k8s_api,
             self.broker_ip,
             ceph_path,

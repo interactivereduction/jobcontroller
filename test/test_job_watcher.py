@@ -11,6 +11,8 @@ class JobWatcherTest(unittest.TestCase):
     @mock.patch("job_controller.job_watcher.load_kubernetes_config")
     def setUp(self, _):
         self.job_name = mock.MagicMock()
+        self.pv_name = mock.MagicMock()
+        self.pvc_name = mock.MagicMock()
         self.namespace = mock.MagicMock()
         self.kafka_ip = mock.MagicMock()
         self.ceph_path = mock.MagicMock()
@@ -21,6 +23,8 @@ class JobWatcherTest(unittest.TestCase):
         self.reduction_inputs = mock.MagicMock()
         self.job_watcher = JobWatcher(
             job_name=self.job_name,
+            pv_name=self.pv_name,
+            pvc_name=self.pvc_name,
             namespace=self.namespace,
             kafka_ip=self.kafka_ip,
             ceph_path=self.ceph_path,
@@ -33,7 +37,7 @@ class JobWatcherTest(unittest.TestCase):
 
     @mock.patch("job_controller.job_watcher.load_kubernetes_config")
     def test_ensure_init_load_kube_config(self, load_kube_config):
-        JobWatcher("", "", "", "", mock.MagicMock(), 1, "", "", {})
+        JobWatcher("", "", "", "", "", "", mock.MagicMock(), 1, "", "", {})
 
         load_kube_config.assert_called_once_with()
 
@@ -93,10 +97,12 @@ class JobWatcherTest(unittest.TestCase):
         event.__getitem__.return_value.metadata.name = "mari0-asfn-132"
         event.__getitem__.return_value.status.succeeded = 1
         self.job_watcher.process_event_success = mock.MagicMock()
+        self.job_watcher.clean_up_pv_and_pvc = mock.MagicMock()
 
         self.job_watcher.process_event(event)
 
         self.job_watcher.process_event_success.assert_called_once_with()
+        self.job_watcher.clean_up_pv_and_pvc.assert_called_once_with()
 
     def test_process_event_on_failures_calls_failure(self):
         event = mock.MagicMock()
@@ -104,10 +110,12 @@ class JobWatcherTest(unittest.TestCase):
         event.__getitem__.return_value.metadata.name = "mari0-asfn-132"
         event.__getitem__.return_value.status.failed = 1
         self.job_watcher.process_event_failed = mock.MagicMock()
+        self.job_watcher.clean_up_pv_and_pvc = mock.MagicMock()
 
         self.job_watcher.process_event(event)
 
         self.job_watcher.process_event_failed.assert_called_once_with(event.__getitem__.return_value)
+        self.job_watcher.clean_up_pv_and_pvc.assert_called_once_with()
 
     @mock.patch("job_controller.job_watcher.client")
     def test_process_event_success_grabs_pod_name_using_grab_pod_name_from_job_name_in_namespace(self, _):
@@ -184,4 +192,30 @@ class JobWatcherTest(unittest.TestCase):
             reduction_inputs=self.reduction_inputs,
             reduction_start=k8s_client.CoreV1Api.return_value.read_namespaced_pod.return_value.status.start_time,
             reduction_end=str(None),
+        )
+
+    @mock.patch("job_controller.job_watcher.client")
+    def test_clean_up_pv_and_pvc_deletes_pv(self, client):
+        pv_name = str(mock.MagicMock())
+        pv = mock.MagicMock()
+        pv.metadata.name = pv_name
+        client.CoreV1Api.return_value.list_persistent_volume.return_value.items = [pv]
+        self.job_watcher.pv_name = pv_name
+
+        self.job_watcher.clean_up_pv_and_pvc()
+
+        client.CoreV1Api.return_value.delete_persistent_volume.assert_called_once_with(pv_name)
+
+    @mock.patch("job_controller.job_watcher.client")
+    def test_clean_up_pv_and_pvc_deletes_pvc(self, client):
+        pvc_name = str(mock.MagicMock())
+        pvc = mock.MagicMock()
+        pvc.metadata.name = pvc_name
+        client.CoreV1Api.return_value.list_namespaced_persistent_volume_claim.return_value.items = [pvc]
+        self.job_watcher.pvc_name = pvc_name
+
+        self.job_watcher.clean_up_pv_and_pvc()
+
+        client.CoreV1Api.return_value.delete_namespaced_persistent_volume_claim.assert_called_once_with(
+            pvc_name, self.job_watcher.namespace
         )

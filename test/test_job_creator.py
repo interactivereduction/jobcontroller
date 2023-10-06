@@ -48,7 +48,13 @@ class JobCreatorTest(unittest.TestCase):
         self.assertIn({"name": "ceph-mount", "mountPath": "/output"}, pod_container["volumeMounts"])
 
         volumes = k8s_pod_call_kwargs["spec"]["template"]["spec"]["volumes"]
-        self.assertIn({"name": "archive-mount", "hostPath": {"type": "Directory", "path": "/archive"}}, volumes)
+        self.assertIn(
+            {
+                "name": "archive-mount",
+                "persistentVolumeClaim": {"claimName": f"{job_name}-archive-pvc", "readOnly": True},
+            },
+            volumes,
+        )
         self.assertIn({"name": "ceph-mount", "hostPath": {"type": "Directory", "path": ceph_path}}, volumes)
         self.assertEqual(len(volumes), 2)
 
@@ -56,3 +62,70 @@ class JobCreatorTest(unittest.TestCase):
         self.assertEqual(
             kubernetes_client.BatchV1Api.return_value.create_namespaced_job.call_args.kwargs["namespace"], job_namespace
         )
+
+    @mock.patch("job_controller.job_creator.client")
+    @mock.patch("job_controller.job_creator.load_kubernetes_config")
+    def test_spawn_pod_creates_pvc_with_passed_values(self, _, kubernetes_client):
+        script = mock.MagicMock()
+        ceph_path = mock.MagicMock()
+        job_name = mock.MagicMock()
+        job_namespace = mock.MagicMock()
+        user_id = mock.MagicMock()
+        runner_sha = mock.MagicMock()
+        k8s = JobCreator(runner_sha)
+
+        k8s.spawn_job(
+            job_name=job_name, job_namespace=job_namespace, script=script, ceph_path=ceph_path, user_id=user_id
+        )
+
+        k8s_pod_call_kwargs = kubernetes_client.V1PersistentVolumeClaim.call_args_list[0].kwargs
+        self.assertEqual(k8s_pod_call_kwargs["kind"], "PersistentVolumeClaim")
+
+        metadata = k8s_pod_call_kwargs["metadata"]
+        self.assertEqual(metadata["name"], f"{job_name}-archive-pvc")
+
+        spec = k8s_pod_call_kwargs["spec"]
+        self.assertEqual(spec["accessModes"], ["ReadOnlyMany"])
+        self.assertEqual(spec["resources"]["requests"]["storage"], "1000Gi")
+        self.assertEqual(spec["volumeName"], f"{job_name}-archive-pv-smb")
+        self.assertEqual(spec["storageClassName"], "smb")
+
+    @mock.patch("job_controller.job_creator.client")
+    @mock.patch("job_controller.job_creator.load_kubernetes_config")
+    def test_spawn_pod_creates_pv_with_passed_values(self, _, kubernetes_client):
+        script = mock.MagicMock()
+        ceph_path = mock.MagicMock()
+        job_name = mock.MagicMock()
+        job_namespace = mock.MagicMock()
+        user_id = mock.MagicMock()
+        runner_sha = mock.MagicMock()
+        k8s = JobCreator(runner_sha)
+
+        k8s.spawn_job(
+            job_name=job_name, job_namespace=job_namespace, script=script, ceph_path=ceph_path, user_id=user_id
+        )
+
+        k8s_pod_call_kwargs = kubernetes_client.V1PersistentVolume.call_args_list[0].kwargs
+        self.assertEqual(k8s_pod_call_kwargs["kind"], "PersistentVolume")
+
+        metadata = k8s_pod_call_kwargs["metadata"]
+        self.assertEqual(metadata["annotations"]["pv.kubernetes.io/provisioned-by"], "smb.csi.k8s.io")
+        self.assertEqual(metadata["name"], f"{job_name}-archive-pv-smb")
+
+        spec = k8s_pod_call_kwargs["spec"]
+        self.assertEqual(spec["capacity"]["storage"], "1000Gi")
+        self.assertEqual(spec["accessModes"], ["ReadOnlyMany"])
+        self.assertEqual(spec["persistentVolumeReclaimPolicy"], "Retain")
+        self.assertEqual(spec["storageClassName"], "smb")
+        self.assertListEqual(
+            spec["mountOptions"],
+            ["noserverino", "_netdev", "vers=2.1", "uid=1001", "gid=1001", "dir_mode=0555", "file_mode=0444"],
+        )
+
+        csi = spec["csi"]
+        self.assertEqual(csi["driver"], "smb.csi.k8s.io")
+        self.assertEqual(csi["readOnly"], True)
+        self.assertEqual(csi["volumeHandle"], "archive.ir.svc.cluster.local/share##archive")
+        self.assertEqual(csi["volumeAttributes"]["source"], "//isisdatar55.isis.cclrc.ac.uk/inst$/")
+        self.assertEqual(csi["nodeStageSecretRef"]["name"], "archive-creds")
+        self.assertEqual(csi["nodeStageSecretRef"]["namespace"], "ir")
