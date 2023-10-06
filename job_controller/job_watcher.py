@@ -206,6 +206,10 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             logger.info("Delivered message to %s [%s]", msg.topic(), msg.partition())
 
     def clean_up_pv_and_pvc(self):
+        """
+        Clean up the PV and PVC created for the jobs
+        :return: None
+        """
         logger.info("Removing PVCs and PVs")
         v1 = client.CoreV1Api()
         logger.info("Check PV %s exists", self.pv_name)
