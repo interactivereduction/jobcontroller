@@ -16,8 +16,12 @@ class QueueConsumer:
     """
 
     def __init__(
-        self, message_callback: Callable[[Dict[str, str]], None], broker_ip: str, username: str, password: str,
-            queue_name: str
+        self,
+        message_callback: Callable[[Dict[str, str]], None],
+        broker_ip: str,
+        username: str,
+        password: str,
+        queue_name: str,
     ) -> None:
         self.message_callback = message_callback
         self.broker_ip = broker_ip

@@ -43,7 +43,7 @@ class JobController:  # pylint: disable=too-many-instance-attributes
             broker_ip=broker_ip,
             username=consumer_username,
             password=consumer_password,
-            queue_name=queue_name
+            queue_name=queue_name,
         )
 
     def on_message(self, message: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
