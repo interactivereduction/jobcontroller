@@ -39,9 +39,9 @@ class QueueConsumer:
         """
         self.connection = BlockingConnection(self.connection_parameters)
         self.channel = self.connection.channel()
-        self.channel.exchange_declare()
-        self.channel.queue_declare()
-        self.channel.queue_bind()
+        self.channel.exchange_declare(self.queue_name, exchange_type="direct", durable=True)
+        self.channel.queue_declare(self.queue_name, durable=True, arguments={"x-queue-type": "quorum"})
+        self.channel.queue_bind(self.queue_name, self.queue_name, routing_key="")
 
     def _message_handler(self, msg: str) -> None:
         """
