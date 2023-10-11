@@ -6,7 +6,7 @@ import asynctest
 import pytest
 from memphis import MemphisError
 
-from job_controller.station_consumer import create_station_consumer
+from job_controller.queue_consumer import create_station_consumer
 from test.utils import AwaitableNonAsyncMagicMock  # pylint: disable=wrong-import-order
 
 
