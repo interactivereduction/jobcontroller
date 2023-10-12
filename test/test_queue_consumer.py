@@ -1,10 +1,8 @@
 # pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring, protected-access
-import json
 import unittest
 from unittest import mock
 
-import pytest
-from pika import PlainCredentials, ConnectionParameters
+from pika import PlainCredentials
 
 from job_controller.queue_consumer import QueueConsumer
 

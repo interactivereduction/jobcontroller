@@ -5,9 +5,6 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-import pytest
-
-from test.utils import AwaitableNonAsyncMagicMock  # pylint: disable=wrong-import-order
 from job_controller.main import JobController
 
 
