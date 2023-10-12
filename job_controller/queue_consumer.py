@@ -18,16 +18,16 @@ class QueueConsumer:
     def __init__(
         self,
         message_callback: Callable[[Dict[str, str]], None],
-        broker_ip: str,
+        queue_host: str,
         username: str,
         password: str,
         queue_name: str,
     ) -> None:
         self.message_callback = message_callback
-        self.broker_ip = broker_ip
+        self.queue_host = queue_host
         self.queue_name = queue_name
         credentials = PlainCredentials(username=username, password=password)
-        self.connection_parameters = ConnectionParameters(broker_ip, 5672, credentials=credentials)
+        self.connection_parameters = ConnectionParameters(queue_host, 5672, credentials=credentials)
         self.connection = None
         self.channel = None
         self.connect_to_broker()
@@ -67,8 +67,6 @@ class QueueConsumer:
             if run_once:
                 run = False
             for mf, _, body in self.channel.consume(self.queue_name):
-                if not run:
-                    return
                 try:
                     self._message_handler(body.decode())
                 except Exception:

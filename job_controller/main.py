@@ -31,7 +31,7 @@ class JobController:  # pylint: disable=too-many-instance-attributes
             raise OSError("RUNNER_SHA not set in the environment, please add it.")
         self.db_updater = DBUpdater(ip=db_ip, username=db_username, password=db_password)
         self.ir_api_host = os.environ.get("IR_API", "ir-api-service.ir.svc.cluster.local:80")
-        broker_ip = os.environ.get("QUEUE_HOST", "")
+        queue_host = os.environ.get("QUEUE_HOST", "")
         queue_name = os.environ.get("INGRESS_QUEUE_NAME", "")
         consumer_username = os.environ.get("QUEUE_USER", "")
         consumer_password = os.environ.get("QUEUE_PASSWORD", "")
@@ -40,7 +40,7 @@ class JobController:  # pylint: disable=too-many-instance-attributes
         self.ir_k8s_api = "ir-jobs"
         self.consumer = QueueConsumer(  # pylint: disable=attribute-defined-outside-init
             self.on_message,
-            broker_ip=broker_ip,
+            queue_host=queue_host,
             username=consumer_username,
             password=consumer_password,
             queue_name=queue_name,
