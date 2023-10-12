@@ -38,10 +38,10 @@ class QueueConsumer:
         :return: None
         """
         self.connection = BlockingConnection(self.connection_parameters)
-        self.channel = self.connection.channel()
-        self.channel.exchange_declare(self.queue_name, exchange_type="direct", durable=True)
-        self.channel.queue_declare(self.queue_name, durable=True, arguments={"x-queue-type": "quorum"})
-        self.channel.queue_bind(self.queue_name, self.queue_name, routing_key="")
+        self.channel = self.connection.channel()  # type: ignore[attr-defined]
+        self.channel.exchange_declare(self.queue_name, exchange_type="direct", durable=True)  # type: ignore[attr-defined]
+        self.channel.queue_declare(self.queue_name, durable=True, arguments={"x-queue-type": "quorum"})  # type: ignore[attr-defined]
+        self.channel.queue_bind(self.queue_name, self.queue_name, routing_key="")  # type: ignore[attr-defined]
 
     def _message_handler(self, msg: str) -> None:
         """
@@ -66,10 +66,10 @@ class QueueConsumer:
         while run:
             if run_once:
                 run = False
-            for header, _, body in self.channel.consume(self.queue_name):
+            for header, _, body in self.channel.consume(self.queue_name):  # type: ignore[attr-defined]
                 try:
                     self._message_handler(body.decode())
                 except Exception:  # pylint: disable=broad-exception-caught
                     logger.warning("Problem processing message: %s", body)
                 finally:
-                    self.channel.basic_ack(header.delivery_tag)
+                    self.channel.basic_ack(header.delivery_tag)  # type: ignore[attr-defined]
