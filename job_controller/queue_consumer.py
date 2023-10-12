@@ -39,8 +39,10 @@ class QueueConsumer:
         """
         self.connection = BlockingConnection(self.connection_parameters)
         self.channel = self.connection.channel()  # type: ignore[attr-defined]
-        self.channel.exchange_declare(self.queue_name, exchange_type="direct", durable=True)  # type: ignore[attr-defined]
-        self.channel.queue_declare(self.queue_name, durable=True, arguments={"x-queue-type": "quorum"})  # type: ignore[attr-defined]
+        self.channel.exchange_declare(self.queue_name, exchange_type="direct", 
+                                      durable=True)  # type: ignore[attr-defined]
+        self.channel.queue_declare(self.queue_name, durable=True,
+                                   arguments={"x-queue-type": "quorum"})  # type: ignore[attr-defined]
         self.channel.queue_bind(self.queue_name, self.queue_name, routing_key="")  # type: ignore[attr-defined]
 
     def _message_handler(self, msg: str) -> None:
