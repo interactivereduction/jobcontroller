@@ -4,7 +4,7 @@ The module is aimed to consume from a station on Memphis using the create_statio
 import json
 from typing import Callable, Dict
 
-from pika import PlainCredentials, ConnectionParameters, BlockingConnection
+from pika import PlainCredentials, ConnectionParameters, BlockingConnection  # type: ignore[import]
 
 from job_controller.utils import logger
 
