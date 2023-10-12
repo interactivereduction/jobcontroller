@@ -24,7 +24,6 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         pv_name: str,
         pvc_name: str,
         namespace: str,
-        kafka_ip: str,
         ceph_path: str,
         db_updater: DBUpdater,
         db_reduction_id: int,
@@ -36,7 +35,6 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         self.pv_name = pv_name
         self.pvc_name = pvc_name
         self.namespace = namespace
-        self.kafka_ip = kafka_ip
         self.ceph_path = ceph_path
         self.db_updater = db_updater
         self.db_reduction_id = db_reduction_id

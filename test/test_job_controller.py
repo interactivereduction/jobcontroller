@@ -5,49 +5,67 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-import pytest
-
-from test.utils import AwaitableNonAsyncMagicMock  # pylint: disable=wrong-import-order
 from job_controller.main import JobController
 
 
 class JobControllerTest(unittest.IsolatedAsyncioTestCase):
     @mock.patch("job_controller.main.DBUpdater")
     @mock.patch("job_controller.main.JobCreator")
-    @mock.patch("job_controller.main.create_station_consumer")
+    @mock.patch("job_controller.main.QueueConsumer")
     def setUp(self, _, __, ___):
         os.environ["RUNNER_SHA"] = "literally_anything"
         self.joc = JobController()
 
+    def _test_queue_consumer_passed_vars(
+        self, queue_consumer, queue_host, consumer_username, consumer_password, queue_name
+    ):
+        queue_consumer.assert_called_with(
+            self.joc.on_message,
+            queue_host=queue_host,
+            username=consumer_username,
+            password=consumer_password,
+            queue_name=queue_name,
+        )
+
     @mock.patch("job_controller.main.JobCreator")
-    @mock.patch("job_controller.main.create_station_consumer")
-    def test_job_controller_gets_various_vars_from_env(self, _, __):
+    @mock.patch("job_controller.main.QueueConsumer")
+    def test_job_controller_gets_various_vars_from_env(self, queue_consumer, __):
+        self.joc = JobController()
         self.assertEqual(self.joc.ir_api_host, "ir-api-service.ir.svc.cluster.local:80")
-        self.assertEqual(self.joc.broker_ip, "")
         self.assertEqual(self.joc.reduce_user_id, "")
-        self.assertEqual(self.joc.consumer_username, "")
-        self.assertEqual(self.joc.consumer_password, "")
+
+        self._test_queue_consumer_passed_vars(
+            queue_consumer, queue_host="", consumer_username="", consumer_password="", queue_name=""
+        )
 
         os.environ["IR_API"] = "fancy_ir_api_ip"
-        os.environ["BROKER_IP"] = "random_ip_address_from_broke"
+        os.environ["QUEUE_HOST"] = "random_ip_address_from_broke"
         os.environ["REDUCE_USER_ID"] = "reduceuser"
-        os.environ["CONSUMER_USERNAME"] = "usernameforconsuming"
-        os.environ["CONSUMER_PASSWORD"] = "passwordforconsuming"
+        os.environ["QUEUE_USER"] = "usernameforconsuming"
+        os.environ["QUEUE_PASSWORD"] = "passwordforconsuming"
+        os.environ["INGRESS_QUEUE_NAME"] = "queue_name"
 
-        self.assertEqual(JobController().ir_api_host, "fancy_ir_api_ip")
-        self.assertEqual(JobController().broker_ip, "random_ip_address_from_broke")
-        self.assertEqual(JobController().reduce_user_id, "reduceuser")
-        self.assertEqual(JobController().consumer_username, "usernameforconsuming")
-        self.assertEqual(JobController().consumer_password, "passwordforconsuming")
+        self.joc = JobController()
+        self.assertEqual(self.joc.ir_api_host, "fancy_ir_api_ip")
+        self.assertEqual(self.joc.reduce_user_id, "reduceuser")
+
+        self._test_queue_consumer_passed_vars(
+            queue_consumer,
+            queue_host="random_ip_address_from_broke",
+            consumer_username="usernameforconsuming",
+            consumer_password="passwordforconsuming",
+            queue_name="queue_name",
+        )
 
         os.environ.pop("IR_API")
-        os.environ.pop("BROKER_IP")
+        os.environ.pop("QUEUE_HOST")
         os.environ.pop("REDUCE_USER_ID")
-        os.environ.pop("CONSUMER_USERNAME")
-        os.environ.pop("CONSUMER_PASSWORD")
+        os.environ.pop("QUEUE_USER")
+        os.environ.pop("QUEUE_PASSWORD")
+        os.environ.pop("INGRESS_QUEUE_NAME")
 
     @mock.patch("job_controller.main.JobCreator")
-    @mock.patch("job_controller.main.create_station_consumer")
+    @mock.patch("job_controller.main.QueueConsumer")
     def test_job_controller_gets_runner_sha_from_env(self, _, job_creator):
         runner_sha = mock.MagicMock()
         os.environ["RUNNER_SHA"] = str(runner_sha)
@@ -57,7 +75,7 @@ class JobControllerTest(unittest.IsolatedAsyncioTestCase):
         job_creator.assert_called_once_with(runner_sha=str(runner_sha))
 
     @mock.patch("job_controller.main.JobCreator")
-    @mock.patch("job_controller.main.create_station_consumer")
+    @mock.patch("job_controller.main.QueueConsumer")
     def test_job_controller_raises_if_runner_sha_not_set(self, _, __):
         os.environ.pop("RUNNER_SHA")
 
@@ -165,12 +183,9 @@ class JobControllerTest(unittest.IsolatedAsyncioTestCase):
         threading.Thread.assert_called_once_with(target=job_watcher.return_value.watch)
         threading.Thread.return_value.start.assert_called_once_with()
 
-    @pytest.mark.asyncio
-    async def test_run_class_starts_consuming(self):
-        with mock.patch("job_controller.station_consumer.Memphis", new=AwaitableNonAsyncMagicMock()) as _:
-            await self.joc._init()  # pylint: disable=protected-access
-            self.joc.consumer = AwaitableNonAsyncMagicMock()
+    def test_run_class_starts_consuming(self):
+        self.joc.consumer = mock.MagicMock()
 
-            await self.joc.run()
+        self.joc.run()
 
-            self.joc.consumer.start_consuming.assert_called_once_with()
+        self.joc.consumer.start_consuming.assert_called_once_with()

@@ -12,7 +12,9 @@ The software responsible for controlling the creation of Jobs, and notifying the
 
 Expects the following environment variables to be set when running:
 
-- "KAFKA_IP": ip to kafka broker
+- "QUEUE_HOST": ip to the message broker
+- "QUEUE_USER": The username for the message broker
+- "QUEUE_PASSWORD": The password for the message broker
 - "IR_IP": ip to the IR-API
 - "DB_IP": ip for database
 - "DB_USERNAME": Username for database
@@ -35,10 +37,8 @@ To install when developing:
 To demo and test. The easiest way to test JobController is running and functioning correctly, it requires a kubernetes cluster to interact with, and a kafka instance with a topic to listen to:
 
 - Follow these instructions to [create the cluster](https://github.com/interactivereduction/k8s#developing-using-a-local-cluster)
-- Download [kafka console producer and consumer](https://www.apache.org/dyn/closer.cgi?path=/kafka/3.4.0/kafka_2.13-3.4.0.tgz)
-- You need to wait for the kafka cluster to finish being ready, it's recommended to use k9s for this.
-- Follow these instructions to [create the local kafka producer](https://github.com/interactivereduction/k8s#creating-a-kafka-producer-for-connecting-to-the-cluster-and-sending-things-to-a-topic)
-- Using the producer send one of the messages in the example kafka messages section below.
+- Create the message broker, this is presently [RabbitMQ](https://www.rabbitmq.com/download.html)
+- Using the producer send one of the messages in the example messages section below.
 - The JobController should make a job and the job will make pods that will perform the work for the run
 
 # How to container
@@ -74,7 +74,7 @@ pytest .
 The integration tests require a postgres database to be running at localhost:5432 with a database called `interactive-reduction`
 the tables do not need to be created.
 
-Example kafka messages:
+# Example messages:
 ```
 {"filepath": "/test/path/to/MARI0.nxs", "experiment_number": "0", "instrument": "MARI"}
 {"filepath": "/test/path/to/MARI123456.nxs", "experiment_number": "1220474", "instrument": "MARI"}
