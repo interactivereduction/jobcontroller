@@ -44,13 +44,15 @@ class QueueConsumerTest(unittest.TestCase):
         self.assertEqual(channel, self.quc.channel)
 
         channel.exchange_declare.assert_called_once_with(self.queue_name, exchange_type="direct", durable=True)
-        channel.queue_declare.assert_called_once_with(self.queue_name, durable=True, arguments={"x-queue-type": "quorum"})
+        channel.queue_declare.assert_called_once_with(
+            self.queue_name, durable=True, arguments={"x-queue-type": "quorum"}
+        )
         channel.queue_bind.assert_called_once_with(self.queue_name, self.queue_name, routing_key="")
 
     @mock.patch("job_controller.queue_consumer.logger")
     def test_message_handler(self, logger):
-        message = "{\"help\": \"im stuck\"}"
-        msg_obj = {'help': 'im stuck'}
+        message = '{"help": "im stuck"}'
+        msg_obj = {"help": "im stuck"}
 
         self.quc._message_handler(message)
 
@@ -63,8 +65,9 @@ class QueueConsumerTest(unittest.TestCase):
 
         self.quc._message_handler(message)
 
-        logger.error.assert_called_once_with("Error attempting to decode JSON: %s",
-                                             "Extra data: line 1 column 3 (char 2)")
+        logger.error.assert_called_once_with(
+            "Error attempting to decode JSON: %s", "Extra data: line 1 column 3 (char 2)"
+        )
         self.message_callback.assert_not_called()
 
     def test_start_consumer(self):
@@ -83,6 +86,7 @@ class QueueConsumerTest(unittest.TestCase):
     def test_start_consumer_will_handle_exceptions_as_warnings(self, logger):
         def raise_exception():
             raise Exception("The worst exception!")
+
         self.quc._message_handler = mock.MagicMock(side_effect=raise_exception)
         body = mock.MagicMock()
         self.quc.channel.consume.return_value = [(mock.MagicMock(), mock.MagicMock(), body)]

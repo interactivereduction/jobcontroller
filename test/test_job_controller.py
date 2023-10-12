@@ -19,13 +19,16 @@ class JobControllerTest(unittest.IsolatedAsyncioTestCase):
         os.environ["RUNNER_SHA"] = "literally_anything"
         self.joc = JobController()
 
-    def _test_queue_consumer_passed_vars(self, queue_consumer, queue_host, consumer_username, consumer_password,
-                                         queue_name):
-        queue_consumer.assert_called_with(self.joc.on_message,
-                                          queue_host=queue_host,
-                                          username=consumer_username,
-                                          password=consumer_password,
-                                          queue_name=queue_name)
+    def _test_queue_consumer_passed_vars(
+        self, queue_consumer, queue_host, consumer_username, consumer_password, queue_name
+    ):
+        queue_consumer.assert_called_with(
+            self.joc.on_message,
+            queue_host=queue_host,
+            username=consumer_username,
+            password=consumer_password,
+            queue_name=queue_name,
+        )
 
     @mock.patch("job_controller.main.JobCreator")
     @mock.patch("job_controller.main.QueueConsumer")
@@ -34,8 +37,9 @@ class JobControllerTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.joc.ir_api_host, "ir-api-service.ir.svc.cluster.local:80")
         self.assertEqual(self.joc.reduce_user_id, "")
 
-        self._test_queue_consumer_passed_vars(queue_consumer, queue_host="", consumer_username="",
-                                              consumer_password="", queue_name="")
+        self._test_queue_consumer_passed_vars(
+            queue_consumer, queue_host="", consumer_username="", consumer_password="", queue_name=""
+        )
 
         os.environ["IR_API"] = "fancy_ir_api_ip"
         os.environ["QUEUE_HOST"] = "random_ip_address_from_broke"
@@ -48,9 +52,13 @@ class JobControllerTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.joc.ir_api_host, "fancy_ir_api_ip")
         self.assertEqual(self.joc.reduce_user_id, "reduceuser")
 
-        self._test_queue_consumer_passed_vars(queue_consumer, queue_host="random_ip_address_from_broke",
-                                              consumer_username="usernameforconsuming",
-                                              consumer_password="passwordforconsuming", queue_name="queue_name")
+        self._test_queue_consumer_passed_vars(
+            queue_consumer,
+            queue_host="random_ip_address_from_broke",
+            consumer_username="usernameforconsuming",
+            consumer_password="passwordforconsuming",
+            queue_name="queue_name",
+        )
 
         os.environ.pop("IR_API")
         os.environ.pop("QUEUE_HOST")
