@@ -66,10 +66,10 @@ class QueueConsumer:
         while run:
             if run_once:
                 run = False
-            for mf, _, body in self.channel.consume(self.queue_name):
+            for header, _, body in self.channel.consume(self.queue_name):
                 try:
                     self._message_handler(body.decode())
-                except Exception:
+                except Exception:  # pylint: disable=broad-exception-caught
                     logger.warning("Problem processing message: %s", body)
                 finally:
-                    self.channel.basic_ack(mf.delivery_tag)
+                    self.channel.basic_ack(header.delivery_tag)

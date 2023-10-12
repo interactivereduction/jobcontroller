@@ -1,4 +1,5 @@
-# pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring, protected-access
+# pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring, protected-access,
+# pylint: disable=too-many-instance-attributes
 import unittest
 from unittest import mock
 
@@ -70,20 +71,20 @@ class QueueConsumerTest(unittest.TestCase):
 
     def test_start_consumer(self):
         self.quc._message_handler = mock.MagicMock()
-        mf = mock.MagicMock()
+        header = mock.MagicMock()
         body = mock.MagicMock()
-        self.quc.channel.consume.return_value = [(mf, mock.MagicMock(), body)]
+        self.quc.channel.consume.return_value = [(header, mock.MagicMock(), body)]
 
         self.quc.start_consuming(run_once=True)
 
         self.quc.channel.consume.assert_called_once_with(self.quc.queue_name)
         self.quc._message_handler.assert_called_once_with(body.decode.return_value)
-        self.quc.channel.basic_ack.assert_called_once_with(mf.delivery_tag)
+        self.quc.channel.basic_ack.assert_called_once_with(header.delivery_tag)
 
     @mock.patch("job_controller.queue_consumer.logger")
     def test_start_consumer_will_handle_exceptions_as_warnings(self, logger):
         def raise_exception():
-            raise Exception("The worst exception!")
+            raise Exception("The worst exception!")  # pylint: disable=broad-exception-raised
 
         self.quc._message_handler = mock.MagicMock(side_effect=raise_exception)
         body = mock.MagicMock()
