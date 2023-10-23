@@ -32,7 +32,7 @@ code-inspection = [
     "mypy==1.5.1",
     "sqlalchemy-stubs==0.4",
     "job_controller[test]",
-    "types-requests==2.28.11.17"
+    "types-requests==2.31.0.10"
 ]
 
 [tool.setuptools]
