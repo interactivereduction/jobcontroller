@@ -34,7 +34,7 @@ To install when developing:
 
 - `pip install .[dev]`
 
-To demo and test. The easiest way to test JobController is running and functioning correctly, it requires a kubernetes cluster to interact with, and a kafka instance with a topic to listen to:
+To demo and test. The easiest way to test JobController is running and functioning correctly, it requires a kubernetes cluster to interact with, and a rabbitmq instance with a queue to listen to:
 
 - Follow these instructions to [create the cluster](https://github.com/interactivereduction/k8s#developing-using-a-local-cluster)
 - Create the message broker, this is presently [RabbitMQ](https://www.rabbitmq.com/download.html)
