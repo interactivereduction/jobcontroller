@@ -2,15 +2,17 @@
 Watch a kubernetes job, and when it ends notify a message broker station/topic
 """
 import json
+import os
 from json import JSONDecodeError
+from time import sleep
 from typing import Any, Optional, Dict, Tuple
 
 from kubernetes import client, watch  # type: ignore[import]
-from kubernetes.client import V1Job  # type: ignore[import]
+from kubernetes.client import V1Job, V1Pod  # type: ignore[import]
 
-from job_controller.database.state_enum import State
-from job_controller.database.db_updater import DBUpdater
-from job_controller.utils import logger, load_kubernetes_config
+from database.state_enum import State
+from database.db_updater import DBUpdater
+from utils import logger
 
 
 class JobWatcher:  # pylint: disable=too-many-instance-attributes
@@ -18,47 +20,24 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
     Watch a kubernetes job, and when it ends notify a message broker station/topic
     """
 
-    def __init__(  # pylint: disable=too-many-arguments
-        self,
-        job_name: str,
-        pv_name: str,
-        pvc_name: str,
-        namespace: str,
-        ceph_path: str,
-        db_updater: DBUpdater,
-        db_reduction_id: int,
-        job_script: str,
-        script_sha: str,
-        reduction_inputs: Dict[str, Any],
-    ):
-        self.job_name = job_name
-        self.pv_name = pv_name
-        self.pvc_name = pvc_name
-        self.namespace = namespace
-        self.ceph_path = ceph_path
+    def __init__(self, db_updater: DBUpdater):
+        self.namespace = os.environ.get("JOB_NAMESPACE", "ir")
         self.db_updater = db_updater
-        self.db_reduction_id = db_reduction_id
-        self.job_script = job_script
-        self.script_sha = script_sha
-        self.reduction_inputs = reduction_inputs
-        load_kubernetes_config()  # Should already be called in job creator, this is a defensive call.
 
-    @staticmethod
-    def grab_pod_name_from_job_name_in_namespace(job_name: str, job_namespace: str) -> Optional[str]:
+    def grab_pod_from_job(self, job: V1Job) -> Optional[V1Pod]:
         """
-        Find the name of the pod, given a job name and a job namespace, this works on the assumtion that there is
+        Find the name of the pod, given a job name, this works on the assumption that there is
         only 1 pod in a job.
-        :param job_name: The name of the job that contains the pod you want
-        :param job_namespace: The name of the namespace that the job lives in.
+        :param job: The job that contains the pod you want
         :return: str or None, the name of the pod for the passed values. Will return None when no pod could be found
         for passed values
         """
         v1 = client.CoreV1Api()
-        pods = v1.list_namespaced_pod(job_namespace)
+        pods = v1.list_namespaced_pod(self.namespace)
         for pod in pods.items:
             for owner in pod.metadata.owner_references:
-                if owner.name == job_name:
-                    return str(pod.metadata.name)
+                if owner.name == job.metadata.name:
+                    return pod
         return None
 
     def watch(self) -> None:
@@ -67,46 +46,65 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         will notify the message broker.
         :return:
         """
-        logger.info("Starting JobWatcher for job %s, and in namespace: %s", self.job_name, self.namespace)
-        v1 = client.BatchV1Api()
-        watch_ = watch.Watch()
-        try:
-            for event in watch_.stream(v1.list_job_for_all_namespaces):
-                self.process_event(event)
-        except Exception as exception:  # pylint: disable=broad-exception-caught
-            logger.error("JobWatcher for job %s failed", self.job_name)
-            logger.exception(exception)
-            self.clean_up_pv_and_pvc()
-            return
-        logger.info("Ending JobWatcher for job %s", self.job_name)
+        logger.info("Starting job watcher, scanning for new job states.")
+        while True:
+            job_list = client.BatchV1Api().list_namespaced_job(self.namespace)
+            for job in job_list.items:
+                if self.job_is_watchable(job):
+                    self.check_for_changes(job)
+            # Brief sleep to facilitate reducing CPU load and network bandwidth whilst largely maintaining performance
+            sleep(0.1)
 
-    def process_event(self, event: Dict[str, Any]) -> None:
+    def job_is_watchable(self, job):
         """
-        Process events from the stream, send the success to a success event processing, send failed to failed event
-        processing.
-        :param event: The event to be processed
+        Checks that the job is watchable by
+        :param job:
         :return:
         """
-        job = event["object"]
-        if self.job_name in job.metadata.name:
-            if job.status.succeeded == 1:
-                # Job passed
-                self.process_event_success()
-                self.clean_up_pv_and_pvc()
-            elif job.status.failed == 1:
-                # Job failed
-                self.process_event_failed(job)
-                self.clean_up_pv_and_pvc()
+        return ("run-" in job.metadata.name and
+                "reduction-id" in job.metadata.annotations)
 
-    def _find_start_and_end_of_job(self) -> Tuple[Any, Optional[Any]]:
-        pod_name = self.grab_pod_name_from_job_name_in_namespace(job_name=self.job_name, job_namespace=self.namespace)
-        if pod_name is None:
-            raise TypeError(
-                f"Pod name can't be None, {self.job_name} name and {self.namespace} "
-                f"namespace returned None when looking for a pod."
-            )
+
+    def check_for_changes(self, job):
+        """
+        Check if the job has a change for which we need to react to, such as the pod
+        having finished or a job has stalled.
+        :param job:
+        :return:
+        """
+        if self.check_for_job_complete(job):
+            pass
+        elif self.check_for_job_stalled(job):
+            pass
+
+    def check_for_job_complete(self, job: V1Job):
+        """
+        Checks if the job has finished by checking its status, if it failed then we
+        need to process that, and the same for a success.
+        :param job:
+        :return:
+        """
+        if job.status.succeeded == 1:
+            # Job has succeeded
+            self.process_job_success(job)
+        elif job.status.failed == 1:
+            # Job has failed
+            pass
+
+    def check_for_job_stalled(self, job):
+        """
+        The way this checks if a job is stalled is by checking if there has been no new
+        logs for the last 30 minutes, or if the job has taken over 6 hours to complete.
+        Long term 6 hours may be too little so this is configurable using the
+        environment variables.
+        :param job:
+        :return:
+        """
+        pass
+
+    def _find_start_and_end_of_pod(self, pod: V1Pod) -> Tuple[Any, Optional[Any]]:
         v1_core = client.CoreV1Api()
-        pod = v1_core.read_namespaced_pod(pod_name, self.namespace)
+        pod = v1_core.read_namespaced_pod(pod.metadata.name, self.namespace)
         start_time = pod.status.start_time
         end_time = None
         for container_status in pod.status.container_statuses:
@@ -115,7 +113,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 break
         return start_time, end_time
 
-    def process_event_failed(self, job: V1Job) -> None:
+    def process_job_failed(self, job: V1Job) -> None:
         """
         Process the event that failed, and notify the message broker
         :param job: The job that has failed
@@ -136,23 +134,26 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             script_sha=self.script_sha,
         )
 
-    def process_event_success(self) -> None:
+    def process_job_success(self, job: V1Job) -> None:
         """
         Process a successful event, grab the required data and logged output that will notify the message broker
         :return:
         """
-        pod_name = self.grab_pod_name_from_job_name_in_namespace(job_name=self.job_name, job_namespace=self.namespace)
-        if pod_name is None:
+        job_name = job.metadata.name
+        namespace = job.metadata.namespace
+        db_reduction_id = job.metadata.annotations.get("reduction-id")
+        pod = self.grab_pod_from_job(job)
+        if pod is None:
             raise TypeError(
-                f"Pod name can't be None, {self.job_name} name and {self.namespace} "
+                f"Pod name can't be None, {job_name} name and {namespace} "
                 f"namespace returned None when looking for a pod."
             )
         v1_core = client.CoreV1Api()
         # Convert message from JSON string to python dict
         try:
-            logs = v1_core.read_namespaced_pod_log(name=pod_name, namespace=self.namespace)
-            output = logs.split("\n")[-2]  # Get second last line (last line is empty)
-            logger.info("Job %s has been completed with output: %s", self.job_name, output)
+            logs = v1_core.read_namespaced_pod_log(name=pod.metadata.name, namespace=namespace)
+            output = logs.split("\n")[-2]  # Get second to last line (last line is empty)
+            logger.info("Job %s has been completed with output: %s", job_name, output)
             job_output = json.loads(output)
         except JSONDecodeError as exception:
             logger.error("Last message from job is not a JSON string")
@@ -183,17 +184,14 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         status = job_output.get("status", "Unsuccessful")
         status_message = job_output.get("status_message", "")
         output_files = job_output.get("output_files", [])
-        start, end = self._find_start_and_end_of_job()
-        self.db_updater.add_completed_run(
-            db_reduction_id=self.db_reduction_id,
+        start, end = self._find_start_and_end_of_pod(pod)
+        self.db_updater.update_completed_run(
+            db_reduction_id=db_reduction_id,
             state=State[status.upper()],
             status_message=status_message,
             output_files=output_files,
-            reduction_script=self.job_script,
-            reduction_inputs=self.reduction_inputs,
             reduction_end=str(end),
             reduction_start=start,
-            script_sha=self.script_sha,
         )
 
     @staticmethod

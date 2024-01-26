@@ -4,7 +4,7 @@ import unittest
 from unittest import mock
 
 from job_controller.database.state_enum import State
-from job_controller.job_watcher import JobWatcher
+from job_watcher import JobWatcher
 
 
 class JobWatcherTest(unittest.TestCase):
@@ -94,12 +94,12 @@ class JobWatcherTest(unittest.TestCase):
         self.job_watcher.job_name = "mari0-asfn"
         event.__getitem__.return_value.metadata.name = "mari0-asfn-132"
         event.__getitem__.return_value.status.succeeded = 1
-        self.job_watcher.process_event_success = mock.MagicMock()
+        self.job_watcher.process_job_success = mock.MagicMock()
         self.job_watcher.clean_up_pv_and_pvc = mock.MagicMock()
 
         self.job_watcher.process_event(event)
 
-        self.job_watcher.process_event_success.assert_called_once_with()
+        self.job_watcher.process_job_success.assert_called_once_with()
         self.job_watcher.clean_up_pv_and_pvc.assert_called_once_with()
 
     def test_process_event_on_failures_calls_failure(self):
@@ -107,12 +107,12 @@ class JobWatcherTest(unittest.TestCase):
         self.job_watcher.job_name = "mari0-asfn"
         event.__getitem__.return_value.metadata.name = "mari0-asfn-132"
         event.__getitem__.return_value.status.failed = 1
-        self.job_watcher.process_event_failed = mock.MagicMock()
+        self.job_watcher.process_job_failed = mock.MagicMock()
         self.job_watcher.clean_up_pv_and_pvc = mock.MagicMock()
 
         self.job_watcher.process_event(event)
 
-        self.job_watcher.process_event_failed.assert_called_once_with(event.__getitem__.return_value)
+        self.job_watcher.process_job_failed.assert_called_once_with(event.__getitem__.return_value)
         self.job_watcher.clean_up_pv_and_pvc.assert_called_once_with()
 
     @mock.patch("job_controller.job_watcher.client")
@@ -120,7 +120,7 @@ class JobWatcherTest(unittest.TestCase):
         self.job_watcher.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value="pod_name")
         self.job_watcher.notify_kafka = mock.MagicMock()
 
-        self.job_watcher.process_event_success()
+        self.job_watcher.process_job_success()
 
         self.job_watcher.grab_pod_name_from_job_name_in_namespace.assert_called_with(
             job_name=self.job_name, job_namespace=self.namespace
@@ -134,7 +134,7 @@ class JobWatcherTest(unittest.TestCase):
         self.job_watcher.grab_pod_name_from_job_name_in_namespace = mock.MagicMock(return_value=None)
         self.job_watcher.notify_kafka = mock.MagicMock()
 
-        self.assertRaises(TypeError, self.job_watcher.process_event_success)
+        self.assertRaises(TypeError, self.job_watcher.process_job_success)
 
         self.job_watcher.grab_pod_name_from_job_name_in_namespace.assert_called_once_with(
             job_name=self.job_name, job_namespace=self.namespace
@@ -148,7 +148,7 @@ class JobWatcherTest(unittest.TestCase):
             '4th to last\n3rd to last\n{"status": "SUCCESSFUL", "output_files": [], "status_message": ""}\n'
         )
 
-        self.job_watcher.process_event_success()
+        self.job_watcher.process_job_success()
 
         self.job_watcher.grab_pod_name_from_job_name_in_namespace.assert_called_with(
             job_name=self.job_name, job_namespace=self.namespace
@@ -174,7 +174,7 @@ class JobWatcherTest(unittest.TestCase):
             '4th to last\n3rd to last\n{"status": Not valid json, "output_files": [], "status_message": ""}\n'
         )
 
-        self.job_watcher.process_event_success()
+        self.job_watcher.process_job_success()
 
         self.job_watcher.grab_pod_name_from_job_name_in_namespace.assert_called_with(
             job_name=self.job_name, job_namespace=self.namespace

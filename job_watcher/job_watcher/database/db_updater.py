@@ -18,8 +18,8 @@ from sqlalchemy import (  # type: ignore[attr-defined]
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship, sessionmaker, declarative_base  # type: ignore[attr-defined]
 
-from job_controller.database.state_enum import State
-from job_controller.utils import logger
+from database.state_enum import State
+from utils import logger
 
 Base = declarative_base()
 
@@ -267,15 +267,12 @@ class DBUpdater:
 
             return int(reduction.id)
 
-    def add_completed_run(
+    def update_completed_run(
         self,
         db_reduction_id: int,
-        reduction_inputs: Dict[str, Any],
         state: State,
         status_message: str,
         output_files: List[str],
-        reduction_script: str,
-        script_sha: str,
         reduction_start: str,
         reduction_end: str,
     ) -> None:
@@ -283,50 +280,37 @@ class DBUpdater:
         This function submits data to the database from what is initially available on completed-runs message broker
         station/topic
         :param db_reduction_id: The ID for the reduction row in the reduction table
-        :param reduction_inputs: The inputs used in the reduction script by the IR-API
         :param state: The state of how the run ended
         :param status_message: The message that accompanies the state for how the  state ended, if the state for
         example was unsuccessful or an error, it would have the reason/error message.
         :param output_files: The files output from the reduction job
-        :param reduction_script: The script used in the reduction
-        :param script_sha: The git sha of the script used in reduction
         :param reduction_start: The time the pod running the reduction started working
         :param reduction_end: The time the pod running the reduction stopped working
         :return:
         """
         logger.info(
-            "Submitting completed-run to the database: {id: %s, reduction_inputs: %s, state: %s, "
-            "status_message: %s, output_files: %s, reduction_script: %s}",
+            "Updating completed-run in the database: {id: %s, state: %s, "
+            "status_message: %s, output_files: %s}",
             db_reduction_id,
-            reduction_inputs,
             str(state),
             status_message,
             output_files,
-            textwrap.shorten(reduction_script, width=10, placeholder="..."),
         )
         with self.session_maker_func() as session:
-            script = session.query(Script).filter_by(script=reduction_script).first()
-            if script is None:
-                script = Script(script=reduction_script, sha=script_sha)
-
             reduction = session.query(Reduction).filter_by(id=db_reduction_id).one()
             reduction.reduction_state = state
-            reduction.reduction_inputs = reduction_inputs
-            reduction.script = script
             reduction.reduction_outputs = str(output_files)
             reduction.reduction_status_message = status_message
             reduction.reduction_start = reduction_start
             reduction.reduction_end = reduction_end
             session.commit()
             logger.info(
-                "Submitted completed-run to the database successfully: {id: %s, reduction_inputs: %s, state: %s, "
-                "status_message: %s, output_files: %s, reduction_script: %s}",
+                "Submitted completed-run to the database successfully: {id: %s, state: %s, "
+                "status_message: %s, output_files: %s}",
                 db_reduction_id,
-                reduction_inputs,
                 str(state),
                 status_message,
                 output_files,
-                textwrap.shorten(reduction_script, width=10, placeholder="..."),
             )
 
 
