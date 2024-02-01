@@ -179,9 +179,9 @@ class JobCreator:
             api_version="batch/v1",
             kind="Job",
             metadata={"name": job_name,
-                      # "annotations": {
-                      #     "reduction-id": reduction_id
-                      # }
+                      "annotations": {
+                          "reduction-id": str(reduction_id)
+                      }
                       },
             spec={
                 "backoffLimit": 0,

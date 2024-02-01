@@ -20,9 +20,10 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
     Watch a kubernetes job, and when it ends notify a message broker station/topic
     """
 
-    def __init__(self, db_updater: DBUpdater):
+    def __init__(self, db_updater: DBUpdater, max_time_to_complete: int):
         self.namespace = os.environ.get("JOB_NAMESPACE", "ir")
         self.db_updater = db_updater
+        self.max_time_to_complete = max_time_to_complete
 
     def grab_pod_from_job(self, job: V1Job) -> Optional[V1Pod]:
         """
@@ -55,7 +56,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             # Brief sleep to facilitate reducing CPU load and network bandwidth whilst largely maintaining performance
             sleep(0.1)
 
-    def job_is_watchable(self, job):
+    def job_is_watchable(self, job: V1Job) -> bool:
         """
         Checks that the job is watchable by
         :param job:
@@ -64,43 +65,60 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         return ("run-" in job.metadata.name and
                 "reduction-id" in job.metadata.annotations)
 
-
-    def check_for_changes(self, job):
+    def check_for_changes(self, job: V1Job) -> None:
         """
         Check if the job has a change for which we need to react to, such as the pod
         having finished or a job has stalled.
         :param job:
         :return:
         """
-        if self.check_for_job_complete(job):
-            pass
-        elif self.check_for_job_stalled(job):
-            pass
+        pod = self.grab_pod_from_job(job)
+        if self.check_for_job_complete(job, pod):
+            self.start_cleanup_job(job, pod)
+        elif self.check_for_job_stalled(job, pod):
+            self.start_cleanup_job(job, pod)
 
-    def check_for_job_complete(self, job: V1Job):
+    def check_for_job_complete(self, job: V1Job, pod: V1Pod) -> bool:
         """
         Checks if the job has finished by checking its status, if it failed then we
         need to process that, and the same for a success.
+        :param pod:
         :param job:
         :return:
         """
         if job.status.succeeded == 1:
             # Job has succeeded
-            self.process_job_success(job)
+            self.process_job_success(job, pod)
+            return True
         elif job.status.failed == 1:
             # Job has failed
-            pass
+            self.process_job_failed(job, pod)
+            return True
+        return False
 
-    def check_for_job_stalled(self, job):
+    def check_for_job_stalled(self, job: V1Job, pod: V1Pod) -> bool:
         """
         The way this checks if a job is stalled is by checking if there has been no new
         logs for the last 30 minutes, or if the job has taken over 6 hours to complete.
         Long term 6 hours may be too little so this is configurable using the
         environment variables.
         :param job:
+        :param pod:
         :return:
         """
-        pass
+        v1_core = client.CoreV1Api()
+        seconds_in_30_minutes = 60 * 30
+        logs = v1_core.read_namespaced_pod_log(
+            name=pod.metadata.name, namespace=pod.metadata.namespace, timestamps=True,
+            tail_lines=1, since_seconds=seconds_in_30_minutes)
+        if logs == "":
+            logger.info(f"No new logs for pod {pod.metadata.name} in {seconds_in_30_minutes} seconds")
+            return True
+        if (pod.metadata.creation_timestamp - datetime.datetime.now()) > self.max_time_to_complete:
+            logger.info(f"Pod has timed out: {pod.metadata.name}, ")
+            return True
+        return False
+
 
     def _find_start_and_end_of_pod(self, pod: V1Pod) -> Tuple[Any, Optional[Any]]:
         v1_core = client.CoreV1Api()
@@ -113,36 +131,36 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 break
         return start_time, end_time
 
-    def process_job_failed(self, job: V1Job) -> None:
+    def process_job_failed(self, job: V1Job, pod: V1Pod) -> None:
         """
         Process the event that failed, and notify the message broker
+        :param pod:
         :param job: The job that has failed
         :return:
         """
         message = job.status.conditions[0].message
-        logger.info("Job %s has failed, with message: %s", self.job_name, message)
-        start, end = self._find_start_and_end_of_job()
-        self.db_updater.add_completed_run(
-            db_reduction_id=self.db_reduction_id,
+        logger.info("Job %s has failed, with message: %s", job.metadata.name, message)
+        reduction_id = job.metadata.annotations["reduction-id"]
+        start, end = self._find_start_and_end_of_pod(pod)
+        self.db_updater.update_completed_run(
+            db_reduction_id=reduction_id,
             state=State(State.ERROR),
             status_message=message,
             output_files=[],
-            reduction_script=self.job_script,
-            reduction_inputs=self.reduction_inputs,
             reduction_end=str(end),
             reduction_start=start,
-            script_sha=self.script_sha,
         )
 
-    def process_job_success(self, job: V1Job) -> None:
+    def process_job_success(self, job: V1Job, pod: V1Pod) -> None:
         """
         Process a successful event, grab the required data and logged output that will notify the message broker
+        :param job:
+        :param pod:
         :return:
         """
         job_name = job.metadata.name
         namespace = job.metadata.namespace
-        db_reduction_id = job.metadata.annotations.get("reduction-id")
-        pod = self.grab_pod_from_job(job)
+        reduction_id = job.metadata.annotations.get("reduction-id")
         if pod is None:
             raise TypeError(
                 f"Pod name can't be None, {job_name} name and {namespace} "
@@ -186,7 +204,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         output_files = job_output.get("output_files", [])
         start, end = self._find_start_and_end_of_pod(pod)
         self.db_updater.update_completed_run(
-            db_reduction_id=db_reduction_id,
+            db_reduction_id=reduction_id,
             state=State[status.upper()],
             status_message=status_message,
             output_files=output_files,
@@ -200,6 +218,27 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             logger.error("Delivery failed for message %s: %s", msg.value(), err)
         else:
             logger.info("Delivered message to %s [%s]", msg.topic(), msg.partition())
+
+    def start_cleanup_job(self, job: V1Job, pod: V1Pod) -> None:
+        """
+        """
+        logger.info(f"Starting cleanup of job {job.metaname.name}")
+        self.clean_up_pvs_for_job(job)
+        self.clean_up_pvcs_for_job(job)
+
+
+    def clean_up_pvs_for_job(self, job: V1Job) -> None:
+        v1 = client.CoreV1Api()
+        for pv in v1.list_persistent_volume().items:
+            pass
+
+    def clean_up_pvcs_for_job(self, job: V1Job) -> None:
+        v1 = client.CoreV1Api()
+        for pvc in v1.list_namespaced_persistent_volume_claim(self.namespace).items:
+            run_name = job.metadata.name.split()
+            if f"pvc-{run_name}" in pvc.metadata.name:
+                pass
+
 
     def clean_up_pv_and_pvc(self) -> None:
         """
