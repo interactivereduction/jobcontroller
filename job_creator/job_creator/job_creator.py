@@ -7,7 +7,8 @@ from kubernetes import client  # type: ignore[import]
 from utils import logger, load_kubernetes_config
 
 
-def _setup_archive_pv(job_name):
+def _setup_archive_pv(job_name) -> str:
+    pv_name = f"{job_name}-archive-pv-smb"
     archive_pv = client.V1PersistentVolume(
         api_version="v1",
         kind="PersistentVolume",
@@ -15,7 +16,7 @@ def _setup_archive_pv(job_name):
             "annotations": {
                 "pv.kubernetes.io/provisioned-by": "smb.csi.k8s.io",
             },
-            "name": f"{job_name}-archive-pv-smb",
+            "name": pv_name,
         },
         spec={
             "capacity": {"storage": "1000Gi"},
@@ -29,7 +30,7 @@ def _setup_archive_pv(job_name):
             "csi": {
                 "driver": "smb.csi.k8s.io",
                 "readOnly": True,
-                "volumeHandle": f"{job_name}-archive-pv-smb",
+                "volumeHandle": pv_name,
                 "volumeAttributes": {"source": "//isisdatar55.isis.cclrc.ac.uk/inst$/"},
                 "nodeStageSecretRef": {
                     "name": "archive-creds",
@@ -38,36 +39,38 @@ def _setup_archive_pv(job_name):
             },
         },
     )
-    archive_pv_response = client.CoreV1Api().create_persistent_volume(archive_pv)
-    return archive_pv_response
+    client.CoreV1Api().create_persistent_volume(archive_pv)
+    return pv_name
 
 
-def _setup_archive_pvc(job_name, job_namespace):
+def _setup_archive_pvc(job_name, job_namespace) -> str:
+    pvc_name = f"{job_name}-archive-pvc"
     archive_pvc = client.V1PersistentVolumeClaim(
         api_version="v1",
         kind="PersistentVolumeClaim",
-        metadata={"name": f"{job_name}-archive-pvc"},
+        metadata={"name": pvc_name},
         spec={
             "accessModes": ["ReadOnlyMany"],
             "resources": {"requests": {"storage": "1000Gi"}},
-            "volumeName": f"{job_name}-archive-pv-smb",
+            "volumeName": f"{pvc_name}-smb",
             "storageClassName": "",
         },
     )
-    archive_pvc_response = client.CoreV1Api().create_namespaced_persistent_volume_claim(
+    client.CoreV1Api().create_namespaced_persistent_volume_claim(
         namespace=job_namespace, body=archive_pvc
     )
-    return archive_pvc_response
+    return pvc_name
 
 
 def _setup_ceph_pv(job_name: str, ceph_creds_k8s_secret_name: str,
                    ceph_creds_k8s_namespace: str, cluster_id: str, fs_name: str,
-                   ceph_mount_path: str):
+                   ceph_mount_path: str) -> str:
+    pv_name = f"{job_name}-ceph-pv"
     ceph_pv = client.V1PersistentVolume(
         api_version="v1",
         kind="PersistentVolume",
         metadata={
-            "name": f"{job_name}-ceph-pv",
+            "name": pv_name,
         },
         spec={
             "capacity": {"storage": "1000Gi"},
@@ -79,7 +82,7 @@ def _setup_ceph_pv(job_name: str, ceph_creds_k8s_secret_name: str,
                 "driver": "cephfs.csi.ceph.com",
                 "nodeStageSecretRef": {"name": ceph_creds_k8s_secret_name,
                                        "namespace": ceph_creds_k8s_namespace},
-                "volumeHandle": f"{job_name}-ceph-pv",
+                "volumeHandle": pv_name,
                 "volumeAttributes": {
                     "clusterID": cluster_id,
                     "mounter": "fuse",
@@ -90,15 +93,16 @@ def _setup_ceph_pv(job_name: str, ceph_creds_k8s_secret_name: str,
             },
         },
     )
-    ceph_pv_response = client.CoreV1Api().create_persistent_volume(ceph_pv)
-    return ceph_pv_response
+    client.CoreV1Api().create_persistent_volume(ceph_pv)
+    return pv_name
 
 
 def _setup_ceph_pvc(job_name, job_namespace):
+    pvc_name = f"{job_name}-ceph-pvc"
     ceph_pvc = client.V1PersistentVolumeClaim(
         api_version="v1",
         kind="PersistentVolumeClaim",
-        metadata={"name": f"{job_name}-ceph-pvc"},
+        metadata={"name": pvc_name},
         spec={
             "accessModes": ["ReadWriteMany"],
             "resources": {"requests": {"storage": "1000Gi"}},
@@ -106,10 +110,10 @@ def _setup_ceph_pvc(job_name, job_namespace):
             "storageClassName": "",
         },
     )
-    ceph_pvc_response = client.CoreV1Api().create_namespaced_persistent_volume_claim(
+    client.CoreV1Api().create_namespaced_persistent_volume_claim(
         namespace=job_namespace, body=ceph_pvc
     )
-    return ceph_pvc_response
+    return pvc_name
 
 
 class JobCreator:
@@ -129,10 +133,10 @@ class JobCreator:
 
     def _setup_runner_files_pv(self, job_name: str, ceph_creds_k8s_secret_name: str,
                                ceph_creds_k8s_namespace: str, cluster_id: str,
-                               fs_name: str, ceph_mount_path: str):
+                               fs_name: str, ceph_mount_path: str) -> str:
         pass
 
-    def _setup_runner_files_pvc(self, job_name, job_namespace):
+    def _setup_runner_files_pvc(self, job_name, job_namespace) -> str:
         pass
 
     # pylint: disable=too-many-arguments
@@ -157,21 +161,29 @@ class JobCreator:
         """
         logger.info("Creating PV and PVC for: %s", job_name)
 
+        pv_names = []
+        pvc_names = []
         # Setup PVs
-        _setup_archive_pv(job_name=job_name)
+        pv_names.append(_setup_archive_pv(job_name=job_name))
         if not self.dev_mode:
-            _setup_ceph_pv(job_name, ceph_creds_k8s_secret_name,
-                           ceph_creds_k8s_namespace, cluster_id, fs_name,
-                           ceph_mount_path)
-        self._setup_runner_files_pv(job_name, ceph_creds_k8s_secret_name,
-                                    ceph_creds_k8s_namespace, cluster_id, fs_name,
-                                    ceph_mount_path)
+            pv_names.append(
+                _setup_ceph_pv(job_name, ceph_creds_k8s_secret_name,
+                               ceph_creds_k8s_namespace, cluster_id, fs_name,
+                               ceph_mount_path))
+        pv_names.append(
+            self._setup_runner_files_pv(job_name, ceph_creds_k8s_secret_name,
+                                        ceph_creds_k8s_namespace, cluster_id, fs_name,
+                                        ceph_mount_path))
 
         # Setup PVCs
-        _setup_archive_pvc(job_name=job_name, job_namespace=job_namespace)
+        pvc_names.append(
+            _setup_archive_pvc(job_name=job_name, job_namespace=job_namespace))
         if not self.dev_mode:
-            _setup_ceph_pvc(job_name=job_name, job_namespace=job_namespace)
-        self._setup_runner_files_pvc(job_name=job_name, job_namespace=job_namespace)
+            pvc_names.append(
+                _setup_ceph_pvc(job_name=job_name, job_namespace=job_namespace))
+        pvc_names.append(
+            self._setup_runner_files_pvc(job_name=job_name,
+                                         job_namespace=job_namespace))
 
         # Create the Job
         logger.info("Spawning job: %s", job_name)
@@ -180,7 +192,9 @@ class JobCreator:
             kind="Job",
             metadata={"name": job_name,
                       "annotations": {
-                          "reduction-id": str(reduction_id)
+                          "reduction-id": str(reduction_id),
+                          "pvs": pv_names,
+                          "pvcs": pvc_names,
                       }
                       },
             spec={

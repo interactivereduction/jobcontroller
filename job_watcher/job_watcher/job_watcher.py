@@ -1,11 +1,12 @@
 """
 Watch a kubernetes job, and when it ends notify a message broker station/topic
 """
+import datetime
 import json
 import os
 from json import JSONDecodeError
 from time import sleep
-from typing import Any, Optional, Dict, Tuple
+from typing import Any, Optional, Tuple
 
 from kubernetes import client, watch  # type: ignore[import]
 from kubernetes.client import V1Job, V1Pod  # type: ignore[import]
@@ -13,6 +14,34 @@ from kubernetes.client import V1Job, V1Pod  # type: ignore[import]
 from database.state_enum import State
 from database.db_updater import DBUpdater
 from utils import logger
+
+
+def clean_up_pvcs_for_job(job: V1Job, namespace: str) -> None:
+    v1 = client.CoreV1Api()
+    pvcs_to_delete = job.metadata.annotations["pvcs"]
+    for pvc in pvcs_to_delete:
+        v1.delete_namespaced_persistent_volume_claim(pvc, namespace=namespace)
+        logger.info(f"Deleted pv: {pvc}")
+
+
+def clean_up_pvs_for_job(job: V1Job) -> None:
+    v1 = client.CoreV1Api()
+    pvs_to_delete = job.metadata.annotations["pvs"]
+    for pv in pvs_to_delete:
+        v1.delete_persistent_volume(pv)
+        logger.info(f"Deleted pv: {pv}")
+
+
+def job_is_watchable(job: V1Job) -> bool:
+    """
+    Checks that the job is watchable by the job watcher
+    :param job:
+    :return:
+    """
+    return ("run-" in job.metadata.name and
+            "reduction-id" in job.metadata.annotations and
+            "pvs" in job.metadata.annotations and
+            "pvcs" in job.metadata.annotations)
 
 
 class JobWatcher:  # pylint: disable=too-many-instance-attributes
@@ -51,19 +80,10 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         while True:
             job_list = client.BatchV1Api().list_namespaced_job(self.namespace)
             for job in job_list.items:
-                if self.job_is_watchable(job):
+                if job_is_watchable(job):
                     self.check_for_changes(job)
             # Brief sleep to facilitate reducing CPU load and network bandwidth whilst largely maintaining performance
             sleep(0.1)
-
-    def job_is_watchable(self, job: V1Job) -> bool:
-        """
-        Checks that the job is watchable by
-        :param job:
-        :return:
-        """
-        return ("run-" in job.metadata.name and
-                "reduction-id" in job.metadata.annotations)
 
     def check_for_changes(self, job: V1Job) -> None:
         """
@@ -74,9 +94,9 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         """
         pod = self.grab_pod_from_job(job)
         if self.check_for_job_complete(job, pod):
-            self.start_cleanup_job(job, pod)
-        elif self.check_for_job_stalled(job, pod):
-            self.start_cleanup_job(job, pod)
+            self.cleanup_job(job)
+        elif self.check_for_pod_stalled(pod):
+            self.cleanup_job(job)
 
     def check_for_job_complete(self, job: V1Job, pod: V1Pod) -> bool:
         """
@@ -96,13 +116,12 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             return True
         return False
 
-    def check_for_job_stalled(self, job: V1Job, pod: V1Pod) -> bool:
+    def check_for_pod_stalled(self, pod: V1Pod) -> bool:
         """
         The way this checks if a job is stalled is by checking if there has been no new
         logs for the last 30 minutes, or if the job has taken over 6 hours to complete.
         Long term 6 hours may be too little so this is configurable using the
         environment variables.
-        :param job:
         :param pod:
         :return:
         """
@@ -118,7 +137,6 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             logger.info(f"Pod has timed out: {pod.metadata.name}, ")
             return True
         return False
-
 
     def _find_start_and_end_of_pod(self, pod: V1Pod) -> Tuple[Any, Optional[Any]]:
         v1_core = client.CoreV1Api()
@@ -212,54 +230,9 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             reduction_start=start,
         )
 
-    @staticmethod
-    def _delivery_callback(err: Any, msg: Any) -> None:
-        if err:
-            logger.error("Delivery failed for message %s: %s", msg.value(), err)
-        else:
-            logger.info("Delivered message to %s [%s]", msg.topic(), msg.partition())
-
-    def start_cleanup_job(self, job: V1Job, pod: V1Pod) -> None:
+    def cleanup_job(self, job: V1Job) -> None:
         """
         """
-        logger.info(f"Starting cleanup of job {job.metaname.name}")
-        self.clean_up_pvs_for_job(job)
-        self.clean_up_pvcs_for_job(job)
-
-
-    def clean_up_pvs_for_job(self, job: V1Job) -> None:
-        v1 = client.CoreV1Api()
-        for pv in v1.list_persistent_volume().items:
-            pass
-
-    def clean_up_pvcs_for_job(self, job: V1Job) -> None:
-        v1 = client.CoreV1Api()
-        for pvc in v1.list_namespaced_persistent_volume_claim(self.namespace).items:
-            run_name = job.metadata.name.split()
-            if f"pvc-{run_name}" in pvc.metadata.name:
-                pass
-
-
-    def clean_up_pv_and_pvc(self) -> None:
-        """
-        Clean up the PV and PVC created for the jobs
-        :return: None
-        """
-        logger.info("Removing PVCs and PVs")
-        v1 = client.CoreV1Api()
-        logger.info("Check PV %s exists", self.pv_name)
-        if self.pv_name in [ii.metadata.name for ii in v1.list_persistent_volume().items]:
-            logger.info("PV %s exists, removing", self.pv_name)
-            v1.delete_persistent_volume(self.pv_name)
-            logger.info("PV %s removed", self.pv_name)
-        else:
-            logger.info("PV %s does not exist", self.pv_name)
-        logger.info("Check PVC %s exists", self.pvc_name)
-        if self.pvc_name in [
-            ii.metadata.name for ii in v1.list_namespaced_persistent_volume_claim(self.namespace).items
-        ]:
-            logger.info("PVC %s exists, removing", self.pvc_name)
-            v1.delete_namespaced_persistent_volume_claim(self.pvc_name, self.namespace)
-            logger.info("PVC %s removed", self.pvc_name)
-        else:
-            logger.info("PVC %s does not exist", self.pvc_name)
+        logger.info(f"Starting cleanup of job {job.metadata.name}")
+        clean_up_pvs_for_job(job)
+        clean_up_pvcs_for_job(job, self.namespace)
