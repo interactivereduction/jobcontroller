@@ -6,7 +6,7 @@ from typing import Callable, Dict
 
 from pika import PlainCredentials, ConnectionParameters, BlockingConnection  # type: ignore[import]
 
-from utils import logger
+from jobcreator.utils import logger
 
 
 class QueueConsumer:

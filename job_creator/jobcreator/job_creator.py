@@ -4,7 +4,9 @@ Communicate to a kubernetes API to spawn a pod with the metadata passed by messa
 
 from kubernetes import client  # type: ignore[import]
 
-from utils import logger, load_kubernetes_config
+from jobcreator.utils import logger, load_kubernetes_config
+from kubernetes.client import V1Container, V1PodSpec, V1PodTemplateSpec, V1JobSpec, V1ObjectMeta, V1SecurityContext, \
+    V1Toleration, V1Volume, V1PersistentVolumeClaimVolumeSource, V1VolumeMount, V1EnvVar, V1EmptyDirVolumeSource
 
 
 def _setup_archive_pv(job_name) -> str:
@@ -121,14 +123,14 @@ class JobCreator:
     This class is responsible for loading the kubernetes config and handling methods for creating new pods.
     """
 
-    def __init__(self, runner_sha: str, dev_mode: bool) -> None:
+    def __init__(self, watcher_sha: str, dev_mode: bool) -> None:
         """
         Takes the runner_sha and ensures that the kubernetes config is loaded before continuing.
         :param runner_sha: The sha256 used for the runner, often made by the runner.D file in this repo's container
         folder
         """
         load_kubernetes_config()
-        self.runner_sha = runner_sha
+        self.watcher_sha = watcher_sha
         self.dev_mode = dev_mode
 
     def _setup_runner_files_pv(self, job_name: str, ceph_creds_k8s_secret_name: str,
@@ -143,7 +145,8 @@ class JobCreator:
     def spawn_job(self, job_name: str, script: str, job_namespace: str, user_id: str,
                   ceph_creds_k8s_secret_name: str, ceph_creds_k8s_namespace: str,
                   cluster_id: str, fs_name: str, ceph_mount_path: str,
-                  reduction_id: int):
+                  reduction_id: int, max_time_to_complete_job: int, db_ip: str,
+                  db_username: str, db_password: str, runner_sha: str):
         """
         Takes the meta_data from the message and uses that dictionary for generating the deployment of the pod.
         :param job_name: The name that the job should be created as
@@ -156,6 +159,11 @@ class JobCreator:
         :param fs_name:
         :param ceph_mount_path:
         :param reduction_id:
+        :param max_time_to_complete_job:
+        :param db_ip:
+        :param db_username:
+        :param db_password:
+        :param runner_sha:
         the containers have permission to use the directories required for outputting data.
         :return: A tuple containing the (job's name, PV name, and PVCs name)
         """
@@ -187,58 +195,141 @@ class JobCreator:
 
         # Create the Job
         logger.info("Spawning job: %s", job_name)
+        main_container = (
+            V1Container(name=job_name,
+                        image=f"ghcr.io/interactivereduction/runner@sha256:{runner_sha}",
+                        args=[script],
+                        volume_mounts=[
+                            V1VolumeMount(name="archive-mount", mount_path="/archive"),
+                            V1VolumeMount(name="ceph-mount", mount_path="/output")
+                        ])
+        )
+
+        watcher_container = (
+            V1Container(name=job_name,
+                        image=f"ghcr.io/interactivereduction/jobwatcher@sha256:{self.watcher_sha}",
+                        env=[
+                            V1EnvVar(name="DB_IP", value=db_ip),
+                            V1EnvVar(name="DB_USERNAME", value=db_username),
+                            V1EnvVar(name="DB_PASSWORD", value=db_password),
+                            V1EnvVar(name="MAX_TIME_TO_COMPLETE_JOB",
+                                     value=str(max_time_to_complete_job)),
+                            V1EnvVar(name="CONTAINER_NAME", value=job_name),
+                            V1EnvVar(name="JOB_NAME", value=job_name),
+                            V1EnvVar(name="POD_NAME", value=job_name),
+                        ])
+        )
+
+        if not self.dev_mode:
+            ceph_volume = V1Volume(name="ceph-mount", persistent_volume_claim=V1PersistentVolumeClaimVolumeSource(claim_name=f"{job_name}-ceph-pvc", read_only=False))
+        else:
+            ceph_volume = V1Volume(name="ceph-mount", empty_dir=V1EmptyDirVolumeSource(size_limit="10000Mi"))
+
+        pod_spec = V1PodSpec(
+            containers=[main_container, watcher_container],
+            restart_policy="Never",
+            security_context=V1SecurityContext(run_as_user=user_id),
+            tolerations=[V1Toleration(key="queue-worker", effect="NoSchedule", operator="Exists")],
+            volumes=[
+                V1Volume(name="archive-mount",
+                         persistent_volume_claim=V1PersistentVolumeClaimVolumeSource(
+                             claim_name=f"{job_name}-archive-pvc", read_only=True)),
+                ceph_volume
+            ]
+        )
+
+        template = V1PodTemplateSpec(
+            spec=pod_spec
+        )
+
+        spec = V1JobSpec(
+            template=template,
+            backoff_limit=0,
+            ttl_seconds_after_finished=21600,  # 6 hours
+        )
+
+        metadata = V1ObjectMeta(
+            name=job_name,
+            annotations={
+                "reduction-id": str(reduction_id),
+                "pvs": str(pv_names),
+                "pvcs": str(pvc_names),
+            }
+        )
+
         job = client.V1Job(
             api_version="batch/v1",
             kind="Job",
-            metadata={"name": job_name,
-                      "annotations": {
-                          "reduction-id": str(reduction_id),
-                          "pvs": pv_names,
-                          "pvcs": pvc_names,
-                      }
-                      },
-            spec={
-                "backoffLimit": 0,
-                "ttlSecondsAfterFinished": 21600,  # 6 hours
-                "template": {
-                    "spec": {
-                        "security_context": {
-                            "runAsUser": user_id,
-                        },
-                        "containers": [
-                            {
-                                "name": job_name,
-                                "image": f"ghcr.io/interactivereduction/runner@sha256:{self.runner_sha}",
-                                "args": [script],
-                                "volumeMounts": [
-                                    {"name": "archive-mount", "mountPath": "/archive"},
-                                    {"name": "ceph-mount", "mountPath": "/output"},
-                                ],
-                            }
-                        ],
-                        "restartPolicy": "Never",
-                        "tolerations": [{"key": "queue-worker", "effect": "NoSchedule", "operator": "Exists"}],
-                        "volumes": [
-                            {
-                                "name": "archive-mount",
-                                "persistentVolumeClaim": {"claimName": f"{job_name}-archive-pvc", "readOnly": True},
-                            },
-                            {
-                                "name": "ceph-mount",
-                                "persistentVolumeClaim": {"claimName": f"{job_name}-ceph-pvc", "readOnly": False}
-                            },
-                        ],
-                    },
-                },
-            },
+            metadata=metadata,
+            spec=spec,
         )
-        if self.dev_mode:
-            # Use an emptyDir instead of a ceph mount for the jobs, this will de deleted when the pod dies.
-            job.spec["template"]["spec"]["volumes"][1] = {
-                "name": "ceph-mount",
-                "emptyDir": {
-                    "sizeLimit": "10000Mi"
-                }
-            }
+
+        # job = client.V1Job(
+        #     api_version="batch/v1",
+        #     kind="Job",
+        #     metadata={
+        #         "name": job_name,
+        #         "annotations": {
+        #             "reduction-id": str(reduction_id),
+        #             "pvs": pv_names,
+        #             "pvcs": pvc_names,
+        #             }
+        #         },
+        #     spec={
+        #         "backoffLimit": 0,
+        #         "ttlSecondsAfterFinished": 21600,  # 6 hours
+        #         "template": {
+        #             "spec": {
+        #                 "security_context": {
+        #                     "runAsUser": user_id,
+        #                 },
+        #                 "containers": [
+        #                     {
+        #                         "name": job_name,
+        #                         "image": f"ghcr.io/interactivereduction/runner@sha256:{runner_sha}",
+        #                         "args": [script],
+        #                         "volumeMounts": [
+        #                             {"name": "archive-mount", "mountPath": "/archive"},
+        #                             {"name": "ceph-mount", "mountPath": "/output"},
+        #                         ],
+        #                     },
+        #                     {
+        #                         "name": "job-watcher",
+        #                         "image": f"ghcr.io/interactivereduction/jobwatcher@sha256:{self.watcher_sha}",
+        #                         "env": [
+        #                             {"name": "DB_IP", "value": db_ip},
+        #                             {"name": "DB_USERNAME", "value": db_username},
+        #                             {"name": "DB_PASSWORD", "value": db_password},
+        #                             {"name": "MAX_TIME_TO_COMPLETE_JOB", "value": str(max_time_to_complete_job)},
+        #                             {"name": "CONTAINER_NAME", "value": job_name},
+        #                             {"name": "JOB_NAME", "value": job_name},
+        #                             {"name": "POD_NAME", "value": job_name},
+        #                         ]
+        #                     }
+        #                 ],
+        #                 "restartPolicy": "Never",
+        #                 "tolerations": [{"key": "queue-worker", "effect": "NoSchedule", "operator": "Exists"}],
+        #                 "volumes": [
+        #                     {
+        #                         "name": "archive-mount",
+        #                         "persistentVolumeClaim": {"claimName": f"{job_name}-archive-pvc", "readOnly": True},
+        #                     },
+        #                     {
+        #                         "name": "ceph-mount",
+        #                         "persistentVolumeClaim": {"claimName": f"{job_name}-ceph-pvc", "readOnly": False}
+        #                     },
+        #                 ],
+        #             },
+        #         },
+        #     },
+        # )
+        # if self.dev_mode:
+        #     # Use an emptyDir instead of a ceph mount for the jobs, this will de deleted when the pod dies.
+        #     job.spec["template"]["spec"]["volumes"][1] = {
+        #         "name": "ceph-mount",
+        #         "emptyDir": {
+        #             "sizeLimit": "10000Mi"
+        #         }
+        #     }
 
         client.BatchV1Api().create_namespaced_job(namespace=job_namespace, body=job)

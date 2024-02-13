@@ -1,5 +1,5 @@
 [project]
-name = "job_creator"
+name = "jobcreator"
 readme = "README.md"
 version = "0.0.1"
 dependencies = [
@@ -13,7 +13,7 @@ dependencies = [
 "Repository" = "https://github.com/interactivereduction/jobcontroller"
 
 [project.scripts]
-jobcontroller = "job_creator.main.main:main"
+jobcreator = "jobcreator.main:main"
 
 [project.optional-dependencies]
 formatting = [
@@ -31,9 +31,9 @@ code-inspection = [
     "pylint==2.17.4",
     "mypy==1.5.1",
     "sqlalchemy-stubs==0.4",
-    "job_controller[test]",
+    "job_creator[test]",
     "types-requests==2.31.0.10"
 ]
 
 [tool.setuptools]
-packages = ["job_controller"]
+packages = ["jobcreator", "jobcreator.database"]
