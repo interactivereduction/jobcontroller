@@ -34,22 +34,32 @@ def clean_up_pvs_for_job(job: V1Job) -> None:
         logger.info(f"Deleted pv: {pv}")
 
 
+def _find_pod_from_partial_name(partial_pod_name: str, namespace: str) -> Optional[V1Pod]:
+    v1 = client.CoreV1Api()
+    pods_in_ir = v1.list_namespaced_pod(namespace=namespace)
+    for pod in pods_in_ir.items:
+        if partial_pod_name in pod.metadata.name:
+            return pod
+    return None
+
+
 class JobWatcher:  # pylint: disable=too-many-instance-attributes
     """
     Watch a kubernetes job, and when it ends notify a message broker station/topic
     """
 
-    def __init__(self, job_name: str, pod_name: str, container_name: str,
+    def __init__(self, job_name: str, partial_pod_name: str, container_name: str,
                  db_updater: DBUpdater, max_time_to_complete: int):
         self.namespace = os.environ.get("JOB_NAMESPACE", "ir")
         self.db_updater = db_updater
         self.max_time_to_complete = max_time_to_complete
         self.done_watching = False
 
-        v1 = client.CoreV1Api()
         v1_batch = client.BatchV1Api()
         self.job = v1_batch.read_namespaced_job(job_name, namespace=self.namespace)
-        self.pod = v1.read_namespaced_pod(pod_name, namespace=self.namespace)
+        self.pod = _find_pod_from_partial_name(partial_pod_name, namespace=self.namespace)
+        if self.pod is None:
+            raise ValueError(f"The pod could not be found using partial pod name: {partial_pod_name}")
         self.container_name = container_name
 
     def watch(self) -> None:

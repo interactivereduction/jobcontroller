@@ -6,40 +6,30 @@ from kubernetes import client  # type: ignore[import]
 
 from jobcreator.utils import logger, load_kubernetes_config
 from kubernetes.client import V1Container, V1PodSpec, V1PodTemplateSpec, V1JobSpec, V1ObjectMeta, V1SecurityContext, \
-    V1Toleration, V1Volume, V1PersistentVolumeClaimVolumeSource, V1VolumeMount, V1EnvVar, V1EmptyDirVolumeSource
+    V1Toleration, V1Volume, V1PersistentVolumeClaimVolumeSource, V1VolumeMount, V1EnvVar, V1EmptyDirVolumeSource, \
+    V1PersistentVolumeSpec, V1CSIPersistentVolumeSource, V1SecretReference, V1PersistentVolumeClaimSpec, \
+    V1ResourceRequirements, V1PersistentVolumeClaim, V1PersistentVolume
 
 
 def _setup_archive_pv(job_name) -> str:
     pv_name = f"{job_name}-archive-pv-smb"
-    archive_pv = client.V1PersistentVolume(
+    metadata = V1ObjectMeta(name=pv_name,
+                            annotations={
+                                "pv.kubernetes.io/provisioned-by": "smb.csi.k8s.io"
+                            })
+    secret_ref = V1SecretReference(name="archive-creds",
+                                   namespace="ir")
+    csi = V1CSIPersistentVolumeSource(driver="smb.csi.k8s.io", read_only=True, volume_handle=pv_name, volume_attributes={"source": "//isisdatar55.isis.cclrc.ac.uk/inst$/"}, node_stage_secret_ref=secret_ref)
+    spec = V1PersistentVolumeSpec(capacity={"storage": "1000Gi"},
+                                  access_modes=["ReadOnlyMany"],
+                                  persistent_volume_reclaim_policy="Retain",
+                                  mount_options=["noserverino", "_netdev", "vers=2.1"],
+                                  csi=csi)
+    archive_pv = V1PersistentVolume(
         api_version="v1",
         kind="PersistentVolume",
-        metadata={
-            "annotations": {
-                "pv.kubernetes.io/provisioned-by": "smb.csi.k8s.io",
-            },
-            "name": pv_name,
-        },
-        spec={
-            "capacity": {"storage": "1000Gi"},
-            "accessModes": ["ReadOnlyMany"],
-            "persistentVolumeReclaimPolicy": "Retain",
-            "mountOptions": [
-                "noserverino",
-                "_netdev",
-                "vers=2.1"
-            ],
-            "csi": {
-                "driver": "smb.csi.k8s.io",
-                "readOnly": True,
-                "volumeHandle": pv_name,
-                "volumeAttributes": {"source": "//isisdatar55.isis.cclrc.ac.uk/inst$/"},
-                "nodeStageSecretRef": {
-                    "name": "archive-creds",
-                    "namespace": "ir",
-                },
-            },
-        },
+        metadata=metadata,
+        spec=spec
     )
     client.CoreV1Api().create_persistent_volume(archive_pv)
     return pv_name
@@ -47,16 +37,17 @@ def _setup_archive_pv(job_name) -> str:
 
 def _setup_archive_pvc(job_name, job_namespace) -> str:
     pvc_name = f"{job_name}-archive-pvc"
+    metadata = V1ObjectMeta(name=pvc_name)
+    resources = V1ResourceRequirements(requests={"storage": "1000Gi"})
+    spec = V1PersistentVolumeClaimSpec(access_modes=["ReadOnlyMany"],
+                                       resources=resources,
+                                       volume_name=f"{job_name}-archive-pv-smb",
+                                       storage_class_name="")
     archive_pvc = client.V1PersistentVolumeClaim(
         api_version="v1",
         kind="PersistentVolumeClaim",
-        metadata={"name": pvc_name},
-        spec={
-            "accessModes": ["ReadOnlyMany"],
-            "resources": {"requests": {"storage": "1000Gi"}},
-            "volumeName": f"{pvc_name}-smb",
-            "storageClassName": "",
-        },
+        metadata=metadata,
+        spec=spec
     )
     client.CoreV1Api().create_namespaced_persistent_volume_claim(
         namespace=job_namespace, body=archive_pvc
@@ -68,32 +59,28 @@ def _setup_ceph_pv(job_name: str, ceph_creds_k8s_secret_name: str,
                    ceph_creds_k8s_namespace: str, cluster_id: str, fs_name: str,
                    ceph_mount_path: str) -> str:
     pv_name = f"{job_name}-ceph-pv"
-    ceph_pv = client.V1PersistentVolume(
+    metadata = V1ObjectMeta(name=pv_name)
+    secret_ref = V1SecretReference(name=ceph_creds_k8s_secret_name,
+                                   namespace=ceph_creds_k8s_namespace)
+    csi = V1CSIPersistentVolumeSource(driver="cephfs.csi.ceph.com",
+                                      node_stage_secret_ref=secret_ref,
+                                      volume_handle=pv_name,
+                                      volume_attributes={
+                                        "clusterID": cluster_id,
+                                        "mounter": "fuse",
+                                        "fsName": fs_name,
+                                        "staticVolume": "true",
+                                        "rootPath": "/isis/instrument" + ceph_mount_path
+                                      })
+    spec = V1PersistentVolumeSpec(capacity={"storage": "1000Gi"}, storage_class_name="",
+                                  access_modes=["ReadWriteMany"],
+                                  persistent_volume_reclaim_policy="Retain",
+                                  volume_mode="Filesystem", csi=csi)
+    ceph_pv = V1PersistentVolume(
         api_version="v1",
         kind="PersistentVolume",
-        metadata={
-            "name": pv_name,
-        },
-        spec={
-            "capacity": {"storage": "1000Gi"},
-            "storageClassName": "",
-            "accessModes": ["ReadWriteMany"],
-            "persistentVolumeReclaimPolicy": "Retain",
-            "volumeMode": "Filesystem",
-            "csi": {
-                "driver": "cephfs.csi.ceph.com",
-                "nodeStageSecretRef": {"name": ceph_creds_k8s_secret_name,
-                                       "namespace": ceph_creds_k8s_namespace},
-                "volumeHandle": pv_name,
-                "volumeAttributes": {
-                    "clusterID": cluster_id,
-                    "mounter": "fuse",
-                    "fsName": fs_name,
-                    "staticVolume": "true",
-                    "rootPath": "/isis/instrument" + ceph_mount_path
-                },
-            },
-        },
+        metadata=metadata,
+        spec=spec
     )
     client.CoreV1Api().create_persistent_volume(ceph_pv)
     return pv_name
@@ -101,16 +88,17 @@ def _setup_ceph_pv(job_name: str, ceph_creds_k8s_secret_name: str,
 
 def _setup_ceph_pvc(job_name, job_namespace):
     pvc_name = f"{job_name}-ceph-pvc"
-    ceph_pvc = client.V1PersistentVolumeClaim(
+    metadata = V1ObjectMeta(name=pvc_name)
+    resources = V1ResourceRequirements(requests={"storage": "1000Gi"})
+    spec = V1PersistentVolumeClaimSpec(access_modes=["ReadWriteMany"],
+                                       resources=resources,
+                                       volume_name=f"{job_name}-ceph-pv",
+                                       storage_class_name="")
+    ceph_pvc = V1PersistentVolumeClaim(
         api_version="v1",
         kind="PersistentVolumeClaim",
-        metadata={"name": pvc_name},
-        spec={
-            "accessModes": ["ReadWriteMany"],
-            "resources": {"requests": {"storage": "1000Gi"}},
-            "volumeName": f"{job_name}-ceph-pv",
-            "storageClassName": "",
-        },
+        metadata=metadata,
+        spec=spec
     )
     client.CoreV1Api().create_namespaced_persistent_volume_claim(
         namespace=job_namespace, body=ceph_pvc
@@ -152,7 +140,7 @@ class JobCreator:
         :param job_name: The name that the job should be created as
         :param script: The script that should be executed
         :param job_namespace: The namespace that the job should be created in
-        :param user_id: The autoreduce user's user id, this is used primarily for mounting CEPH and will ensure that
+        :param user_id: The autoreduce user's user id, this is used primarily for mounting CEPH and will ensure that ceph can be used to output data to. Will be cast to an int.
         :param ceph_creds_k8s_secret_name:
         :param ceph_creds_k8s_namespace:
         :param cluster_id:
@@ -206,7 +194,7 @@ class JobCreator:
         )
 
         watcher_container = (
-            V1Container(name=job_name,
+            V1Container(name="job-watcher",
                         image=f"ghcr.io/interactivereduction/jobwatcher@sha256:{self.watcher_sha}",
                         env=[
                             V1EnvVar(name="DB_IP", value=db_ip),
@@ -226,9 +214,10 @@ class JobCreator:
             ceph_volume = V1Volume(name="ceph-mount", empty_dir=V1EmptyDirVolumeSource(size_limit="10000Mi"))
 
         pod_spec = V1PodSpec(
+            service_account_name="jobwatcher",
             containers=[main_container, watcher_container],
             restart_policy="Never",
-            security_context=V1SecurityContext(run_as_user=user_id),
+            security_context=V1SecurityContext(run_as_user=int(user_id)),
             tolerations=[V1Toleration(key="queue-worker", effect="NoSchedule", operator="Exists")],
             volumes=[
                 V1Volume(name="archive-mount",
