@@ -37,7 +37,7 @@ class JobController:  # pylint: disable=too-many-instance-attributes
         consumer_password = os.environ.get("QUEUE_PASSWORD", "")
         self.reduce_user_id = os.environ.get("REDUCE_USER_ID", "")
         self.job_creator = JobCreator(runner_sha=runner_sha)
-        self.ir_k8s_api = "ir-jobs"
+        self.ir_jobs_namespace = os.environ.get("JOBS_NAMESPACE", "ir-jobs")
         self.consumer = QueueConsumer(  # pylint: disable=attribute-defined-outside-init
             self.on_message,
             queue_host=queue_host,
@@ -89,7 +89,7 @@ class JobController:  # pylint: disable=too-many-instance-attributes
                 job_name=job_name,
                 script=script,
                 ceph_path=ceph_path,
-                job_namespace=self.ir_k8s_api,
+                job_namespace=self.ir_jobs_namespace,
                 user_id=self.reduce_user_id,
             )
             self.create_job_watcher(job, pv, pvc, ceph_path, db_reduction_id, script, script_sha, additional_values)
@@ -125,7 +125,7 @@ class JobController:  # pylint: disable=too-many-instance-attributes
             job_name,
             pv,
             pvc,
-            self.ir_k8s_api,
+            self.ir_jobs_namespace,
             ceph_path,
             self.db_updater,
             db_reduction_id,
