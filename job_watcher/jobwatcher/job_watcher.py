@@ -9,7 +9,8 @@ from time import sleep
 from typing import Any, Optional, Tuple
 
 from kubernetes import client, watch  # type: ignore[import]
-from kubernetes.client import V1Job, V1Pod, V1Container  # type: ignore[import]
+from kubernetes.client import V1Job, V1Pod, V1Container, V1PodStatus, V1ContainerStatus, \
+    V1ContainerState  # type: ignore[import]
 
 from jobwatcher.database.state_enum import State
 from jobwatcher.database.db_updater import DBUpdater
@@ -19,19 +20,29 @@ from jobwatcher.utils import logger
 def clean_up_pvcs_for_job(job: V1Job, namespace: str) -> None:
     v1 = client.CoreV1Api()
     pvcs_to_delete_str = job.metadata.annotations["pvcs"]
+    # Clean up the string and turn it into a list
     pvcs_to_delete = pvcs_to_delete_str.strip('][').split(', ')
+    logger.info(f"Deleting pvcs: {pvcs_to_delete}")
     for pvc in pvcs_to_delete:
-        v1.delete_namespaced_persistent_volume_claim(pvc, namespace=namespace)
-        logger.info(f"Deleted pv: {pvc}")
+        # Strip pv name for ' just in case they have stuck around.
+        pvc_name = pvc.strip("'")
+        if pvc_name is not None and pvc_name != "None":
+            v1.delete_namespaced_persistent_volume_claim(pvc.strip("'"), namespace=namespace)
+            logger.info(f"Deleted pv: {pvc}")
 
 
 def clean_up_pvs_for_job(job: V1Job) -> None:
     v1 = client.CoreV1Api()
     pvs_to_delete_str = job.metadata.annotations["pvs"]
+    # Clean up the string and turn it into a list
     pvs_to_delete = pvs_to_delete_str.strip('][').split(', ')
+    logger.info(f"Deleting pvs: {pvs_to_delete}")
     for pv in pvs_to_delete:
-        v1.delete_persistent_volume(pv)
-        logger.info(f"Deleted pv: {pv}")
+        # Strip pv name for ' just in case they have stuck around.
+        pv_name = pv.strip("'")
+        if pv_name is not None and pv_name != "None":
+            v1.delete_persistent_volume(pv_name)
+            logger.info(f"Deleted pv: {pv}")
 
 
 def _find_pod_from_partial_name(partial_pod_name: str, namespace: str) -> Optional[V1Pod]:
@@ -54,13 +65,13 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         self.db_updater = db_updater
         self.max_time_to_complete = max_time_to_complete
         self.done_watching = False
-
-        v1_batch = client.BatchV1Api()
-        self.job = v1_batch.read_namespaced_job(job_name, namespace=self.namespace)
-        self.pod = _find_pod_from_partial_name(partial_pod_name, namespace=self.namespace)
-        if self.pod is None:
-            raise ValueError(f"The pod could not be found using partial pod name: {partial_pod_name}")
+        self.job_name = job_name
         self.container_name = container_name
+        self.job = None
+        self.pod_name = None
+        self.pod = None
+
+        self.update_current_container_info(partial_pod_name)
 
     def watch(self) -> None:
         """
@@ -72,7 +83,25 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         while not self.done_watching:
             self.check_for_changes()
             # Brief sleep to facilitate reducing CPU and network load
-            sleep(0.1)
+            if not self.done_watching:
+                logger.info("Container still busy: %s", self.container_name)
+                sleep(0.5)
+
+    def update_current_container_info(self, partial_pod_name: str = None) -> None:
+        v1 = client.CoreV1Api()
+        v1_batch = client.BatchV1Api()
+        self.job = v1_batch.read_namespaced_job(self.job_name, namespace=self.namespace)
+        if partial_pod_name is not None:
+            logger.info("Finding the pod including name: %s", partial_pod_name)
+            self.pod = _find_pod_from_partial_name(partial_pod_name, namespace=self.namespace)
+            logger.info("Pod found: %s", self.pod.metadata.name)
+            if self.pod is None:
+                raise ValueError(f"The pod could not be found using partial pod name: {partial_pod_name}")
+            self.pod_name = self.pod.metadata.name
+        else:
+            if self.pod_name is None:
+                raise ValueError("Can't update container info if pod_name was not set and partial_pod_name not provided.")
+            self.pod = v1.read_namespaced_pod(name=self.pod_name, namespace=self.namespace)
 
     def check_for_changes(self) -> None:
         """
@@ -80,10 +109,21 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         having finished or a job has stalled.
         :return:
         """
+        self.update_current_container_info()
         if self.check_for_job_complete():
             self.cleanup_job()
+            self.done_watching = True
         elif self.check_for_pod_stalled():
+            logger.info("Job has stalled out...")
             self.cleanup_job()
+            self.done_watching = True
+
+    def get_container_status(self) -> Optional[V1ContainerStatus]:
+        # Find container
+        for container_status in self.pod.status.container_statuses:
+            if container_status.name == self.container_name:
+                return container_status
+        return None
 
     def check_for_job_complete(self) -> bool:
         """
@@ -91,14 +131,21 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         need to process that, and the same for a success.
         :return:
         """
-        if self.job.status.succeeded == 1:
-            # Job has succeeded
-            self.process_job_success()
-            return True
-        elif self.job.status.failed == 1:
-            # Job has failed
-            self.process_job_failed()
-            return True
+        container_status = self.get_container_status()
+        if container_status is None:
+            raise ValueError(f"Container not found: {self.container_name}, in pod: {self.pod.metadata.name}")
+        if container_status.state.terminated is not None:
+            # Container has finished
+            if container_status.state.terminated.exit_code == 0:
+                # Job has succeeded
+                logger.info("Job has succeeded... processing success.")
+                self.process_job_success()
+                return True
+            else:
+                # Job has failed
+                logger.info("Job has errored... processing failure.")
+                self.process_job_failed()
+                return True
         return False
 
     def check_for_pod_stalled(self) -> bool:
@@ -118,7 +165,8 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         if logs == "":
             logger.info(f"No new logs for pod {self.pod.metadata.name} in {seconds_in_30_minutes} seconds")
             return True
-        if (self.pod.metadata.creation_timestamp - datetime.datetime.now()) > self.max_time_to_complete:
+        if ((datetime.datetime.now(datetime.timezone.utc) - self.pod.metadata.creation_timestamp) >
+                datetime.timedelta(seconds=self.max_time_to_complete)):
             logger.info(f"Pod has timed out: {self.pod.metadata.name}, ")
             return True
         return False
@@ -128,18 +176,36 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         pod = v1_core.read_namespaced_pod(pod.metadata.name, self.namespace)
         start_time = pod.status.start_time
         end_time = None
-        for container_status in pod.status.container_statuses:
-            if container_status.state.terminated:
-                end_time = container_status.state.terminated.finished_at
-                break
+        container_status = self.get_container_status()
+        if container_status.state.terminated:
+            end_time = container_status.state.terminated.finished_at
         return start_time, end_time
+
+    def _find_latest_raised_error(self) -> str:
+        """
+        For this we will make an assumption that contains "Error:" is the line that we
+        want to grab and store. This is usually found at the bottom of a traceback for a
+        failure. However, will default to the last line in the pod otherwise.
+        :return: string containing the error found last in the logs.
+        """
+        v1_core = client.CoreV1Api()
+        logs = v1_core.read_namespaced_pod_log(
+            name=self.pod.metadata.name, namespace=self.pod.metadata.namespace,
+            tail_lines=50, container=self.container_name).split("\n")
+        line_to_record = logs[-1]
+        logs.reverse()
+        for line in logs:
+            if "Error:" in line:
+                line_to_record = line
+                break
+        return line_to_record.strip()
 
     def process_job_failed(self) -> None:
         """
         Process the event that failed, and notify the message broker
         :return:
         """
-        message = self.job.status.conditions[0].message
+        message = self._find_latest_raised_error()
         logger.info("Job %s has failed, with message: %s", self.job.metadata.name, message)
         reduction_id = self.job.metadata.annotations["reduction-id"]
         start, end = self._find_start_and_end_of_pod(self.pod)
@@ -167,7 +233,9 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         v1_core = client.CoreV1Api()
         # Convert message from JSON string to python dict
         try:
-            logs = v1_core.read_namespaced_pod_log(name=self.pod.metadata.name, namespace=self.namespace)
+            logs = v1_core.read_namespaced_pod_log(name=self.pod.metadata.name,
+                                                   namespace=self.namespace,
+                                                   container=self.container_name)
             output = logs.split("\n")[-2]  # Get second to last line (last line is empty)
             logger.info("Job %s has been completed with output: %s", job_name, output)
             job_output = json.loads(output)

@@ -176,96 +176,6 @@ class DBUpdater:
         self.session_maker_func = sessionmaker(bind=engine)
 
     # pylint: disable=too-many-arguments, too-many-locals
-    def add_detected_run(
-        self,
-        filename: str,
-        title: str,
-        instrument_name: str,
-        users: str,
-        experiment_number: str,
-        run_start: str,
-        run_end: str,
-        good_frames: str,
-        raw_frames: str,
-        reduction_inputs: Dict[str, Any],
-    ) -> int:
-        """
-        This function submits data to the database from what is initially available on detected-runs message broker
-        station/topic
-        :param filename: the filename of the run that needs to be reduced
-        :param title: The title of the run file
-        :param instrument_name: The name of the instrument for the run
-        :param users: The users entered into the run file
-        :param experiment_number: The RB number of the run entered by users
-        :param run_start: The time at which the run started, created using the standard python time format.
-        :param run_end: The time at which the run ended, created using the standard python time format.
-        :param good_frames: The number of frames that are considered "good" in the file
-        :param raw_frames: The number of frames that are in the file
-        :param reduction_inputs: The inputs to be used by the reduction
-        :return: The id of the reduction row entry
-        """
-        logger.info(
-            "Submitting detected-run to the database: {filename: %s, title: %s, instrument_name: %s, users: %s, "
-            "experiment_number: %s, run_start: %s, run_end: %s, good_frames: %s, raw_frames: %s, "
-            "reduction_inputs: %s}",
-            filename,
-            title,
-            instrument_name,
-            users,
-            experiment_number,
-            run_start,
-            run_end,
-            good_frames,
-            raw_frames,
-            reduction_inputs,
-        )
-        with self.session_maker_func() as session:
-            instrument = session.query(Instrument).filter_by(instrument_name=instrument_name).first()
-            if instrument is None:
-                instrument = Instrument(instrument_name=instrument_name)
-
-            run = Run(
-                filename=filename,
-                title=title,
-                users=users,
-                experiment_number=experiment_number,
-                run_start=run_start,
-                run_end=run_end,
-                good_frames=good_frames,
-                raw_frames=raw_frames,
-            )
-            run.instrument = instrument
-            reduction = Reduction(
-                reduction_start=None,
-                reduction_end=None,
-                reduction_state=State.NOT_STARTED,
-                reduction_inputs=reduction_inputs,
-                script_id=None,
-                reduction_outputs=None,
-            )
-            # Now create the run_reduction entry and add it
-            run_reduction = RunReduction(run_relationship=run, reduction_relationship=reduction)
-            session.add(run_reduction)
-            session.commit()
-
-            logger.info(
-                "Submitted detected-run to the database successfully: {filename: %s, title: %s, instrument_name: %s, "
-                "users: %s, experiment_number: %s, run_start: %s, run_end: %s, good_frames: %s, raw_frames: %s, "
-                "reduction_inputs: %s}",
-                filename,
-                title,
-                instrument_name,
-                users,
-                experiment_number,
-                run_start,
-                run_end,
-                good_frames,
-                raw_frames,
-                reduction_inputs,
-            )
-
-            return int(reduction.id)
-
     def update_completed_run(
         self,
         db_reduction_id: int,
@@ -311,6 +221,5 @@ class DBUpdater:
                 status_message,
                 output_files,
             )
-
 
 # pylint: enable=too-many-arguments, too-many-locals

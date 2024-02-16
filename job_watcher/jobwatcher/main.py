@@ -6,7 +6,7 @@ from jobwatcher.utils import load_kubernetes_config
 
 
 # Defaults to 6 hours
-MAX_TIME_TO_COMPLETE = os.environ.get("MAX_TIME_TO_COMPLETE_JOB", 60*60*6)
+MAX_TIME_TO_COMPLETE = int(os.environ.get("MAX_TIME_TO_COMPLETE_JOB", 60*60*6))
 
 # Grab pod info from env
 CONTAINER_NAME = os.environ.get("CONTAINER_NAME", "")

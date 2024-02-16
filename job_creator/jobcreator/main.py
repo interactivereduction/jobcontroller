@@ -100,6 +100,7 @@ async def process_message(message: Dict[str, Any]):
             reduction_id=db_reduction_id,
             instrument=instrument_name,
         )
+        DB_UPDATER.update_script(db_reduction_id, script, script_sha)
         ceph_mount_path = create_ceph_mount_path(instrument_name, rb_number)
         JOB_CREATOR.spawn_job(
             job_name=job_name,
