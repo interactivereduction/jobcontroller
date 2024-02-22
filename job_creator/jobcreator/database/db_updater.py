@@ -225,17 +225,20 @@ class DBUpdater:
             if instrument is None:
                 instrument = Instrument(instrument_name=instrument_name)
 
-            run = Run(
-                filename=filename,
-                title=title,
-                users=users,
-                experiment_number=experiment_number,
-                run_start=run_start,
-                run_end=run_end,
-                good_frames=good_frames,
-                raw_frames=raw_frames,
-            )
-            run.instrument = instrument
+            run = session.query(Run).filter_by(filename=filename).first()
+            if run is None:
+                run = Run(
+                    filename=filename,
+                    title=title,
+                    users=users,
+                    experiment_number=experiment_number,
+                    run_start=run_start,
+                    run_end=run_end,
+                    good_frames=good_frames,
+                    raw_frames=raw_frames,
+                )
+                run.instrument = instrument
+
             reduction = Reduction(
                 reduction_start=None,
                 reduction_end=None,
