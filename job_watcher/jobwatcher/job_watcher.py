@@ -158,13 +158,16 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         """
         v1_core = client.CoreV1Api()
         seconds_in_30_minutes = 60 * 30
-        logs = v1_core.read_namespaced_pod_log(
-            name=self.pod.metadata.name, namespace=self.pod.metadata.namespace,
-            timestamps=True, tail_lines=1, since_seconds=seconds_in_30_minutes,
-            container=self.container_name)
-        if logs == "":
-            logger.info(f"No new logs for pod {self.pod.metadata.name} in {seconds_in_30_minutes} seconds")
-            return True
+        # If pod is younger than 30 minutes it can't be stalled for 30 minutes, if older, then check.
+        if ((datetime.datetime.now(datetime.timezone.utc) - self.pod.metadata.creation_timestamp) >
+                datetime.timedelta(seconds=seconds_in_30_minutes)):
+            logs = v1_core.read_namespaced_pod_log(
+                name=self.pod.metadata.name, namespace=self.pod.metadata.namespace,
+                timestamps=True, tail_lines=1, since_seconds=seconds_in_30_minutes,
+                container=self.container_name)
+            if logs == "":
+                logger.info(f"No new logs for pod {self.pod.metadata.name} in {seconds_in_30_minutes} seconds")
+                return True
         if ((datetime.datetime.now(datetime.timezone.utc) - self.pod.metadata.creation_timestamp) >
                 datetime.timedelta(seconds=self.max_time_to_complete)):
             logger.info(f"Pod has timed out: {self.pod.metadata.name}, ")
