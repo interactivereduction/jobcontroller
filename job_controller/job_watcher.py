@@ -1,6 +1,7 @@
 """
 Watch a kubernetes job, and when it ends notify a message broker station/topic
 """
+
 import json
 from json import JSONDecodeError
 from typing import Any, Optional, Dict, Tuple

@@ -1,6 +1,7 @@
 """
 DB updater integration tests. Requires a postgres database at localhost:5432 with password: password
 """
+
 # pylint: disable=redefined-outer-name, too-many-arguments, redefined-argument-from-local,
 from datetime import datetime
 
