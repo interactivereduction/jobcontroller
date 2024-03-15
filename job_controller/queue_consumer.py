@@ -1,6 +1,7 @@
 """
 The module is aimed to consume from a station on Memphis using the create_station_consumer
 """
+
 import json
 from typing import Callable, Dict
 
