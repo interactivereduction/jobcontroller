@@ -2,6 +2,7 @@
 This module is responsible for holding the SQL Classes that SQLAlchemy will use and then formatting the SQL queries
 via SQLAlchemy via pre-made functions.
 """
+
 import textwrap
 from typing import Any, Dict, List
 

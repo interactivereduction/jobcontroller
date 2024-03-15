@@ -1,6 +1,7 @@
 """
 The SQLAlchemy enum for the State of the reduction status
 """
+
 from enum import Enum
 
 
