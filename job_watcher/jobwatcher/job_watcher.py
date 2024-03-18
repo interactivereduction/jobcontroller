@@ -27,7 +27,7 @@ def clean_up_pvcs_for_job(job: V1Job, namespace: str) -> None:
         # Strip pv name for ' just in case they have stuck around.
         pvc_name = pvc.strip("'")
         if pvc_name is not None and pvc_name != "None":
-            v1.delete_namespaced_persistent_volume_claim(pvc.strip("'"), namespace=namespace)
+            v1.delete_namespaced_persistent_volume_claim(pvc.strip("'").strip('"'), namespace=namespace)
             logger.info(f"Deleted pv: {pvc}")
 
 
@@ -39,7 +39,7 @@ def clean_up_pvs_for_job(job: V1Job) -> None:
     logger.info(f"Deleting pvs: {pvs_to_delete}")
     for pv in pvs_to_delete:
         # Strip pv name for ' just in case they have stuck around.
-        pv_name = pv.strip("'")
+        pv_name = pv.strip("'").strip('"')
         if pv_name is not None and pv_name != "None":
             v1.delete_persistent_volume(pv_name)
             logger.info(f"Deleted pv: {pv}")
@@ -94,9 +94,9 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         if partial_pod_name is not None:
             logger.info("Finding the pod including name: %s", partial_pod_name)
             self.pod = _find_pod_from_partial_name(partial_pod_name, namespace=self.namespace)
-            logger.info("Pod found: %s", self.pod.metadata.name)
             if self.pod is None:
                 raise ValueError(f"The pod could not be found using partial pod name: {partial_pod_name}")
+            logger.info("Pod found: %s", self.pod.metadata.name)
             self.pod_name = self.pod.metadata.name
         else:
             if self.pod_name is None:
