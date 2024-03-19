@@ -8,15 +8,8 @@ from json import JSONDecodeError
 from time import sleep
 from typing import Any, Optional, Tuple
 
-from kubernetes import client, watch  # type: ignore[import]
-from kubernetes.client import (
-    V1Job,
-    V1Pod,
-    V1Container,
-    V1PodStatus,
-    V1ContainerStatus,
-    V1ContainerState,
-)  # type: ignore[import]
+from kubernetes import client # type: ignore[import]
+from kubernetes.client import (V1Job, V1Pod, V1ContainerStatus)  # type: ignore[import]
 
 from jobwatcher.database.state_enum import State
 from jobwatcher.database.db_updater import DBUpdater
@@ -34,13 +27,13 @@ def clean_up_pvcs_for_job(job: V1Job, namespace: str) -> None:
     pvcs_to_delete_str = job.metadata.annotations["pvcs"]
     # Clean up the string and turn it into a list
     pvcs_to_delete = pvcs_to_delete_str.strip("][").split(", ")
-    logger.info(f"Deleting pvcs: {pvcs_to_delete}")
+    logger.info("Deleting pvcs: %s", pvcs_to_delete)
     for pvc in pvcs_to_delete:
         # Strip pv name for ' just in case they have stuck around.
         pvc_name = pvc.strip("'")
         if pvc_name is not None and pvc_name != "None":
             v1.delete_namespaced_persistent_volume_claim(pvc.strip("'").strip('"'), namespace=namespace)
-            logger.info(f"Deleted pv: {pvc}")
+            logger.info("Deleted pv: %s", pvc)
 
 
 def clean_up_pvs_for_job(job: V1Job) -> None:
@@ -53,13 +46,13 @@ def clean_up_pvs_for_job(job: V1Job) -> None:
     pvs_to_delete_str = job.metadata.annotations["pvs"]
     # Clean up the string and turn it into a list
     pvs_to_delete = pvs_to_delete_str.strip("][").split(", ")
-    logger.info(f"Deleting pvs: {pvs_to_delete}")
+    logger.info("Deleting pvs: %s", pvs_to_delete)
     for pv in pvs_to_delete:
         # Strip pv name for ' just in case they have stuck around.
         pv_name = pv.strip("'").strip('"')
         if pv_name is not None and pv_name != "None":
             v1.delete_persistent_volume(pv_name)
-            logger.info(f"Deleted pv: {pv}")
+            logger.info("Deleted pv: %s", pv)
 
 
 def _find_pod_from_partial_name(partial_pod_name: str, namespace: str) -> Optional[V1Pod]:
@@ -190,11 +183,10 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 logger.info("Job has succeeded... processing success.")
                 self.process_job_success()
                 return True
-            else:
-                # Job has failed
-                logger.info("Job has errored... processing failure.")
-                self.process_job_failed()
-                return True
+            # Job has failed
+            logger.info("Job has errored... processing failure.")
+            self.process_job_failed()
+            return True
         return False
 
     def check_for_pod_stalled(self) -> bool:
@@ -220,12 +212,12 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 container=self.container_name,
             )
             if logs == "":
-                logger.info(f"No new logs for pod {self.pod.metadata.name} in {seconds_in_30_minutes} seconds")
+                logger.info("No new logs for pod %s in %s seconds", self.pod.metadata.name, seconds_in_30_minutes)
                 return True
         if (datetime.datetime.now(datetime.timezone.utc) - self.pod.metadata.creation_timestamp) > datetime.timedelta(
             seconds=self.max_time_to_complete
         ):
-            logger.info(f"Pod has timed out: {self.pod.metadata.name}, ")
+            logger.info("Pod has timed out: %s", self.pod.metadata.name)
             return True
         return False
 
@@ -349,6 +341,6 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         Cleanup the leftovers that a job will leave behind when it cleans up itself
         after a timeout, namely PVs and PVCs
         """
-        logger.info(f"Starting cleanup of job {self.job.metadata.name}")
+        logger.info("Starting cleanup of job %s", self.job.metadata.name)
         clean_up_pvs_for_job(self.job)
         clean_up_pvcs_for_job(self.job, self.namespace)

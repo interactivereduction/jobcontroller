@@ -2,7 +2,7 @@
 This module is responsible for holding the SQL Classes that SQLAlchemy will use and then formatting the SQL queries
 via SQLAlchemy via pre-made functions.
 """
-from typing import Any, Dict, List
+from typing import Any, List
 
 from sqlalchemy import (  # type: ignore[attr-defined]
     create_engine,
@@ -198,7 +198,7 @@ class DBUpdater:
         :return:
         """
         logger.info(
-            "Updating completed-run in the database: {id: %s, state: %s, " "status_message: %s, output_files: %s}",
+            "Updating completed-run in the database: {id: %s, state: %s, status_message: %s, output_files: %s}",
             db_reduction_id,
             str(state),
             status_message,

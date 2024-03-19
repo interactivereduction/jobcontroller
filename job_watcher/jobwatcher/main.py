@@ -1,3 +1,6 @@
+"""
+Main file containing the entry point of the JobWatcher application
+"""
 import os
 
 from jobwatcher.database.db_updater import DBUpdater
