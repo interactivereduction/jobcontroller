@@ -34,5 +34,5 @@ class MainTest(unittest.TestCase):
             db_updater=DB_UPDATER,
             max_time_to_complete=int(self.max_time_to_complete_job),
             container_name=self.container_name, job_name=self.job_name,
-            pod_name=self.pod_name)
+            partial_pod_name=self.pod_name)
         job_watcher.return_value.watch.assert_called_once_with()
