@@ -98,9 +98,9 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         self.done_watching = False
         self.job_name = job_name
         self.container_name = container_name
-        self.job = None
-        self.pod_name = None
-        self.pod = None
+        self.job: Optional[V1Job] = None
+        self.pod_name: Optional[str] = None
+        self.pod: Optional[V1Pod] = None
 
         self.update_current_container_info(partial_pod_name)
 
@@ -118,7 +118,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 logger.info("Container still busy: %s", self.container_name)
                 sleep(0.5)
 
-    def update_current_container_info(self, partial_pod_name: str = None) -> None:
+    def update_current_container_info(self, partial_pod_name: Optional[str] = None) -> None:
         """
         Updates the current container info that the job watcher is aware of.
         :param partial_pod_name: optional str, the partial name of the pod that the job is running
@@ -232,7 +232,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         start_time = pod.status.start_time
         end_time = None
         container_status = self.get_container_status()
-        if container_status.state.terminated:
+        if container_status is not None and container_status.state.terminated:
             end_time = container_status.state.terminated.finished_at
         return start_time, end_time
 
@@ -250,7 +250,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             tail_lines=50,
             container=self.container_name,
         ).split("\n")
-        line_to_record = logs[-1]
+        line_to_record: str = str(logs[-1])
         logs.reverse()
         for line in logs:
             if "Error:" in line:

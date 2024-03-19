@@ -22,7 +22,7 @@ DB_PASSWORD = os.environ.get("DB_PASSWORD", "")
 DB_UPDATER = DBUpdater(ip=DB_IP, username=DB_USERNAME, password=DB_PASSWORD)
 
 
-def main():
+def main() -> None:
     """
     The main entry point to the JobWatcher application
     :return:
