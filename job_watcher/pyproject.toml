@@ -30,7 +30,6 @@ code-inspection = [
     "pylint==2.17.4",
     "mypy==1.5.1",
     "sqlalchemy-stubs==0.4",
-    "job_watcher[test]",
     "types-requests==2.31.0.10"
 ]
 
