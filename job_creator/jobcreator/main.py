@@ -22,7 +22,7 @@ DB_UPDATER = DBUpdater(ip=DB_IP, username=DB_USERNAME, password=DB_PASSWORD)
 
 # This is used for ensuring that when on staging we will use an empty dir instead of the ceph production mount
 DEV_MODE = os.environ.get("DEV_MODE", "False")
-if DEV_MODE != "False":  # pylint disable=simplifiable-if-statement
+if DEV_MODE != "False":  # pylint: disable=simplifiable-if-statement
     DEV_MODE = True
 else:
     DEV_MODE = False
@@ -63,7 +63,7 @@ def on_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-many-loc
     asyncio.run(process_message(message))
 
 
-async def process_message(message: Dict[str, Any]) -> None:  # pylint disable=too-many-locals
+async def process_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
     """
     Request that the k8s api spawns a job
     :param message: dict, the message is a dictionary containing the needed information for spawning a pod
@@ -120,6 +120,7 @@ async def process_message(message: Dict[str, Any]) -> None:  # pylint disable=to
         )
     except Exception as exception:  # pylint: disable=broad-exception-caught
         logger.exception(exception)
+
 
 def main() -> None:
     """
