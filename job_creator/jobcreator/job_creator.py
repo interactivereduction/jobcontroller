@@ -99,7 +99,7 @@ def _setup_ceph_pv(
     return pv_name
 
 
-def _setup_ceph_pvc(job_name, job_namespace):
+def _setup_ceph_pvc(job_name: str, job_namespace: str) -> str:
     """
     Sets up the ceph PVC using the loaded kubeconfig as a destination
     :param job_name: str, the name of the job that the PVC is made for
@@ -153,7 +153,7 @@ class JobCreator:
         db_username: str,
         db_password: str,
         runner_sha: str,
-    ):
+    ) -> None:
         """
         Takes the meta_data from the message and uses that dictionary for generating the deployment of the pod.
         :param job_name: The name that the job should be created as
@@ -171,7 +171,7 @@ class JobCreator:
         :param db_password: the database password to use to connect
         :param runner_sha: The sha used for defining what version the runner is
         the containers have permission to use the directories required for outputting data.
-        :return: A tuple containing the (job's name, PV name, and PVCs name)
+        :return: None
         """
         logger.info("Creating PV and PVC for: %s", job_name)
 

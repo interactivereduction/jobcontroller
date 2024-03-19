@@ -40,8 +40,8 @@ class Run(Base):  # type: ignore[valid-type, misc]
     run_end = Column(DateTime)
     good_frames = Column(Integer)
     raw_frames = Column(Integer)
-    reductions = relationship("RunReduction", back_populates="run_relationship")
-    instrument = relationship("Instrument")
+    reductions = relationship("RunReduction", back_populates="run_relationship")  # type: ignore[var-annotated]
+    instrument = relationship("Instrument")  # type: ignore[var-annotated]
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Run):
@@ -75,7 +75,7 @@ class Script(Base):  # type: ignore[valid-type, misc]
     id = Column(Integer, primary_key=True, autoincrement=True)
     script = Column(String, unique=True)
     sha = Column(String, nullable=True)
-    reductions = relationship("Reduction", back_populates="script")
+    reductions = relationship("Reduction", back_populates="script")  # type: ignore[var-annotated]
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Script):
@@ -99,9 +99,10 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
     reduction_status_message = Column(String)
     reduction_inputs = Column(JSONB)
     script_id = Column(Integer, ForeignKey("scripts.id"))
-    script = relationship("Script", back_populates="reductions")
+    script = relationship("Script", back_populates="reductions")  # type: ignore[var-annotated]
     reduction_outputs = Column(String)
-    run_reduction_relationship = relationship("RunReduction", back_populates="reduction_relationship")
+    run_reduction_relationship = relationship("RunReduction",  # type: ignore[var-annotated]
+                                              back_populates="reduction_relationship")
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Reduction):
@@ -270,7 +271,7 @@ class DBUpdater:
 
             return int(reduction.id)
 
-    def update_script(self, db_reduction_id: int, reduction_script: str, script_sha: str):
+    def update_script(self, db_reduction_id: int, reduction_script: str, script_sha: str) -> None:
         """
         Updates the script tied to a reduction in the DB
         :param db_reduction_id: The ID for the reduction to be updated

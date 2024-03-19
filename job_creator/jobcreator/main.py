@@ -21,7 +21,7 @@ DB_PASSWORD = os.environ.get("DB_PASSWORD", "")
 DB_UPDATER = DBUpdater(ip=DB_IP, username=DB_USERNAME, password=DB_PASSWORD)
 
 # This is used for ensuring that when on staging we will use an empty dir instead of the ceph production mount
-DEV_MODE = os.environ.get("DEV_MODE", "False")
+DEV_MODE: Any = os.environ.get("DEV_MODE", "False")
 if DEV_MODE != "False":  # pylint: disable=simplifiable-if-statement
     DEV_MODE = True
 else:
@@ -31,7 +31,7 @@ if DEV_MODE:
 else:
     logger.info("Launched in production mode")
 
-MANTID_SHA = os.environ.get("MANTID_SHA", None)
+MANTID_SHA: str = os.environ.get("MANTID_SHA", None)
 if MANTID_SHA is None:
     raise OSError("MANTID_SHA not set in the environment, please add it.")
 WATCHER_SHA = os.environ.get("WATCHER_SHA", None)
