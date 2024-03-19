@@ -64,6 +64,7 @@ def on_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-many-loc
     """
     asyncio.run(process_message(message))
 
+
 # pylint disable=too-many-locals
 async def process_message(message: Dict[str, Any]) -> None:
     """
@@ -122,7 +123,10 @@ async def process_message(message: Dict[str, Any]) -> None:
         )
     except Exception as exception:  # pylint: disable=broad-exception-caught
         logger.exception(exception)
+
+
 # pylint enable=too-many-locals
+
 
 def main() -> None:
     """

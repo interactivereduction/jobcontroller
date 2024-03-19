@@ -525,7 +525,7 @@ class JobWatcherTest(unittest.TestCase):
             reduction_start=start,
         )
 
-# pylint disable=redefined-outer-name
+    # pylint disable=redefined-outer-name
     @mock.patch("jobwatcher.job_watcher.clean_up_pvcs_for_job")
     @mock.patch("jobwatcher.job_watcher.clean_up_pvs_for_job")
     @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
@@ -537,4 +537,6 @@ class JobWatcherTest(unittest.TestCase):
 
         clean_up_pvs_for_job.assert_called_once_with(jw.job)
         clean_up_pvcs_for_job.assert_called_once_with(jw.job, jw.namespace)
+
+
 # pylint enable=redefined-outer-name
