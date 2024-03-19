@@ -121,6 +121,7 @@ async def process_message(message: Dict[str, Any]) -> None:  # pylint disable=to
     except Exception as exception:  # pylint: disable=broad-exception-caught
         logger.exception(exception)
 
+
 def main() -> None:
     """
     This is the function that runs the JobController software suite
