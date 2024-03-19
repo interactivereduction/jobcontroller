@@ -7,7 +7,12 @@ from kubernetes import client  # type: ignore[import]
 from jobcreator.utils import logger, load_kubernetes_config
 
 
-def _setup_archive_pv(job_name) -> str:
+def _setup_archive_pv(job_name: str) -> str:
+    """
+    Sets up the archive PV using the loaded kubeconfig as a destination
+    :param job_name: str, the name of the job needing an archive
+    :return: str, the name of the archive PV
+    """
     pv_name = f"{job_name}-archive-pv-smb"
     metadata = client.V1ObjectMeta(name=pv_name,
                                    annotations={
@@ -31,7 +36,13 @@ def _setup_archive_pv(job_name) -> str:
     return pv_name
 
 
-def _setup_archive_pvc(job_name, job_namespace) -> str:
+def _setup_archive_pvc(job_name: str, job_namespace: str) -> str:
+    """
+    Sets up the archive PVC using the loaded kubeconfig as a destination
+    :param job_name: str, the name of the job that the PVC is made for
+    :param job_namespace: str, the namespace that the job is in
+    :return: str, the name of the PVC
+    """
     pvc_name = f"{job_name}-archive-pvc"
     metadata = client.V1ObjectMeta(name=pvc_name)
     resources = client.V1ResourceRequirements(requests={"storage": "1000Gi"})
@@ -54,6 +65,11 @@ def _setup_archive_pvc(job_name, job_namespace) -> str:
 def _setup_ceph_pv(job_name: str, ceph_creds_k8s_secret_name: str,
                    ceph_creds_k8s_namespace: str, cluster_id: str, fs_name: str,
                    ceph_mount_path: str) -> str:
+    """
+    Sets up the ceph deneb PV using the loaded kubeconfig as a destination
+    :param job_name: str, the name of the job needing an ceph deneb PV mount
+    :return: str, the name of the ceph deneb PV
+    """
     pv_name = f"{job_name}-ceph-pv"
     metadata = client.V1ObjectMeta(name=pv_name)
     secret_ref = client.V1SecretReference(
@@ -86,13 +102,18 @@ def _setup_ceph_pv(job_name: str, ceph_creds_k8s_secret_name: str,
 
 
 def _setup_ceph_pvc(job_name, job_namespace):
+    """
+    Sets up the ceph PVC using the loaded kubeconfig as a destination
+    :param job_name: str, the name of the job that the PVC is made for
+    :param job_namespace: str, the namespace that the job is in
+    :return: str, the name of the PVC
+    """
     pvc_name = f"{job_name}-ceph-pvc"
     metadata = client.V1ObjectMeta(name=pvc_name)
     resources = client.V1ResourceRequirements(requests={"storage": "1000Gi"})
-    spec = client.V1PersistentVolumeClaimSpec(access_modes=["ReadWriteMany"],
-                                       resources=resources,
-                                       volume_name=f"{job_name}-ceph-pv",
-                                       storage_class_name="")
+    spec = client.V1PersistentVolumeClaimSpec(
+        access_modes=["ReadWriteMany"], resources=resources,
+        volume_name=f"{job_name}-ceph-pv", storage_class_name="")
     ceph_pvc = client.V1PersistentVolumeClaim(
         api_version="v1",
         kind="PersistentVolumeClaim",
@@ -113,8 +134,9 @@ class JobCreator:
     def __init__(self, watcher_sha: str, dev_mode: bool) -> None:
         """
         Takes the runner_sha and ensures that the kubernetes config is loaded before continuing.
-        :param runner_sha: The sha256 used for the runner, often made by the runner.D file in this repo's container
-        folder
+        :param watcher_sha: str, The sha256 used for the watcher, often made by the watcher.D file in this repo's container folder
+        :param dev_mode: bool, Whether the jobwatcher is launched in development mode
+        :return: None
         """
         load_kubernetes_config()
         self.watcher_sha = watcher_sha

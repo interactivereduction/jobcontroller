@@ -20,6 +20,10 @@ DB_UPDATER = DBUpdater(ip=DB_IP, username=DB_USERNAME, password=DB_PASSWORD)
 
 
 def main():
+    """
+    The main entry point to the JobWatcher application
+    :return:
+    """
     load_kubernetes_config()
     job_watcher = JobWatcher(db_updater=DB_UPDATER,
                              max_time_to_complete=MAX_TIME_TO_COMPLETE,

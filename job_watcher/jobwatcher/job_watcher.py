@@ -18,6 +18,12 @@ from jobwatcher.utils import logger
 
 
 def clean_up_pvcs_for_job(job: V1Job, namespace: str) -> None:
+    """
+    Delete the PVCs associated with the job
+    :param namespace: str, the namespace the PVCs of the job are in
+    :param job: V1Job, the object whose PVCs need being cleaned up
+    :return: None
+    """
     v1 = client.CoreV1Api()
     pvcs_to_delete_str = job.metadata.annotations["pvcs"]
     # Clean up the string and turn it into a list
@@ -32,6 +38,11 @@ def clean_up_pvcs_for_job(job: V1Job, namespace: str) -> None:
 
 
 def clean_up_pvs_for_job(job: V1Job) -> None:
+    """
+    Delete the PVs associated with the job
+    :param job: V1Job, the object whose PVs need being cleaned up
+    :return: None
+    """
     v1 = client.CoreV1Api()
     pvs_to_delete_str = job.metadata.annotations["pvs"]
     # Clean up the string and turn it into a list
@@ -46,6 +57,12 @@ def clean_up_pvs_for_job(job: V1Job) -> None:
 
 
 def _find_pod_from_partial_name(partial_pod_name: str, namespace: str) -> Optional[V1Pod]:
+    """
+    Find a pod from a partial name and it's namespace
+    :param partial_pod_name: str, the partial name of the pod
+    :param namespace: str, the namespace of the pod
+    :return: V1Pod optional, the Pod info if found or None.
+    """
     v1 = client.CoreV1Api()
     pods_in_ir = v1.list_namespaced_pod(namespace=namespace)
     for pod in pods_in_ir.items:
@@ -60,7 +77,16 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
     """
 
     def __init__(self, job_name: str, partial_pod_name: str, container_name: str,
-                 db_updater: DBUpdater, max_time_to_complete: int):
+                 db_updater: DBUpdater, max_time_to_complete: int) -> None:
+        """
+        The init for the JobWatcher class
+        :param job_name: str, The name of the job to be watched
+        :param partial_pod_name: str, the partial name of the pod to be watched
+        :param container_name: str, The name of the container you should watch
+        :param db_updater: DBUpdater, the DBUpdater to be used for updating the db based on the status of the job
+        :param max_time_to_complete: int, The maximum time before we assume the job is stalled.
+        :return: None
+        """
         self.namespace = os.environ.get("JOB_NAMESPACE", "ir")
         self.db_updater = db_updater
         self.max_time_to_complete = max_time_to_complete
@@ -77,7 +103,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         """
         This is the main function responsible for watching a job, and it's responsible for calling the function that
         will notify the message broker.
-        :return:
+        :return: None
         """
         logger.info("Starting job watcher, scanning for new job states.")
         while not self.done_watching:
@@ -88,6 +114,11 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 sleep(0.5)
 
     def update_current_container_info(self, partial_pod_name: str = None) -> None:
+        """
+        Updates the current container info that the job watcher is aware of.
+        :param partial_pod_name: optional str, the partial name of the pod that the job is running
+        :return: None
+        """
         v1 = client.CoreV1Api()
         v1_batch = client.BatchV1Api()
         self.job = v1_batch.read_namespaced_job(self.job_name, namespace=self.namespace)
@@ -107,7 +138,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         """
         Check if the job has a change for which we need to react to, such as the pod
         having finished or a job has stalled.
-        :return:
+        :return: None
         """
         self.update_current_container_info()
         if self.check_for_job_complete():
@@ -119,6 +150,10 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             self.done_watching = True
 
     def get_container_status(self) -> Optional[V1ContainerStatus]:
+        """
+        Get and return the current container status, ignoring the job watcher's container
+        :return: Optional[V1ContainerStatus], The job's main container status
+        """
         # Find container
         for container_status in self.pod.status.container_statuses:
             if container_status.name == self.container_name:
@@ -129,7 +164,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         """
         Checks if the job has finished by checking its status, if it failed then we
         need to process that, and the same for a success.
-        :return:
+        :return: bool, True if job complete, False if job not finished
         """
         container_status = self.get_container_status()
         if container_status is None:
@@ -154,7 +189,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         logs for the last 30 minutes, or if the job has taken over 6 hours to complete.
         Long term 6 hours may be too little so this is configurable using the
         environment variables.
-        :return:
+        :return: bool, True if pod is stalled, False if pod is not stalled.
         """
         v1_core = client.CoreV1Api()
         seconds_in_30_minutes = 60 * 30
@@ -175,6 +210,11 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         return False
 
     def _find_start_and_end_of_pod(self, pod: V1Pod) -> Tuple[Any, Optional[Any]]:
+        """
+        Find the start and end of the pod
+        :param pod: V1Pod, the pod that the start and end of the pod is meant to be delayed
+        :return: Tuple[Any, Optional[Any]], The start datetime, and the optional end datetime if the pod has finished.
+        """
         v1_core = client.CoreV1Api()
         pod = v1_core.read_namespaced_pod(pod.metadata.name, self.namespace)
         start_time = pod.status.start_time
@@ -206,7 +246,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
     def process_job_failed(self) -> None:
         """
         Process the event that failed, and notify the message broker
-        :return:
+        :return: None
         """
         message = self._find_latest_raised_error()
         logger.info("Job %s has failed, with message: %s", self.job.metadata.name, message)
@@ -224,7 +264,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
     def process_job_success(self) -> None:
         """
         Process a successful event, grab the required data and logged output that will notify the message broker
-        :return:
+        :return: None
         """
         job_name = self.job.metadata.name
         reduction_id = self.job.metadata.annotations.get("reduction-id")

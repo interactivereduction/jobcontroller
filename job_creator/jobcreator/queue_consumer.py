@@ -51,7 +51,7 @@ class QueueConsumer:
         """
         Handles a message from the message broker
         :param msg: A message that need to be processed
-        :return:
+        :return: None
         """
         try:
             msg_obj = json.loads(msg)

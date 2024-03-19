@@ -79,7 +79,14 @@ def ensure_ceph_path_exists(ceph_path_str: str) -> str:
     return str(ceph_path)
 
 
-def create_ceph_mount_path(instrument_name: str, rb_number: str, mount_path: str = "/isis/instrument"):
+def create_ceph_mount_path(instrument_name: str, rb_number: str, mount_path: str = "/isis/instrument") -> None:
+    """
+    Creates the ceph mount for the job to output to
+    :param instrument_name: str, name of the instrument
+    :param rb_number: str, the rb number of the run
+    :param mount_path: str, the path that should be pointed to by default, before RBNumber, and Instrument specific directories.
+    :return: None
+    """
     ceph_path = create_ceph_path(instrument_name, rb_number)
     ceph_path = ensure_ceph_path_exists(ceph_path)
     # There is an assumption that the ceph_path will have /ceph at the start that needs to be removed
