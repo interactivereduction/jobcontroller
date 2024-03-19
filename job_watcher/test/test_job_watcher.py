@@ -1,5 +1,6 @@
 # pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring, protected-access,
-# pylint: disable=too-many-instance-attributes, invalid-name, too-many-public-methods, line-too-long
+# pylint: disable=too-many-instance-attributes, invalid-name, too-many-public-methods, line-too-long,
+# pylint: disable=redefined-outer-name, broad-exception-raised
 
 import os
 import random
@@ -505,9 +506,7 @@ class JobWatcherTest(unittest.TestCase):
         jw._find_start_and_end_of_pod = mock.MagicMock(return_value=(start, end))
 
         def raise_error(name, namespace, container):
-            # pylint disable=broad-exception-raised
             raise Exception("Exception raised!")
-            # pylint enable=broad-exception-raised
 
         client.CoreV1Api.return_value.read_namespaced_pod_log = mock.MagicMock(side_effect=raise_error)
 
@@ -525,7 +524,6 @@ class JobWatcherTest(unittest.TestCase):
             reduction_start=start,
         )
 
-# pylint disable=redefined-outer-name
     @mock.patch("jobwatcher.job_watcher.clean_up_pvcs_for_job")
     @mock.patch("jobwatcher.job_watcher.clean_up_pvs_for_job")
     @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
@@ -537,4 +535,3 @@ class JobWatcherTest(unittest.TestCase):
 
         clean_up_pvs_for_job.assert_called_once_with(jw.job)
         clean_up_pvcs_for_job.assert_called_once_with(jw.job, jw.namespace)
-# pylint enable=redefined-outer-name
