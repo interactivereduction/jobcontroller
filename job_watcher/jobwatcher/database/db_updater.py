@@ -15,7 +15,7 @@ from sqlalchemy import (  # type: ignore[attr-defined]
     Enum,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import relationship, sessionmaker, declarative_base, Relationship  # type: ignore[attr-defined]
+from sqlalchemy.orm import relationship, sessionmaker, declarative_base  # type: ignore[attr-defined]
 
 from jobwatcher.database.state_enum import State
 from jobwatcher.utils import logger
@@ -39,8 +39,8 @@ class Run(Base):  # type: ignore[valid-type, misc]
     run_end = Column(DateTime)
     good_frames = Column(Integer)
     raw_frames = Column(Integer)
-    reductions: Relationship = relationship("RunReduction", back_populates="run_relationship")
-    instrument: Relationship = relationship("Instrument")
+    reductions = relationship("RunReduction", back_populates="run_relationship")  # type: ignore[var-annotated]
+    instrument = relationship("Instrument")  # type: ignore[var-annotated]
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Run):
@@ -74,7 +74,7 @@ class Script(Base):  # type: ignore[valid-type, misc]
     id = Column(Integer, primary_key=True, autoincrement=True)
     script = Column(String, unique=True)
     sha = Column(String, nullable=True)
-    reductions: Relationship = relationship("Reduction", back_populates="script")
+    reductions = relationship("Reduction", back_populates="script")  # type: ignore[var-annotated]
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Script):
@@ -98,9 +98,9 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
     reduction_status_message = Column(String)
     reduction_inputs = Column(JSONB)
     script_id = Column(Integer, ForeignKey("scripts.id"))
-    script: Relationship = relationship("Script", back_populates="reductions")
+    script = relationship("Script", back_populates="reductions")  # type: ignore[var-annotated]
     reduction_outputs = Column(String)
-    run_reduction_relationship: Relationship = relationship("RunReduction", back_populates="reduction_relationship")
+    run_reduction_relationship = relationship("RunReduction", back_populates="reduction_relationship")  # type: ignore[var-annotated]
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Reduction):
@@ -132,8 +132,9 @@ class RunReduction(Base):  # type: ignore[valid-type, misc]
     __tablename__ = "runs_reductions"
     run_id = Column(Integer, ForeignKey("runs.id"), primary_key=True)
     reduction_id = Column(Integer, ForeignKey("reductions.id"), primary_key=True)
-    run_relationship: Relationship = relationship("Run", back_populates="reductions")
-    reduction_relationship: Relationship = relationship("Reduction", back_populates="run_reduction_relationship")
+    run_relationship = relationship("Run", back_populates="reductions")  # type: ignore[var-annotated]
+    reduction_relationship = relationship("Reduction",  # type: ignore[var-annotated]
+                                          back_populates="run_reduction_relationship")
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunReduction):
