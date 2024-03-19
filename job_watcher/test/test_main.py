@@ -6,7 +6,7 @@ from unittest import mock
 
 class MainTest(unittest.TestCase):
     def setUp(self):
-        self.max_time_to_complete_job = str(random.randint(1, 60*60*60))
+        self.max_time_to_complete_job = str(random.randint(1, 60 * 60 * 60))
         self.container_name = str(mock.MagicMock())
         self.job_name = str(mock.MagicMock())
         self.pod_name = str(mock.MagicMock())
@@ -33,6 +33,8 @@ class MainTest(unittest.TestCase):
         job_watcher.assert_called_once_with(
             db_updater=DB_UPDATER,
             max_time_to_complete=int(self.max_time_to_complete_job),
-            container_name=self.container_name, job_name=self.job_name,
-            partial_pod_name=self.pod_name)
+            container_name=self.container_name,
+            job_name=self.job_name,
+            partial_pod_name=self.pod_name,
+        )
         job_watcher.return_value.watch.assert_called_once_with()

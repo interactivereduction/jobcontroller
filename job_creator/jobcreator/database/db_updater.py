@@ -282,7 +282,7 @@ class DBUpdater:
             "Submitting script to the database: {db_reduction_id: %s, reduction_script: %s, script_sha: %s}",
             db_reduction_id,
             textwrap.shorten(reduction_script, width=10, placeholder="..."),
-            script_sha
+            script_sha,
         )
         with self.session_maker_func() as session:
             script = session.query(Script).filter_by(sha=script_sha).first()
@@ -295,7 +295,8 @@ class DBUpdater:
                 "Submitted script to the database: {db_reduction_id: %s, reduction_script: %s, script_sha: %s}",
                 db_reduction_id,
                 textwrap.shorten(reduction_script, width=10, placeholder="..."),
-                script_sha
+                script_sha,
             )
+
 
 # pylint: enable=too-many-arguments, too-many-locals

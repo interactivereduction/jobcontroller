@@ -198,8 +198,7 @@ class DBUpdater:
         :return:
         """
         logger.info(
-            "Updating completed-run in the database: {id: %s, state: %s, "
-            "status_message: %s, output_files: %s}",
+            "Updating completed-run in the database: {id: %s, state: %s, " "status_message: %s, output_files: %s}",
             db_reduction_id,
             str(state),
             status_message,
@@ -221,5 +220,6 @@ class DBUpdater:
                 status_message,
                 output_files,
             )
+
 
 # pylint: enable=too-many-arguments, too-many-locals
