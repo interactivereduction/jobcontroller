@@ -133,8 +133,9 @@ class RunReduction(Base):  # type: ignore[valid-type, misc]
     run_id = Column(Integer, ForeignKey("runs.id"), primary_key=True)
     reduction_id = Column(Integer, ForeignKey("reductions.id"), primary_key=True)
     run_relationship = relationship("Run", back_populates="reductions")  # type: ignore[var-annotated]
-    reduction_relationship = relationship("Reduction",  # type: ignore[var-annotated]
-                                          back_populates="run_reduction_relationship")
+    reduction_relationship = relationship(
+        "Reduction", back_populates="run_reduction_relationship"  # type: ignore[var-annotated]
+    )
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunReduction):
