@@ -9,8 +9,14 @@ from time import sleep
 from typing import Any, Optional, Tuple
 
 from kubernetes import client, watch  # type: ignore[import]
-from kubernetes.client import V1Job, V1Pod, V1Container, V1PodStatus, V1ContainerStatus, \
-    V1ContainerState  # type: ignore[import]
+from kubernetes.client import (
+    V1Job,
+    V1Pod,
+    V1Container,
+    V1PodStatus,
+    V1ContainerStatus,
+    V1ContainerState,
+)  # type: ignore[import]
 
 from jobwatcher.database.state_enum import State
 from jobwatcher.database.db_updater import DBUpdater
@@ -27,7 +33,7 @@ def clean_up_pvcs_for_job(job: V1Job, namespace: str) -> None:
     v1 = client.CoreV1Api()
     pvcs_to_delete_str = job.metadata.annotations["pvcs"]
     # Clean up the string and turn it into a list
-    pvcs_to_delete = pvcs_to_delete_str.strip('][').split(', ')
+    pvcs_to_delete = pvcs_to_delete_str.strip("][").split(", ")
     logger.info(f"Deleting pvcs: {pvcs_to_delete}")
     for pvc in pvcs_to_delete:
         # Strip pv name for ' just in case they have stuck around.
@@ -46,7 +52,7 @@ def clean_up_pvs_for_job(job: V1Job) -> None:
     v1 = client.CoreV1Api()
     pvs_to_delete_str = job.metadata.annotations["pvs"]
     # Clean up the string and turn it into a list
-    pvs_to_delete = pvs_to_delete_str.strip('][').split(', ')
+    pvs_to_delete = pvs_to_delete_str.strip("][").split(", ")
     logger.info(f"Deleting pvs: {pvs_to_delete}")
     for pv in pvs_to_delete:
         # Strip pv name for ' just in case they have stuck around.
@@ -76,8 +82,14 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
     Watch a kubernetes job, and when it ends notify a message broker station/topic
     """
 
-    def __init__(self, job_name: str, partial_pod_name: str, container_name: str,
-                 db_updater: DBUpdater, max_time_to_complete: int) -> None:
+    def __init__(
+        self,
+        job_name: str,
+        partial_pod_name: str,
+        container_name: str,
+        db_updater: DBUpdater,
+        max_time_to_complete: int,
+    ) -> None:
         """
         The init for the JobWatcher class
         :param job_name: str, The name of the job to be watched
@@ -131,7 +143,9 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             self.pod_name = self.pod.metadata.name
         else:
             if self.pod_name is None:
-                raise ValueError("Can't update container info if pod_name was not set and partial_pod_name not provided.")
+                raise ValueError(
+                    "Can't update container info if pod_name was not set and partial_pod_name not provided."
+                )
             self.pod = v1.read_namespaced_pod(name=self.pod_name, namespace=self.namespace)
 
     def check_for_changes(self) -> None:
@@ -194,17 +208,23 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         v1_core = client.CoreV1Api()
         seconds_in_30_minutes = 60 * 30
         # If pod is younger than 30 minutes it can't be stalled for 30 minutes, if older, then check.
-        if ((datetime.datetime.now(datetime.timezone.utc) - self.pod.metadata.creation_timestamp) >
-                datetime.timedelta(seconds=seconds_in_30_minutes)):
+        if (datetime.datetime.now(datetime.timezone.utc) - self.pod.metadata.creation_timestamp) > datetime.timedelta(
+            seconds=seconds_in_30_minutes
+        ):
             logs = v1_core.read_namespaced_pod_log(
-                name=self.pod.metadata.name, namespace=self.pod.metadata.namespace,
-                timestamps=True, tail_lines=1, since_seconds=seconds_in_30_minutes,
-                container=self.container_name)
+                name=self.pod.metadata.name,
+                namespace=self.pod.metadata.namespace,
+                timestamps=True,
+                tail_lines=1,
+                since_seconds=seconds_in_30_minutes,
+                container=self.container_name,
+            )
             if logs == "":
                 logger.info(f"No new logs for pod {self.pod.metadata.name} in {seconds_in_30_minutes} seconds")
                 return True
-        if ((datetime.datetime.now(datetime.timezone.utc) - self.pod.metadata.creation_timestamp) >
-                datetime.timedelta(seconds=self.max_time_to_complete)):
+        if (datetime.datetime.now(datetime.timezone.utc) - self.pod.metadata.creation_timestamp) > datetime.timedelta(
+            seconds=self.max_time_to_complete
+        ):
             logger.info(f"Pod has timed out: {self.pod.metadata.name}, ")
             return True
         return False
@@ -233,8 +253,11 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         """
         v1_core = client.CoreV1Api()
         logs = v1_core.read_namespaced_pod_log(
-            name=self.pod.metadata.name, namespace=self.pod.metadata.namespace,
-            tail_lines=50, container=self.container_name).split("\n")
+            name=self.pod.metadata.name,
+            namespace=self.pod.metadata.namespace,
+            tail_lines=50,
+            container=self.container_name,
+        ).split("\n")
         line_to_record = logs[-1]
         logs.reverse()
         for line in logs:
@@ -276,9 +299,9 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         v1_core = client.CoreV1Api()
         # Convert message from JSON string to python dict
         try:
-            logs = v1_core.read_namespaced_pod_log(name=self.pod.metadata.name,
-                                                   namespace=self.namespace,
-                                                   container=self.container_name)
+            logs = v1_core.read_namespaced_pod_log(
+                name=self.pod.metadata.name, namespace=self.namespace, container=self.container_name
+            )
             output = logs.split("\n")[-2]  # Get second to last line (last line is empty)
             logger.info("Job %s has been completed with output: %s", job_name, output)
             job_output = json.loads(output)

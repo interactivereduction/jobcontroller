@@ -51,7 +51,7 @@ CEPH_CREDS_SECRET_NAMESPACE = os.environ.get("CEPH_CREDS_SECRET_NAMESPACE", "ir"
 CLUSTER_ID = os.environ.get("CLUSTER_ID", "ba68226a-672f-4ba5-97bc-22840318b2ec")
 FS_NAME = os.environ.get("FS_NAME", "deneb")
 
-MAX_TIME_TO_COMPLETE = int(os.environ.get("MAX_TIME_TO_COMPLETE", 60*60*6))
+MAX_TIME_TO_COMPLETE = int(os.environ.get("MAX_TIME_TO_COMPLETE", 60 * 60 * 6))
 
 
 def on_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
@@ -117,7 +117,7 @@ async def process_message(message: Dict[str, Any]):
             db_username=DB_USERNAME,
             db_password=DB_PASSWORD,
             max_time_to_complete_job=MAX_TIME_TO_COMPLETE,
-            runner_sha=MANTID_SHA
+            runner_sha=MANTID_SHA,
         )
     except Exception as exception:  # pylint: disable=broad-exception-caught
         logger.exception(exception)
