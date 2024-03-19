@@ -2,12 +2,12 @@ import os
 import random
 import unittest
 from datetime import datetime, timezone, timedelta
+from json import JSONDecodeError
 from unittest import mock
 from unittest.mock import call
 
 from jobwatcher.job_watcher import JobWatcher, clean_up_pvcs_for_job, clean_up_pvs_for_job, _find_pod_from_partial_name
-
-from database.state_enum import State
+from jobwatcher.database.state_enum import State
 
 
 class JobWatcherTest(unittest.TestCase):
@@ -125,10 +125,9 @@ class JobWatcherTest(unittest.TestCase):
 
         jw.update_current_container_info(partial_pod_name)
 
-        client.CoreV1Api.return_value.read_namespaced_pod.assert_called_once_with(
-            name=_find_pod_from_partial_name.return_value.metadata.name, namespace=jw.namespace)
-        self.assertEqual(jw.pod, client.CoreV1Api.return_value.read_namespaced_pod.return_value)
-        _find_pod_from_partial_name.assert_called_once_with(partial_pod_name, namespace=jw.namespace)
+        self.assertEqual(jw.pod, _find_pod_from_partial_name.return_value)
+        _find_pod_from_partial_name.assert_called_with(partial_pod_name, namespace=jw.namespace)
+        self.assertEqual(_find_pod_from_partial_name.call_count, 2)  # Called twice because called during jw init
 
     @mock.patch('jobwatcher.job_watcher._find_pod_from_partial_name')
     @mock.patch('jobwatcher.job_watcher.client')
@@ -267,7 +266,7 @@ class JobWatcherTest(unittest.TestCase):
     def test_check_for_job_complete_container_status_is_terminated_exit_code_not_0(self, _, __):
         jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
         container_status = mock.MagicMock()
-        container_status.state.terminated.exit_code = 0
+        container_status.state.terminated.exit_code = 100
         jw.get_container_status = mock.MagicMock(return_value=container_status)
         jw.process_job_success = mock.MagicMock()
         jw.process_job_failed = mock.MagicMock()
@@ -388,15 +387,128 @@ class JobWatcherTest(unittest.TestCase):
             reduction_start=start,
         )
 
-    def test_process_job_success(self):
-        pass
+    @mock.patch('jobwatcher.job_watcher._find_pod_from_partial_name')
+    @mock.patch('jobwatcher.job_watcher.client')
+    def test_process_job_success(self, client, _):
+        jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+        start = mock.MagicMock()
+        end = mock.MagicMock()
+        jw._find_start_and_end_of_pod = mock.MagicMock(return_value=(start, end))
+        client.BatchV1Api.return_value.read_namespaced_job.return_value.metadata.annotations.get.return_value = "id"
+        logs = """
+        line 1
+        line 2
+        line 3
+        
+        {"status": "Successful", "status_message": "status_message", "output_files": "output_file.nxs"}
+        """
+        client.CoreV1Api.return_value.read_namespaced_pod_log.return_value = logs
 
-    def test_process_job_success_pod_is_none(self):
-        pass
+        jw.process_job_success()
 
-    def test_process_job_success_raise_errors(self):
-        # Raise all 3 here
-        pass
+        client.CoreV1Api.return_value.read_namespaced_pod_log.assert_called_once_with(
+            name=jw.pod.metadata.name, namespace=jw.namespace, container=jw.container_name)
+        jw.db_updater.update_completed_run.assert_called_once_with(
+            db_reduction_id=client.BatchV1Api.return_value.read_namespaced_job.return_value.metadata.annotations.get
+            .return_value,
+            state=State.SUCCESSFUL,
+            status_message="status_message",
+            output_files="output_file.nxs",
+            reduction_end=str(end),
+            reduction_start=start,
+        )
 
-    def test_cleanup_job(self):
-        pass
+    @mock.patch('jobwatcher.job_watcher._find_pod_from_partial_name')
+    @mock.patch('jobwatcher.job_watcher.client')
+    def test_process_job_success_pod_is_none(self, _, __):
+        jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+        jw.pod = None
+
+        self.assertRaises(TypeError, jw.process_job_success)
+
+    @mock.patch('jobwatcher.job_watcher._find_pod_from_partial_name')
+    @mock.patch('jobwatcher.job_watcher.client')
+    def test_process_job_success_raise_json_decode_error(self, client, __):
+        jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+        start = mock.MagicMock()
+        end = mock.MagicMock()
+        jw._find_start_and_end_of_pod = mock.MagicMock(return_value=(start, end))
+        def raise_error(name, namespace, container):
+            raise JSONDecodeError("", "", 1)
+        client.CoreV1Api.return_value.read_namespaced_pod_log = mock.MagicMock(side_effect=raise_error)
+
+        jw.process_job_success()
+
+        client.CoreV1Api.return_value.read_namespaced_pod_log.assert_called_once_with(
+            name=jw.pod.metadata.name, namespace=jw.namespace, container=jw.container_name)
+        jw.db_updater.update_completed_run.assert_called_once_with(
+            db_reduction_id=client.BatchV1Api.return_value.read_namespaced_job.return_value.metadata.annotations.get
+            .return_value,
+            state=State.UNSUCCESSFUL,
+            status_message=": line 1 column 2 (char 1)",
+            output_files=[],
+            reduction_end=str(end),
+            reduction_start=start,
+        )
+
+    @mock.patch('jobwatcher.job_watcher._find_pod_from_partial_name')
+    @mock.patch('jobwatcher.job_watcher.client')
+    def test_process_job_success_raise_type_error(self, client, __):
+        jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+        start = mock.MagicMock()
+        end = mock.MagicMock()
+        jw._find_start_and_end_of_pod = mock.MagicMock(return_value=(start, end))
+        def raise_error(name, namespace, container):
+            raise TypeError("TypeError!")
+        client.CoreV1Api.return_value.read_namespaced_pod_log = mock.MagicMock(side_effect=raise_error)
+
+        jw.process_job_success()
+
+        client.CoreV1Api.return_value.read_namespaced_pod_log.assert_called_once_with(
+            name=jw.pod.metadata.name, namespace=jw.namespace, container=jw.container_name)
+        jw.db_updater.update_completed_run.assert_called_once_with(
+            db_reduction_id=client.BatchV1Api.return_value.read_namespaced_job.return_value.metadata.annotations.get
+            .return_value,
+            state=State.UNSUCCESSFUL,
+            status_message="TypeError!",
+            output_files=[],
+            reduction_end=str(end),
+            reduction_start=start,
+        )
+
+    @mock.patch('jobwatcher.job_watcher._find_pod_from_partial_name')
+    @mock.patch('jobwatcher.job_watcher.client')
+    def test_process_job_success_raise_exception(self, client, __):
+        jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+        start = mock.MagicMock()
+        end = mock.MagicMock()
+        jw._find_start_and_end_of_pod = mock.MagicMock(return_value=(start, end))
+        def raise_error(name, namespace, container):
+            raise Exception("Exception raised!")
+        client.CoreV1Api.return_value.read_namespaced_pod_log = mock.MagicMock(side_effect=raise_error)
+
+        jw.process_job_success()
+
+        client.CoreV1Api.return_value.read_namespaced_pod_log.assert_called_once_with(
+            name=jw.pod.metadata.name, namespace=jw.namespace, container=jw.container_name)
+        jw.db_updater.update_completed_run.assert_called_once_with(
+            db_reduction_id=client.BatchV1Api.return_value.read_namespaced_job.return_value.metadata.annotations.get
+            .return_value,
+            state=State.UNSUCCESSFUL,
+            status_message="Exception raised!",
+            output_files=[],
+            reduction_end=str(end),
+            reduction_start=start,
+        )
+
+    @mock.patch('jobwatcher.job_watcher.clean_up_pvcs_for_job')
+    @mock.patch('jobwatcher.job_watcher.clean_up_pvs_for_job')
+    @mock.patch('jobwatcher.job_watcher._find_pod_from_partial_name')
+    @mock.patch('jobwatcher.job_watcher.client')
+    def test_cleanup_job(self, _, __, clean_up_pvs_for_job, clean_up_pvcs_for_job):
+        jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+
+        jw.cleanup_job()
+
+        clean_up_pvs_for_job.assert_called_once_with(jw.job)
+        clean_up_pvcs_for_job.assert_called_once_with(jw.job, jw.namespace)
