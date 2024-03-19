@@ -1,5 +1,5 @@
 # pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring, protected-access,
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes, too-many-locals
 import random
 import unittest
 from unittest import mock

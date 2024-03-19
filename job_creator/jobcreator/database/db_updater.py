@@ -3,7 +3,7 @@ This module is responsible for holding the SQL Classes that SQLAlchemy will use 
 via SQLAlchemy via pre-made functions.
 """
 import textwrap
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from sqlalchemy import (  # type: ignore[attr-defined]
     create_engine,

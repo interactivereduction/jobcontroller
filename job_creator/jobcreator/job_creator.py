@@ -127,7 +127,8 @@ class JobCreator:
     def __init__(self, watcher_sha: str, dev_mode: bool) -> None:
         """
         Takes the runner_sha and ensures that the kubernetes config is loaded before continuing.
-        :param watcher_sha: str, The sha256 used for the watcher, often made by the watcher.D file in this repo's container folder
+        :param watcher_sha: str, The sha256 used for the watcher, often made by the watcher.D file in this repo's
+        container folder
         :param dev_mode: bool, Whether the jobwatcher is launched in development mode
         :return: None
         """
@@ -135,7 +136,7 @@ class JobCreator:
         self.watcher_sha = watcher_sha
         self.dev_mode = dev_mode
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-locals
     def spawn_job(
         self,
         job_name: str,
