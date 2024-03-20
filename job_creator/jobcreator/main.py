@@ -31,7 +31,7 @@ if DEV_MODE:
 else:
     logger.info("Launched in production mode")
 
-MANTID_SHA: str = os.environ.get("MANTID_SHA", None)
+MANTID_SHA: Any = os.environ.get("MANTID_SHA", None)
 if MANTID_SHA is None:
     raise OSError("MANTID_SHA not set in the environment, please add it.")
 WATCHER_SHA = os.environ.get("WATCHER_SHA", None)

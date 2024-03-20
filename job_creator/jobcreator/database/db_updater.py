@@ -134,8 +134,9 @@ class RunReduction(Base):  # type: ignore[valid-type, misc]
     __tablename__ = "runs_reductions"
     run_id = Column(Integer, ForeignKey("runs.id"), primary_key=True)
     reduction_id = Column(Integer, ForeignKey("reductions.id"), primary_key=True)
-    run_relationship = relationship("Run", back_populates="reductions")
-    reduction_relationship = relationship("Reduction", back_populates="run_reduction_relationship")
+    run_relationship = relationship("Run", back_populates="reductions")  # type: ignore[var-annotated]
+    reduction_relationship = relationship("Reduction",  # type: ignore[var-annotated]
+                                          back_populates="run_reduction_relationship")
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunReduction):
