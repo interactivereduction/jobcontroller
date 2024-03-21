@@ -595,4 +595,3 @@ class JobWatcherTest(unittest.TestCase):
         jw.job = None
 
         self.assertRaises(AttributeError, jw.cleanup_job)
-
