@@ -1,5 +1,5 @@
 """
-Watch a kubernetes job, and when it ends notify a message broker station/topic
+Watch a kubernetes job, and when it ends update the DB with the results, and exit.
 """
 import datetime
 import json
@@ -72,7 +72,7 @@ def _find_pod_from_partial_name(partial_pod_name: str, namespace: str) -> Option
 
 class JobWatcher:  # pylint: disable=too-many-instance-attributes
     """
-    Watch a kubernetes job, and when it ends notify a message broker station/topic
+    Watch a kubernetes job, and when it ends update the DB with the results, and exit.
     """
 
     def __init__(
