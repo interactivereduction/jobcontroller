@@ -162,9 +162,10 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         :return: Optional[V1ContainerStatus], The job's main container status
         """
         # Find container
-        for container_status in self.pod.status.container_statuses:
-            if container_status.name == self.container_name:
-                return container_status
+        if self.pod is not None:
+            for container_status in self.pod.status.container_statuses:
+                if container_status.name == self.container_name:
+                    return container_status
         return None
 
     def check_for_job_complete(self) -> bool:
@@ -175,7 +176,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         """
         container_status = self.get_container_status()
         if container_status is None:
-            raise ValueError(f"Container not found: {self.container_name}, in pod: {self.pod.metadata.name}")
+            raise ValueError(f"Container not found: {self.container_name}")
         if container_status.state.terminated is not None:
             # Container has finished
             if container_status.state.terminated.exit_code == 0:
@@ -197,6 +198,8 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         environment variables.
         :return: bool, True if pod is stalled, False if pod is not stalled.
         """
+        if self.pod is None:
+            raise AttributeError("Pod must be set in the JobWatcher before calling this function.")
         v1_core = client.CoreV1Api()
         seconds_in_30_minutes = 60 * 30
         # If pod is younger than 30 minutes it can't be stalled for 30 minutes, if older, then check.
@@ -243,6 +246,8 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         failure. However, will default to the last line in the pod otherwise.
         :return: string containing the error found last in the logs.
         """
+        if self.pod is None:
+            raise AttributeError("Pod must be set in the JobWatcher before calling this function.")
         v1_core = client.CoreV1Api()
         logs = v1_core.read_namespaced_pod_log(
             name=self.pod.metadata.name,
@@ -263,6 +268,8 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         Process the event that failed, and notify the message broker
         :return: None
         """
+        if self.pod is None or self.job is None:
+            raise AttributeError("Pod and job must be set in the JobWatcher before calling this function.")
         message = self._find_latest_raised_error()
         logger.info("Job %s has failed, with message: %s", self.job.metadata.name, message)
         reduction_id = self.job.metadata.annotations["reduction-id"]
@@ -281,6 +288,8 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         Process a successful event, grab the required data and logged output that will notify the message broker
         :return: None
         """
+        if self.job is None:
+            raise AttributeError("Job must be set in the JobWatcher before calling this function.")
         job_name = self.job.metadata.name
         reduction_id = self.job.metadata.annotations.get("reduction-id")
         if self.pod is None:
@@ -341,6 +350,8 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         Cleanup the leftovers that a job will leave behind when it cleans up itself
         after a timeout, namely PVs and PVCs
         """
+        if self.job is None:
+            raise AttributeError("Job must be set in the JobWatcher before calling this function.")
         logger.info("Starting cleanup of job %s", self.job.metadata.name)
         clean_up_pvs_for_job(self.job)
         clean_up_pvcs_for_job(self.job, self.namespace)

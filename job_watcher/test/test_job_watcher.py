@@ -232,6 +232,16 @@ class JobWatcherTest(unittest.TestCase):
 
     @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
     @mock.patch("jobwatcher.job_watcher.client")
+    def test_get_container_status_pod_is_none(self, _, __):
+        jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+        jw.pod = mock.MagicMock()
+
+        result = jw.get_container_status()
+
+        self.assertEqual(result, None)
+
+    @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
+    @mock.patch("jobwatcher.job_watcher.client")
     def test_get_container_status_not_present(self, _, __):
         jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
         container_status = mock.MagicMock()
@@ -305,6 +315,14 @@ class JobWatcherTest(unittest.TestCase):
         jw.max_time_to_complete = 99999999
 
         self.assertEqual(jw.check_for_pod_stalled(), False)
+
+    @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
+    @mock.patch("jobwatcher.job_watcher.client")
+    def test_check_for_pod_stalled_pod_where_pod_is_none(self, _, __):
+        jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+        jw.pod = None
+
+        self.assertRaises(AttributeError, jw.check_for_pod_stalled)
 
     @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
     @mock.patch("jobwatcher.job_watcher.client")
@@ -385,6 +403,14 @@ class JobWatcherTest(unittest.TestCase):
 
     @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
     @mock.patch("jobwatcher.job_watcher.client")
+    def test_find_latest_raised_error(self, _, __):
+        jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+        jw.pod = None
+
+        self.assertRaises(AttributeError, jw._find_latest_raised_error)
+
+    @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
+    @mock.patch("jobwatcher.job_watcher.client")
     def test_process_job_failed(self, _, __):
         jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
         jw._find_latest_raised_error = mock.MagicMock()
@@ -403,6 +429,24 @@ class JobWatcherTest(unittest.TestCase):
             reduction_end=str(end),
             reduction_start=start,
         )
+
+    @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
+    @mock.patch("jobwatcher.job_watcher.client")
+    def test_process_job_failed_pod_is_none(self, _, __):
+        jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+        jw.pod = None
+        jw.job = mock.MagicMock()
+
+        self.assertRaises(AttributeError, jw.process_job_failed)
+
+    @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
+    @mock.patch("jobwatcher.job_watcher.client")
+    def test_process_job_failed_job_is_none(self, _, __):
+        jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+        jw.pod = mock.MagicMock()
+        jw.job = None
+
+        self.assertRaises(AttributeError, jw.process_job_failed)
 
     @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
     @mock.patch("jobwatcher.job_watcher.client")
@@ -442,6 +486,14 @@ class JobWatcherTest(unittest.TestCase):
         jw.pod = None
 
         self.assertRaises(TypeError, jw.process_job_success)
+
+    @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
+    @mock.patch("jobwatcher.job_watcher.client")
+    def test_process_job_success_pod_is_none(self, _, __):
+        jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+        jw.job = None
+
+        self.assertRaises(AttributeError, jw.process_job_success)
 
     @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
     @mock.patch("jobwatcher.job_watcher.client")
@@ -535,3 +587,12 @@ class JobWatcherTest(unittest.TestCase):
 
         clean_up_pvs_for_job.assert_called_once_with(jw.job)
         clean_up_pvcs_for_job.assert_called_once_with(jw.job, jw.namespace)
+
+    @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
+    @mock.patch("jobwatcher.job_watcher.client")
+    def test_cleanup_job_where_job_is_none(self, _, __):
+        jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+        jw.job = None
+
+        self.assertRaises(AttributeError, jw.cleanup_job)
+
