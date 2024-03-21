@@ -403,7 +403,7 @@ class JobWatcherTest(unittest.TestCase):
 
     @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
     @mock.patch("jobwatcher.job_watcher.client")
-    def test_find_latest_raised_error(self, _, __):
+    def test_find_latest_raise_error_pod_is_none(self, _, __):
         jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
         jw.pod = None
 
@@ -489,7 +489,7 @@ class JobWatcherTest(unittest.TestCase):
 
     @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
     @mock.patch("jobwatcher.job_watcher.client")
-    def test_process_job_success_pod_is_none(self, _, __):
+    def test_process_job_success_job_is_none(self, _, __):
         jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
         jw.job = None
 
@@ -595,4 +595,3 @@ class JobWatcherTest(unittest.TestCase):
         jw.job = None
 
         self.assertRaises(AttributeError, jw.cleanup_job)
-
