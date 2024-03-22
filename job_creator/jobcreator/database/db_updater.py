@@ -2,6 +2,7 @@
 This module is responsible for holding the SQL Classes that SQLAlchemy will use and then formatting the SQL queries
 via SQLAlchemy via pre-made functions.
 """
+from __future__ import annotations
 import textwrap
 from typing import Any, Dict, List
 
@@ -16,10 +17,10 @@ from sqlalchemy import (  # type: ignore[attr-defined]
     Enum,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import relationship, sessionmaker, declarative_base  # type: ignore[attr-defined]
+from sqlalchemy.orm import relationship, sessionmaker, declarative_base, Mapped  # type: ignore[attr-defined]
 
-from job_controller.database.state_enum import State
-from job_controller.utils import logger
+from jobcreator.database.state_enum import State
+from jobcreator.utils import logger
 
 Base = declarative_base()
 
@@ -40,8 +41,8 @@ class Run(Base):  # type: ignore[valid-type, misc]
     run_end = Column(DateTime)
     good_frames = Column(Integer)
     raw_frames = Column(Integer)
-    reductions = relationship("RunReduction", back_populates="run_relationship")
-    instrument = relationship("Instrument")
+    reductions: Mapped[List[Reduction]] = relationship("RunReduction", back_populates="run_relationship")
+    instrument: Mapped[Instrument] = relationship("Instrument")
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Run):
@@ -75,7 +76,7 @@ class Script(Base):  # type: ignore[valid-type, misc]
     id = Column(Integer, primary_key=True, autoincrement=True)
     script = Column(String, unique=True)
     sha = Column(String, nullable=True)
-    reductions = relationship("Reduction", back_populates="script")
+    reductions: Mapped[Reduction] = relationship("Reduction", back_populates="script")
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Script):
@@ -99,9 +100,11 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
     reduction_status_message = Column(String)
     reduction_inputs = Column(JSONB)
     script_id = Column(Integer, ForeignKey("scripts.id"))
-    script = relationship("Script", back_populates="reductions")
+    script: Mapped[Script] = relationship("Script", back_populates="reductions")
     reduction_outputs = Column(String)
-    run_reduction_relationship = relationship("RunReduction", back_populates="reduction_relationship")
+    run_reduction_relationship: Mapped[List[Run]] = relationship(
+        "RunReduction", back_populates="reduction_relationship"
+    )
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Reduction):
@@ -133,8 +136,8 @@ class RunReduction(Base):  # type: ignore[valid-type, misc]
     __tablename__ = "runs_reductions"
     run_id = Column(Integer, ForeignKey("runs.id"), primary_key=True)
     reduction_id = Column(Integer, ForeignKey("reductions.id"), primary_key=True)
-    run_relationship = relationship("Run", back_populates="reductions")
-    reduction_relationship = relationship("Reduction", back_populates="run_reduction_relationship")
+    run_relationship: Mapped[Run] = relationship("Run", back_populates="reductions")
+    reduction_relationship: Mapped[Reduction] = relationship("Reduction", back_populates="run_reduction_relationship")
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunReduction):
@@ -225,17 +228,20 @@ class DBUpdater:
             if instrument is None:
                 instrument = Instrument(instrument_name=instrument_name)
 
-            run = Run(
-                filename=filename,
-                title=title,
-                users=users,
-                experiment_number=experiment_number,
-                run_start=run_start,
-                run_end=run_end,
-                good_frames=good_frames,
-                raw_frames=raw_frames,
-            )
-            run.instrument = instrument
+            run = session.query(Run).filter_by(filename=filename).first()
+            if run is None:
+                run = Run(
+                    filename=filename,
+                    title=title,
+                    users=users,
+                    experiment_number=experiment_number,
+                    run_start=run_start,
+                    run_end=run_end,
+                    good_frames=good_frames,
+                    raw_frames=raw_frames,
+                )
+                run.instrument = instrument
+
             reduction = Reduction(
                 reduction_start=None,
                 reduction_end=None,
@@ -267,66 +273,32 @@ class DBUpdater:
 
             return int(reduction.id)
 
-    def add_completed_run(
-        self,
-        db_reduction_id: int,
-        reduction_inputs: Dict[str, Any],
-        state: State,
-        status_message: str,
-        output_files: List[str],
-        reduction_script: str,
-        script_sha: str,
-        reduction_start: str,
-        reduction_end: str,
-    ) -> None:
+    def update_script(self, db_reduction_id: int, reduction_script: str, script_sha: str) -> None:
         """
-        This function submits data to the database from what is initially available on completed-runs message broker
-        station/topic
-        :param db_reduction_id: The ID for the reduction row in the reduction table
-        :param reduction_inputs: The inputs used in the reduction script by the IR-API
-        :param state: The state of how the run ended
-        :param status_message: The message that accompanies the state for how the  state ended, if the state for
-        example was unsuccessful or an error, it would have the reason/error message.
-        :param output_files: The files output from the reduction job
-        :param reduction_script: The script used in the reduction
-        :param script_sha: The git sha of the script used in reduction
-        :param reduction_start: The time the pod running the reduction started working
-        :param reduction_end: The time the pod running the reduction stopped working
+        Updates the script tied to a reduction in the DB
+        :param db_reduction_id: The ID for the reduction to be updated
+        :param reduction_script: The contents of the script to be added
+        :param script_sha: The sha of that script
         :return:
         """
         logger.info(
-            "Submitting completed-run to the database: {id: %s, reduction_inputs: %s, state: %s, "
-            "status_message: %s, output_files: %s, reduction_script: %s}",
+            "Submitting script to the database: {db_reduction_id: %s, reduction_script: %s, script_sha: %s}",
             db_reduction_id,
-            reduction_inputs,
-            str(state),
-            status_message,
-            output_files,
             textwrap.shorten(reduction_script, width=10, placeholder="..."),
+            script_sha,
         )
         with self.session_maker_func() as session:
-            script = session.query(Script).filter_by(script=reduction_script).first()
+            script = session.query(Script).filter_by(sha=script_sha).first()
             if script is None:
                 script = Script(script=reduction_script, sha=script_sha)
-
             reduction = session.query(Reduction).filter_by(id=db_reduction_id).one()
-            reduction.reduction_state = state
-            reduction.reduction_inputs = reduction_inputs
             reduction.script = script
-            reduction.reduction_outputs = str(output_files)
-            reduction.reduction_status_message = status_message
-            reduction.reduction_start = reduction_start
-            reduction.reduction_end = reduction_end
             session.commit()
             logger.info(
-                "Submitted completed-run to the database successfully: {id: %s, reduction_inputs: %s, state: %s, "
-                "status_message: %s, output_files: %s, reduction_script: %s}",
+                "Submitted script to the database: {db_reduction_id: %s, reduction_script: %s, script_sha: %s}",
                 db_reduction_id,
-                reduction_inputs,
-                str(state),
-                status_message,
-                output_files,
                 textwrap.shorten(reduction_script, width=10, placeholder="..."),
+                script_sha,
             )
 
 

@@ -6,7 +6,7 @@ from typing import Callable, Dict
 
 from pika import PlainCredentials, ConnectionParameters, BlockingConnection  # type: ignore[import]
 
-from job_controller.utils import logger
+from jobcreator.utils import logger
 
 
 class QueueConsumer:
@@ -51,7 +51,7 @@ class QueueConsumer:
         """
         Handles a message from the message broker
         :param msg: A message that need to be processed
-        :return:
+        :return: None
         """
         try:
             msg_obj = json.loads(msg)

@@ -15,7 +15,7 @@ logging.basicConfig(
     format="[%(asctime)s]-%(name)s-%(levelname)s: %(message)s",
     level=logging.INFO,
 )
-logger = logging.getLogger("jobcontroller")
+logger = logging.getLogger("jobcreator")
 
 
 def create_ceph_path(instrument_name: str, rb_number: str) -> str:
@@ -77,3 +77,19 @@ def ensure_ceph_path_exists(ceph_path_str: str) -> str:
             ceph_path.mkdir(parents=True, exist_ok=True)
 
     return str(ceph_path)
+
+
+def create_ceph_mount_path(instrument_name: str, rb_number: str, mount_path: str = "/isis/instrument") -> str:
+    """
+    Creates the ceph mount for the job to output to
+    :param instrument_name: str, name of the instrument
+    :param rb_number: str, the rb number of the run
+    :param mount_path: str, the path that should be pointed to by default, before RBNumber, and Instrument specific
+    directories.
+    :return: str, the path that was created for the mount
+    """
+    ceph_path = create_ceph_path(instrument_name, rb_number)
+    ceph_path = ensure_ceph_path_exists(ceph_path)
+    # There is an assumption that the ceph_path will have /ceph at the start that needs to be removed
+    ceph_path = ceph_path.replace("/ceph", "")
+    return os.path.join(mount_path, ceph_path)
