@@ -40,8 +40,7 @@ class Run(Base):  # type: ignore[valid-type, misc]
     run_end = Column(DateTime)
     good_frames = Column(Integer)
     raw_frames = Column(Integer)
-    reductions: Mapped[List[Reduction]] = relationship("RunReduction",
-                                                       back_populates="run_relationship")
+    reductions: Mapped[List[Reduction]] = relationship("RunReduction", back_populates="run_relationship")
     instrument: Mapped[Instrument] = relationship("Instrument")
 
     def __eq__(self, other: Any) -> bool:
@@ -137,9 +136,7 @@ class RunReduction(Base):  # type: ignore[valid-type, misc]
     run_id = Column(Integer, ForeignKey("runs.id"), primary_key=True)
     reduction_id = Column(Integer, ForeignKey("reductions.id"), primary_key=True)
     run_relationship: Mapped[Run] = relationship("Run", back_populates="reductions")
-    reduction_relationship: Mapped[Reduction] = relationship(
-        "Reduction", back_populates="run_reduction_relationship"
-    )
+    reduction_relationship: Mapped[Reduction] = relationship("Reduction", back_populates="run_reduction_relationship")
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, RunReduction):
