@@ -91,5 +91,5 @@ def create_ceph_mount_path(instrument_name: str, rb_number: str, mount_path: str
     ceph_path = create_ceph_path(instrument_name, rb_number)
     ceph_path = ensure_ceph_path_exists(ceph_path)
     # There is an assumption that the ceph_path will have /ceph at the start that needs to be removed
-    ceph_path = ceph_path[5:]
+    ceph_path = ceph_path.replace("/ceph", "")
     return os.path.join(mount_path, ceph_path)

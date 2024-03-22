@@ -293,7 +293,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         job_name = self.job.metadata.name
         reduction_id = self.job.metadata.annotations.get("reduction-id")
         if self.pod is None:
-            raise TypeError(
+            raise AttributeError(
                 f"Pod name can't be None, {job_name} name and {self.namespace} "
                 f"namespace returned None when looking for a pod."
             )

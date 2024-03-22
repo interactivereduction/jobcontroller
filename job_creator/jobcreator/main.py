@@ -2,7 +2,6 @@
 Main class, creates jobs by calling to the jobcreator, creates the jobwatcher for each created job, and receives
 requests from the topicconsumer.
 """
-import asyncio
 import os
 import uuid
 from pathlib import Path
@@ -22,7 +21,7 @@ DB_UPDATER = DBUpdater(ip=DB_IP, username=DB_USERNAME, password=DB_PASSWORD)
 
 # This is used for ensuring that when on staging we will use an empty dir instead of the ceph production mount
 DEV_MODE: Any = os.environ.get("DEV_MODE", "False")
-if DEV_MODE != "False":  # pylint: disable=simplifiable-if-statement
+if DEV_MODE.lower() != "false":  # pylint: disable=simplifiable-if-statement
     DEV_MODE = True
 else:
     DEV_MODE = False
@@ -54,16 +53,7 @@ FS_NAME = os.environ.get("FS_NAME", "deneb")
 MAX_TIME_TO_COMPLETE = int(os.environ.get("MAX_TIME_TO_COMPLETE", 60 * 60 * 6))
 
 
-def on_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
-    """
-    Request that the k8s api spawns a job
-    :param message: dict, the message is a dictionary containing the needed information for spawning a pod
-    :return: None
-    """
-    asyncio.run(process_message(message))
-
-
-async def process_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
+def process_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
     """
     Request that the k8s api spawns a job
     :param message: dict, the message is a dictionary containing the needed information for spawning a pod
@@ -126,8 +116,8 @@ def main() -> None:
     """
     This is the function that runs the JobController software suite
     """
-    consumer = QueueConsumer(  # pylint: disable=attribute-defined-outside-init
-        on_message,
+    consumer = QueueConsumer(
+        process_message,
         queue_host=QUEUE_HOST,
         username=CONSUMER_USERNAME,
         password=CONSUMER_PASSWORD,

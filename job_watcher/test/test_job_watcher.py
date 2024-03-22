@@ -484,14 +484,16 @@ class JobWatcherTest(unittest.TestCase):
     def test_process_job_success_pod_is_none(self, _, __):
         jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
         jw.pod = None
+        jw.job = mock.MagicMock()
 
-        self.assertRaises(TypeError, jw.process_job_success)
+        self.assertRaises(AttributeError, jw.process_job_success)
 
     @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
     @mock.patch("jobwatcher.job_watcher.client")
     def test_process_job_success_job_is_none(self, _, __):
         jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
         jw.job = None
+        jw.pod = mock.MagicMock()
 
         self.assertRaises(AttributeError, jw.process_job_success)
 
