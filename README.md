@@ -71,7 +71,7 @@ To run the tests:
 pytest .
 ```
 
-The integration tests require a postgres database to be running at localhost:5432 with a database called `interactive-reduction`
+The integration tests require a postgres database to be running at localhost:5432 with a database called `fia`
 the tables do not need to be created.
 
 # Example messages:
