@@ -15,7 +15,7 @@ Expects the following environment variables to be set when running:
 - "QUEUE_HOST": ip to the message broker
 - "QUEUE_USER": The username for the message broker
 - "QUEUE_PASSWORD": The password for the message broker
-- "IR_IP": ip to the IR-API
+- "FIA_IP": ip to the FIA-API
 - "DB_IP": ip for database
 - "DB_USERNAME": Username for database
 - "DB_PASSWORD": Password for database

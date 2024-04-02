@@ -5,13 +5,13 @@ from typing import Tuple
 import requests
 
 
-def acquire_script(ir_api_host: str, reduction_id: int, instrument: str) -> Tuple[str, str]:
+def acquire_script(fia_api_host: str, reduction_id: int, instrument: str) -> Tuple[str, str]:
     """
-    Given the IR-API host, reduction_id, and instrument, return the script object required for reduction
+    Given the FIA-API host, reduction_id, and instrument, return the script object required for reduction
     :return: Script, the script for the reduction
     """
     response = requests.get(
-        f"http://{ir_api_host}/instrument/{instrument}/script?reduction_id={reduction_id}", timeout=30
+        f"http://{fia_api_host}/instrument/{instrument}/script?reduction_id={reduction_id}", timeout=30
     )
     if response.status_code != 200:
         response.raise_for_status()

@@ -36,7 +36,7 @@ if MANTID_SHA is None:
 WATCHER_SHA = os.environ.get("WATCHER_SHA", None)
 if WATCHER_SHA is None:
     raise OSError("WATCHER_SHA not set in the environment, please add it.")
-IR_API_HOST = os.environ.get("IR_API", "ir-api-service.ir.svc.cluster.local:80")
+FIA_API_HOST = os.environ.get("FIA_API", "ir-api-service.ir.svc.cluster.local:80")
 QUEUE_HOST = os.environ.get("QUEUE_HOST", "")
 QUEUE_NAME = os.environ.get("INGRESS_QUEUE_NAME", "")
 CONSUMER_USERNAME = os.environ.get("QUEUE_USER", "")
@@ -86,7 +86,7 @@ def process_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-man
             reduction_inputs=additional_values,
         )
         script, script_sha = acquire_script(
-            ir_api_host=IR_API_HOST,
+            fia_api_host=FIA_API_HOST,
             reduction_id=db_reduction_id,
             instrument=instrument_name,
         )
