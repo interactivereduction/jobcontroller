@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.urls]
-"Repository" = "https://github.com/interactivereduction/jobcontroller"
+"Repository" = "https://github.com/fiaisis/jobcontroller"
 
 [project.scripts]
 jobcreator = "jobcreator.main:main"

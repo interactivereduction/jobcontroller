@@ -247,7 +247,7 @@ class JobCreatorTest(unittest.TestCase):
         self.assertIn(
             call(
                 name="job-watcher",
-                image=f"ghcr.io/interactivereduction/jobwatcher@sha256:{watcher_sha}",
+                image=f"ghcr.io/fiaisis/jobwatcher@sha256:{watcher_sha}",
                 env=[
                     client.V1EnvVar(name="DB_IP", value=db_ip),
                     client.V1EnvVar(name="DB_USERNAME", value=db_username),
@@ -263,7 +263,7 @@ class JobCreatorTest(unittest.TestCase):
         self.assertIn(
             call(
                 name=job_name,
-                image=f"ghcr.io/interactivereduction/runner@sha256:{runner_sha}",
+                image=f"ghcr.io/fiaisis/runner@sha256:{runner_sha}",
                 args=[script],
                 volume_mounts=[
                     client.V1VolumeMount(name="archive-mount", mount_path="/archive"),
