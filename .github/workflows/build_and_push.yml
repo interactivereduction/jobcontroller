@@ -27,12 +27,19 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.WRITE_PACKAGE_TOKEN }}
 
-    - name: Build and push jobcontroller Docker image
+    - name: Build and push jobwatcher Docker image
       uses: docker/build-push-action@v5
       with:
-        file: ./container/jobcontroller.D
+        file: ./container/job_watcher.D
         push: true
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/jobcontroller:${{ github.sha }}
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/jobwatcher:${{ github.sha }}
+
+    - name: Build and push jobcreator Docker image
+      uses: docker/build-push-action@v5
+      with:
+        file: ./container/job_creator.D
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/jobcreator:${{ github.sha }}
 
     - name: Build and push runner Docker image
       uses: docker/build-push-action@v5
