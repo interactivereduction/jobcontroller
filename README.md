@@ -71,9 +71,6 @@ To run the tests:
 pytest .
 ```
 
-The integration tests require a postgres database to be running at localhost:5432 with a database called `fia`
-the tables do not need to be created.
-
 # Example messages:
 ```
 {"filepath": "/test/path/to/MARI0.nxs", "experiment_number": "0", "instrument": "MARI"}
