@@ -1,8 +1,8 @@
 # Job Controller
 
-![License: GPL-3.0](https://img.shields.io/github/license/InteractiveReduction/jobcontroller)
-![Build: passing](https://img.shields.io/github/actions/workflow/status/interactivereduction/jobcontroller/tests.yml?branch=main)
-[![codecov](https://codecov.io/github/interactivereduction/jobcontroller/branch/main/graph/badge.svg?token=XR6PCJ1VR8)](https://codecov.io/github/interactivereduction/jobcontroller)
+![License: GPL-3.0](https://img.shields.io/github/license/fiaisis/jobcontroller)
+![Build: passing](https://img.shields.io/github/actions/workflow/status/fiaisis/jobcontroller/tests.yml?branch=main)
+[![codecov](https://codecov.io/github/fiaisis/jobcontroller/branch/main/graph/badge.svg?token=XR6PCJ1VR8)](https://codecov.io/github/fiaisis/jobcontroller)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/PyCQA/pylint)
 
@@ -15,7 +15,7 @@ Expects the following environment variables to be set when running:
 - "QUEUE_HOST": ip to the message broker
 - "QUEUE_USER": The username for the message broker
 - "QUEUE_PASSWORD": The password for the message broker
-- "IR_IP": ip to the IR-API
+- "FIA_IP": ip to the FIA-API
 - "DB_IP": ip for database
 - "DB_USERNAME": Username for database
 - "DB_PASSWORD": Password for database
@@ -36,7 +36,7 @@ To install when developing:
 
 To demo and test. The easiest way to test JobController is running and functioning correctly, it requires a kubernetes cluster to interact with, and a rabbitmq instance with a queue to listen to:
 
-- Follow these instructions to [create the cluster](https://github.com/interactivereduction/k8s#developing-using-a-local-cluster)
+- Follow these instructions to [create the cluster](https://github.com/fiaisis/k8s#developing-using-a-local-cluster)
 - Create the message broker, this is presently [RabbitMQ](https://www.rabbitmq.com/download.html)
 - Using the producer send one of the messages in the example messages section below.
 - The JobController should make a job and the job will make pods that will perform the work for the run
@@ -44,23 +44,23 @@ To demo and test. The easiest way to test JobController is running and functioni
 # How to container
 
 - The containers are stored in
-  the [container registry for the organisation on github](https://github.com/orgs/interactivereduction/packages).
+  the [container registry for the organisation on github](https://github.com/orgs/fiaisis/packages).
 
 - Build container:
 ```bash
-docker build . -f ./container/jobcontroller.D -t ghcr.io/interactivereduction/jobcontroller
+docker build . -f ./container/jobcontroller.D -t ghcr.io/fiaisis/jobcontroller
 ```
 
 - Run container (replace contents of < > with relevant details):
 ```bash
-docker run -it --rm --mount source=/ceph/<instrument>/RBNumbers/RB<experiment number>,target=/output --name jobcontroller ghcr.io/interactivereduction/jobcontroller
+docker run -it --rm --mount source=/ceph/<instrument>/RBNumbers/RB<experiment number>,target=/output --name jobcontroller ghcr.io/fiaisis/jobcontroller
 ```
 
 - To push containers you will need to setup the correct access for it, you can follow
   this [guide](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry).
 - Publish container:
 ```bash
-docker push ghcr.io/interactivereduction/jobcontroller -a
+docker push ghcr.io/fiaisis/jobcontroller -a
 ```
 
 # Running Tests:
@@ -70,9 +70,6 @@ To run the tests:
 ```bash
 pytest .
 ```
-
-The integration tests require a postgres database to be running at localhost:5432 with a database called `interactive-reduction`
-the tables do not need to be created.
 
 # Example messages:
 ```

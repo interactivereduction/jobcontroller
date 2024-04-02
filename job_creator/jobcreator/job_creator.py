@@ -15,7 +15,7 @@ def _setup_archive_pv(job_name: str) -> str:
     """
     pv_name = f"{job_name}-archive-pv-smb"
     metadata = client.V1ObjectMeta(name=pv_name, annotations={"pv.kubernetes.io/provisioned-by": "smb.csi.k8s.io"})
-    secret_ref = client.V1SecretReference(name="archive-creds", namespace="ir")
+    secret_ref = client.V1SecretReference(name="archive-creds", namespace="fia")
     csi = client.V1CSIPersistentVolumeSource(
         driver="smb.csi.k8s.io",
         read_only=True,
@@ -195,7 +195,7 @@ class JobCreator:
         logger.info("Spawning job: %s", job_name)
         main_container = client.V1Container(
             name=job_name,
-            image=f"ghcr.io/interactivereduction/runner@sha256:{runner_sha}",
+            image=f"ghcr.io/fiaisis/runner@sha256:{runner_sha}",
             args=[script],
             volume_mounts=[
                 client.V1VolumeMount(name="archive-mount", mount_path="/archive"),
@@ -205,7 +205,7 @@ class JobCreator:
 
         watcher_container = client.V1Container(
             name="job-watcher",
-            image=f"ghcr.io/interactivereduction/jobwatcher@sha256:{self.watcher_sha}",
+            image=f"ghcr.io/fiaisis/jobwatcher@sha256:{self.watcher_sha}",
             env=[
                 client.V1EnvVar(name="DB_IP", value=db_ip),
                 client.V1EnvVar(name="DB_USERNAME", value=db_username),

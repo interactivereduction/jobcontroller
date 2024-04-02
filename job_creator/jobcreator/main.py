@@ -36,17 +36,17 @@ if MANTID_SHA is None:
 WATCHER_SHA = os.environ.get("WATCHER_SHA", None)
 if WATCHER_SHA is None:
     raise OSError("WATCHER_SHA not set in the environment, please add it.")
-IR_API_HOST = os.environ.get("IR_API", "ir-api-service.ir.svc.cluster.local:80")
+FIA_API_HOST = os.environ.get("FIA_API", "fia-api-service.fia.svc.cluster.local:80")
 QUEUE_HOST = os.environ.get("QUEUE_HOST", "")
 QUEUE_NAME = os.environ.get("INGRESS_QUEUE_NAME", "")
 CONSUMER_USERNAME = os.environ.get("QUEUE_USER", "")
 CONSUMER_PASSWORD = os.environ.get("QUEUE_PASSWORD", "")
 REDUCE_USER_ID = os.environ.get("REDUCE_USER_ID", "")
-JOB_NAMESPACE = os.environ.get("JOB_NAMESPACE", "ir")
+JOB_NAMESPACE = os.environ.get("JOB_NAMESPACE", "fia")
 JOB_CREATOR = JobCreator(dev_mode=DEV_MODE, watcher_sha=WATCHER_SHA)
 
 CEPH_CREDS_SECRET_NAME = os.environ.get("CEPH_CREDS_SECRET_NAME", "ceph-creds")
-CEPH_CREDS_SECRET_NAMESPACE = os.environ.get("CEPH_CREDS_SECRET_NAMESPACE", "ir")
+CEPH_CREDS_SECRET_NAMESPACE = os.environ.get("CEPH_CREDS_SECRET_NAMESPACE", "fia")
 CLUSTER_ID = os.environ.get("CLUSTER_ID", "ba68226a-672f-4ba5-97bc-22840318b2ec")
 FS_NAME = os.environ.get("FS_NAME", "deneb")
 
@@ -86,7 +86,7 @@ def process_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-man
             reduction_inputs=additional_values,
         )
         script, script_sha = acquire_script(
-            ir_api_host=IR_API_HOST,
+            fia_api_host=FIA_API_HOST,
             reduction_id=db_reduction_id,
             instrument=instrument_name,
         )
