@@ -5,12 +5,12 @@ from unittest import mock
 
 from pika import PlainCredentials
 
-from job_controller.queue_consumer import QueueConsumer
+from jobcreator.queue_consumer import QueueConsumer
 
 
 class QueueConsumerTest(unittest.TestCase):
-    @mock.patch("job_controller.queue_consumer.BlockingConnection")
-    @mock.patch("job_controller.queue_consumer.ConnectionParameters")
+    @mock.patch("jobcreator.queue_consumer.BlockingConnection")
+    @mock.patch("jobcreator.queue_consumer.ConnectionParameters")
     def setUp(self, connection_parameters, blocking_connection):
         self.blocking_connection = blocking_connection
         self.connection_parameters = connection_parameters
@@ -48,7 +48,7 @@ class QueueConsumerTest(unittest.TestCase):
         )
         channel.queue_bind.assert_called_once_with(self.queue_name, self.queue_name, routing_key="")
 
-    @mock.patch("job_controller.queue_consumer.logger")
+    @mock.patch("jobcreator.queue_consumer.logger")
     def test_message_handler(self, logger):
         message = '{"help": "im stuck"}'
         msg_obj = {"help": "im stuck"}
@@ -58,7 +58,7 @@ class QueueConsumerTest(unittest.TestCase):
         logger.info.assert_called_once_with("Message decoded as: %s", msg_obj)
         self.message_callback.assert_called_once_with(msg_obj)
 
-    @mock.patch("job_controller.queue_consumer.logger")
+    @mock.patch("jobcreator.queue_consumer.logger")
     def test_message_handler_on_json_decode_error(self, logger):
         message = "{}::::::::://1//1/1!!!''''''"
 
@@ -81,7 +81,7 @@ class QueueConsumerTest(unittest.TestCase):
         self.quc._message_handler.assert_called_once_with(body.decode.return_value)
         self.quc.channel.basic_ack.assert_called_once_with(header.delivery_tag)
 
-    @mock.patch("job_controller.queue_consumer.logger")
+    @mock.patch("jobcreator.queue_consumer.logger")
     def test_start_consumer_will_handle_exceptions_as_warnings(self, logger):
         def raise_exception():
             raise Exception("The worst exception!")  # pylint: disable=broad-exception-raised

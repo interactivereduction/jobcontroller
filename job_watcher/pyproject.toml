@@ -1,19 +1,18 @@
 [project]
-name = "job_controller"
+name = "jobwatcher"
 readme = "README.md"
 version = "0.0.1"
 dependencies = [
-    "kubernetes==25.3.0",
+    "kubernetes==29.0.0",
     "psycopg2==2.9.6",
     "SQLAlchemy==2.0.13",
-    "pika==1.3.2"
 ]
 
 [project.urls]
 "Repository" = "https://github.com/interactivereduction/jobcontroller"
 
 [project.scripts]
-jobcontroller = "job_controller.main:main"
+jobwatcher = "jobwatcher.main:main"
 
 [project.optional-dependencies]
 formatting = [
@@ -31,9 +30,8 @@ code-inspection = [
     "pylint==2.17.4",
     "mypy==1.5.1",
     "sqlalchemy-stubs==0.4",
-    "job_controller[test]",
     "types-requests==2.31.0.10"
 ]
 
 [tool.setuptools]
-packages = ["job_controller"]
+packages = ["jobwatcher", "jobwatcher.database"]

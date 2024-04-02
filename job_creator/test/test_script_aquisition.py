@@ -1,13 +1,13 @@
-# pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring
-
+# pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring, protected-access,
+# pylint: disable=too-many-instance-attributes
 import unittest
 from unittest.mock import patch, Mock
 
-from job_controller.script_aquisition import acquire_script, apply_json_output
+from jobcreator.script_aquisition import acquire_script, apply_json_output
 
 
 class ScriptAquisitionTest(unittest.TestCase):
-    @patch("job_controller.script_aquisition.requests")
+    @patch("jobcreator.script_aquisition.requests")
     def test_acquire_script_success(self, mock_requests):
         mock_response = Mock()
         mock_response.status_code = 200
@@ -25,7 +25,7 @@ class ScriptAquisitionTest(unittest.TestCase):
 
         assert out == expected_value
 
-    @patch("job_controller.script_aquisition.requests")
+    @patch("jobcreator.script_aquisition.requests")
     def test_acquire_script_failure(self, mock_requests):
         mock_response = Mock()
         mock_requests.get.return_value = mock_response
