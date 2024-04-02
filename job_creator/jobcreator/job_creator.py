@@ -15,7 +15,7 @@ def _setup_archive_pv(job_name: str) -> str:
     """
     pv_name = f"{job_name}-archive-pv-smb"
     metadata = client.V1ObjectMeta(name=pv_name, annotations={"pv.kubernetes.io/provisioned-by": "smb.csi.k8s.io"})
-    secret_ref = client.V1SecretReference(name="archive-creds", namespace="ir")
+    secret_ref = client.V1SecretReference(name="archive-creds", namespace="fia")
     csi = client.V1CSIPersistentVolumeSource(
         driver="smb.csi.k8s.io",
         read_only=True,

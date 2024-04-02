@@ -63,8 +63,8 @@ def _find_pod_from_partial_name(partial_pod_name: str, namespace: str) -> Option
     :return: V1Pod optional, the Pod info if found or None.
     """
     v1 = client.CoreV1Api()
-    pods_in_ir = v1.list_namespaced_pod(namespace=namespace)
-    for pod in pods_in_ir.items:
+    pods_in_fia = v1.list_namespaced_pod(namespace=namespace)
+    for pod in pods_in_fia.items:
         if partial_pod_name in pod.metadata.name:
             return pod
     return None
@@ -92,7 +92,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         :param max_time_to_complete: int, The maximum time before we assume the job is stalled.
         :return: None
         """
-        self.namespace = os.environ.get("JOB_NAMESPACE", "ir")
+        self.namespace = os.environ.get("JOB_NAMESPACE", "fia")
         self.db_updater = db_updater
         self.max_time_to_complete = max_time_to_complete
         self.done_watching = False

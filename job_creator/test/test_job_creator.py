@@ -42,7 +42,7 @@ class JobCreatorTest(unittest.TestCase):
             volume_attributes={"source": "//isisdatar55.isis.cclrc.ac.uk/inst$/"},
             node_stage_secret_ref=client.V1SecretReference.return_value,
         )
-        client.V1SecretReference.assert_called_once_with(name="archive-creds", namespace="ir")
+        client.V1SecretReference.assert_called_once_with(name="archive-creds", namespace="fia")
 
     @mock.patch("jobcreator.job_creator.client")
     def test_setup_archive_pvc(self, client):
