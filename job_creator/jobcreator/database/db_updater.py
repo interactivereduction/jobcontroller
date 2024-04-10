@@ -173,6 +173,11 @@ class Instrument(Base):  # type: ignore[valid-type, misc]
 
 
 def create_hash_of_script(script: str) -> str:
+    """
+    Create a hash of the script that in theory is unique
+    :param script: str, The script to be hashed
+    :return: str, a sha512 of the passed in script
+    """
     return hashlib.sha512(script.encode()).hexdigest()
 
 
