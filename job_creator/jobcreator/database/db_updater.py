@@ -296,7 +296,7 @@ class DBUpdater:
         )
         with self.session_maker_func() as session:
             script_hash = create_hash_of_script(reduction_script)
-            script = session.query(Script).filter_by(sha=script_hash).first()
+            script = session.query(Script).filter_by(script_hash=script_hash).first()
             if script is None:
                 script = Script(script=reduction_script, sha=script_sha, script_hash=script_hash)
             reduction = session.query(Reduction).filter_by(id=db_reduction_id).one()
