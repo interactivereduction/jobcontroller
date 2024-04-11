@@ -3,6 +3,8 @@ This module is responsible for holding the SQL Classes that SQLAlchemy will use 
 via SQLAlchemy via pre-made functions.
 """
 from __future__ import annotations
+
+import hashlib
 import textwrap
 from typing import Any, Dict, List
 
@@ -74,8 +76,9 @@ class Script(Base):  # type: ignore[valid-type, misc]
 
     __tablename__ = "scripts"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    script = Column(String, unique=True)
+    script = Column(String)
     sha = Column(String, nullable=True)
+    script_hash = Column(String, nullable=True)
     reductions: Mapped[Reduction] = relationship("Reduction", back_populates="script")
 
     def __eq__(self, other: Any) -> bool:
@@ -167,6 +170,15 @@ class Instrument(Base):  # type: ignore[valid-type, misc]
 
     def __repr__(self) -> str:
         return f"<Instrument(id={self.id}, instrument_name={self.instrument_name})>"
+
+
+def create_hash_of_script(script: str) -> str:
+    """
+    Create a hash of the script that in theory is unique
+    :param script: str, The script to be hashed
+    :return: str, a sha512 of the passed in script
+    """
+    return hashlib.sha512(script.encode()).hexdigest()
 
 
 class DBUpdater:
@@ -288,9 +300,10 @@ class DBUpdater:
             script_sha,
         )
         with self.session_maker_func() as session:
-            script = session.query(Script).filter_by(sha=script_sha).first()
+            script_hash = create_hash_of_script(reduction_script)
+            script = session.query(Script).filter_by(script_hash=script_hash).first()
             if script is None:
-                script = Script(script=reduction_script, sha=script_sha)
+                script = Script(script=reduction_script, sha=script_sha, script_hash=script_hash)
             reduction = session.query(Reduction).filter_by(id=db_reduction_id).one()
             reduction.script = script
             session.commit()
