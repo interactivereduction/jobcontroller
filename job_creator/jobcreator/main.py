@@ -110,6 +110,8 @@ def process_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-man
             db_password=DB_PASSWORD,
             max_time_to_complete_job=MAX_TIME_TO_COMPLETE,
             runner_sha=MANTID_SHA,
+            manila_share_id=MANILA_SHARE_ID,
+            manila_share_access_id=MANILA_SHARE_ACCESS_ID,
         )
     except Exception as exception:  # pylint: disable=broad-exception-caught
         logger.exception(exception)
