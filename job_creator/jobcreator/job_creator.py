@@ -78,7 +78,7 @@ def _setup_extras_pv(job_name: str, secret_namespace: str, manila_share_id: str,
         volume_handle=pv_name,
         volume_attributes={"shareID": manila_share_id, "shareAccessID": manila_share_access_id},
         node_stage_secret_ref=secret_ref,
-        node_publish_secret_ref=secret_ref
+        node_publish_secret_ref=secret_ref,
     )
     spec = client.V1PersistentVolumeSpec(
         capacity={"storage": "1000Gi"},
@@ -109,8 +109,9 @@ def _setup_extras_pvc(job_name: str, job_namespace: str, pv_name: str) -> str:
         selector=selector,
         storage_class_name="",
     )
-    extras_pvc = client.V1PersistentVolumeClaim(api_version="v1", kind="PersistentVolumeClaim",
-                                                metadata=metadata, spec=spec)
+    extras_pvc = client.V1PersistentVolumeClaim(
+        api_version="v1", kind="PersistentVolumeClaim", metadata=metadata, spec=spec
+    )
     client.CoreV1Api().create_namespaced_persistent_volume_claim(namespace=job_namespace, body=extras_pvc)
     return pvc_name
 
@@ -247,17 +248,19 @@ class JobCreator:
                     job_name, ceph_creds_k8s_secret_name, ceph_creds_k8s_namespace, cluster_id, fs_name, ceph_mount_path
                 )
             )
-        extras_pv_name = _setup_extras_pv(job_name=job_name, secret_namespace=job_namespace,
-                                          manila_share_id=manila_share_id,
-                                          manila_share_access_id=manila_share_access_id)
+        extras_pv_name = _setup_extras_pv(
+            job_name=job_name,
+            secret_namespace=job_namespace,
+            manila_share_id=manila_share_id,
+            manila_share_access_id=manila_share_access_id,
+        )
         pv_names.append(extras_pv_name)
 
         # Setup PVCs
         pvc_names.append(_setup_archive_pvc(job_name=job_name, job_namespace=job_namespace))
         if not self.dev_mode:
             pvc_names.append(_setup_ceph_pvc(job_name=job_name, job_namespace=job_namespace))
-        pvc_names.append(_setup_extras_pvc(job_name=job_name, job_namespace=job_namespace,
-                                           pv_name=extras_pv_name))
+        pvc_names.append(_setup_extras_pvc(job_name=job_name, job_namespace=job_namespace, pv_name=extras_pv_name))
 
         # Create the Job
         logger.info("Spawning job: %s", job_name)
@@ -315,8 +318,8 @@ class JobCreator:
                     name="extras-mount",
                     persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(
                         claim_name=f"{job_name}-extras-pvc", read_only=True
-                    )
-                )
+                    ),
+                ),
             ],
         )
 

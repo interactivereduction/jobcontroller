@@ -5,8 +5,15 @@ import unittest
 from unittest import mock
 from unittest.mock import call
 
-from jobcreator.job_creator import (JobCreator, _setup_archive_pv, _setup_archive_pvc, _setup_ceph_pv, _setup_ceph_pvc,
-                                    _setup_extras_pv, _setup_extras_pvc)
+from jobcreator.job_creator import (
+    JobCreator,
+    _setup_archive_pv,
+    _setup_archive_pvc,
+    _setup_ceph_pv,
+    _setup_ceph_pvc,
+    _setup_extras_pv,
+    _setup_extras_pvc,
+)
 
 
 class JobCreatorTest(unittest.TestCase):
@@ -85,7 +92,8 @@ class JobCreatorTest(unittest.TestCase):
         client.V1ResourceRequirements(requests={"storage": "1000Gi"})
         client.V1LabelSelectorRequirement.assert_called_once_with(key="name", operator="In", values=[pv_name])
         client.V1LabelSelector.assert_called_once_with(
-            match_expressions=[client.V1LabelSelectorRequirement.return_value])
+            match_expressions=[client.V1LabelSelectorRequirement.return_value]
+        )
         client.V1PersistentVolumeClaimSpec.assert_called_once_with(
             access_modes=["ReadOnlyMany"],
             resources=client.V1ResourceRequirements.return_value,
@@ -121,9 +129,7 @@ class JobCreatorTest(unittest.TestCase):
             metadata=client.V1ObjectMeta.return_value,
             spec=client.V1PersistentVolumeSpec.return_value,
         )
-        client.V1ObjectMeta.assert_called_once_with(
-            name=pv_name, labels={"name": pv_name}
-        )
+        client.V1ObjectMeta.assert_called_once_with(name=pv_name, labels={"name": pv_name})
         client.V1PersistentVolumeSpec.assert_called_once_with(
             capacity={"storage": "1000Gi"},
             access_modes=["ReadOnlyMany"],
@@ -135,7 +141,7 @@ class JobCreatorTest(unittest.TestCase):
             volume_handle=pv_name,
             volume_attributes={"shareID": manila_share_id, "shareAccessID": manila_share_access_id},
             node_stage_secret_ref=client.V1SecretReference.return_value,
-            node_publish_secret_ref=client.V1SecretReference.return_value
+            node_publish_secret_ref=client.V1SecretReference.return_value,
         )
         client.V1SecretReference.assert_called_once_with(name="manila-creds", namespace=secret_namespace)
 
@@ -231,8 +237,15 @@ class JobCreatorTest(unittest.TestCase):
     @mock.patch("jobcreator.job_creator.load_kubernetes_config")
     @mock.patch("jobcreator.job_creator.client")
     def test_jobcreator_spawn_job_dev_mode_false(
-        self, client, _, setup_ceph_pvc, setup_ceph_pv, setup_archive_pvc, setup_archive_pv,
-            setup_extras_pvc, setup_extras_pv
+        self,
+        client,
+        _,
+        setup_ceph_pvc,
+        setup_ceph_pv,
+        setup_archive_pvc,
+        setup_archive_pv,
+        setup_extras_pvc,
+        setup_extras_pv,
     ):
         job_name = mock.MagicMock()
         script = mock.MagicMock()
@@ -289,7 +302,9 @@ class JobCreatorTest(unittest.TestCase):
             annotations={
                 "reduction-id": str(reduction_id),
                 "pvs": str([setup_archive_pv.return_value, setup_ceph_pv.return_value, setup_extras_pv.return_value]),
-                "pvcs": str([setup_archive_pvc.return_value, setup_ceph_pvc.return_value, setup_extras_pvc.return_value]),
+                "pvcs": str(
+                    [setup_archive_pvc.return_value, setup_ceph_pvc.return_value, setup_extras_pvc.return_value]
+                ),
                 "kubectl.kubernetes.io/default-container": client.V1Container.return_value.name,
             },
         )
@@ -314,19 +329,19 @@ class JobCreatorTest(unittest.TestCase):
         )
         self.assertIn(
             call(name="extras-mount", persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource.return_value),
-            client.V1Volume.call_args_list
+            client.V1Volume.call_args_list,
         )
         self.assertIn(
             call(claim_name=f"{job_name}-extras-pvc", read_only=True),
-            client.V1PersistentVolumeClaimVolumeSource.call_args_list
+            client.V1PersistentVolumeClaimVolumeSource.call_args_list,
         )
         self.assertIn(
             call(name="archive-mount", persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource.return_value),
-            client.V1Volume.call_args_list
+            client.V1Volume.call_args_list,
         )
         self.assertIn(
             call(claim_name=f"{job_name}-archive-pvc", read_only=True),
-            client.V1PersistentVolumeClaimVolumeSource.call_args_list
+            client.V1PersistentVolumeClaimVolumeSource.call_args_list,
         )
         self.assertEqual(client.V1Volume.call_count, 3)
         self.assertEqual(client.V1PersistentVolumeClaimVolumeSource.call_count, 3)
@@ -354,7 +369,7 @@ class JobCreatorTest(unittest.TestCase):
                 volume_mounts=[
                     client.V1VolumeMount(name="archive-mount", mount_path="/archive"),
                     client.V1VolumeMount(name="ceph-mount", mount_path="/output"),
-                    client.V1VolumeMount(name="extras-mount", mount_path="/extras")
+                    client.V1VolumeMount(name="extras-mount", mount_path="/extras"),
                 ],
             ),
             client.V1Container.call_args_list,
@@ -375,8 +390,15 @@ class JobCreatorTest(unittest.TestCase):
     @mock.patch("jobcreator.job_creator.load_kubernetes_config")
     @mock.patch("jobcreator.job_creator.client")
     def test_jobcreator_spawn_job_dev_mode_true(
-        self, client, _, setup_ceph_pvc, setup_ceph_pv, setup_archive_pvc, setup_archive_pv,
-            setup_extras_pvc, setup_extras_pv
+        self,
+        client,
+        _,
+        setup_ceph_pvc,
+        setup_ceph_pv,
+        setup_archive_pvc,
+        setup_archive_pv,
+        setup_extras_pvc,
+        setup_extras_pv,
     ):
         job_name = mock.MagicMock()
         script = mock.MagicMock()
