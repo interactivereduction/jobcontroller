@@ -50,6 +50,9 @@ CEPH_CREDS_SECRET_NAMESPACE = os.environ.get("CEPH_CREDS_SECRET_NAMESPACE", "fia
 CLUSTER_ID = os.environ.get("CLUSTER_ID", "ba68226a-672f-4ba5-97bc-22840318b2ec")
 FS_NAME = os.environ.get("FS_NAME", "deneb")
 
+MANILA_SHARE_ID = os.environ.get("MANILA_SHARE_ID", "05b75577-a8fb-4c87-a3f3-6a07012e80bc")
+MANILA_SHARE_ACCESS_ID = os.environ.get("MANILA_SHARE_ACCESS_ID", "8045701a-0c3e-486b-a89b-4fd741d04f69")
+
 MAX_TIME_TO_COMPLETE = int(os.environ.get("MAX_TIME_TO_COMPLETE", 60 * 60 * 6))
 
 
