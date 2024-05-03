@@ -7,15 +7,16 @@ from kubernetes import client  # type: ignore[import]
 from jobcreator.utils import logger, load_kubernetes_config
 
 
-def _setup_archive_pv(job_name: str) -> str:
+def _setup_archive_pv(job_name: str, secret_namespace: str) -> str:
     """
     Sets up the archive PV using the loaded kubeconfig as a destination
     :param job_name: str, the name of the job needing an archive
+    :param secret_namespace: str, the namespace of the secret for mounting
     :return: str, the name of the archive PV
     """
     pv_name = f"{job_name}-archive-pv-smb"
     metadata = client.V1ObjectMeta(name=pv_name, annotations={"pv.kubernetes.io/provisioned-by": "smb.csi.k8s.io"})
-    secret_ref = client.V1SecretReference(name="archive-creds", namespace="fia")
+    secret_ref = client.V1SecretReference(name="archive-creds", namespace=secret_namespace)
     csi = client.V1CSIPersistentVolumeSource(
         driver="smb.csi.k8s.io",
         read_only=True,
@@ -55,6 +56,63 @@ def _setup_archive_pvc(job_name: str, job_namespace: str) -> str:
         api_version="v1", kind="PersistentVolumeClaim", metadata=metadata, spec=spec
     )
     client.CoreV1Api().create_namespaced_persistent_volume_claim(namespace=job_namespace, body=archive_pvc)
+    return pvc_name
+
+
+def _setup_extras_pv(job_name: str, secret_namespace: str, manila_share_id: str, manila_share_access_id: str) -> str:
+    """
+    Setups up the extras PV using the loaded kubeconfig as destination
+    :param job_name: str, the name of the job the PV is for
+    :param manila_share_id: The id of the manila share to mount for extras
+    :param manila_share_access_id: the id of the access rule for the manila share that provides access to the
+    manila share
+    :param secret_namespace: the namespace where the manila-creds secret is.
+    :return: str, the name of the PV
+    """
+    pv_name = f"{job_name}-extras-pv"
+    metadata = client.V1ObjectMeta(name=pv_name, labels={"name": pv_name})
+    secret_ref = client.V1SecretReference(name="manila-creds", namespace=secret_namespace)
+    csi = client.V1CSIPersistentVolumeSource(
+        driver="cephfs.manila.csi.openstack.org",
+        read_only=True,
+        volume_handle=pv_name,
+        volume_attributes={"shareID": manila_share_id, "shareAccessID": manila_share_access_id},
+        node_stage_secret_ref=secret_ref,
+        node_publish_secret_ref=secret_ref,
+    )
+    spec = client.V1PersistentVolumeSpec(
+        capacity={"storage": "1000Gi"},
+        access_modes=["ReadOnlyMany"],
+        csi=csi,
+    )
+    archive_pv = client.V1PersistentVolume(api_version="v1", kind="PersistentVolume", metadata=metadata, spec=spec)
+    client.CoreV1Api().create_persistent_volume(archive_pv)
+    return pv_name
+
+
+def _setup_extras_pvc(job_name: str, job_namespace: str, pv_name: str) -> str:
+    """
+    Sets up the extras Manila PVC using the loaded kubeconfig as a destination
+    :param job_name: str, the name of the job that the PVC is made for
+    :param job_namespace: str, the namespace that the job is in
+    :param pv_name: str, the name of the PV the PVC is being made for
+    :return: str, the name of the PVC
+    """
+    pvc_name = f"{job_name}-extras-pvc"
+    metadata = client.V1ObjectMeta(name=pvc_name)
+    resources = client.V1ResourceRequirements(requests={"storage": "1000Gi"})
+    match_expression = client.V1LabelSelectorRequirement(key="name", operator="In", values=[pv_name])
+    selector = client.V1LabelSelector(match_expressions=[match_expression])
+    spec = client.V1PersistentVolumeClaimSpec(
+        access_modes=["ReadOnlyMany"],
+        resources=resources,
+        selector=selector,
+        storage_class_name="",
+    )
+    extras_pvc = client.V1PersistentVolumeClaim(
+        api_version="v1", kind="PersistentVolumeClaim", metadata=metadata, spec=spec
+    )
+    client.CoreV1Api().create_namespaced_persistent_volume_claim(namespace=job_namespace, body=extras_pvc)
     return pvc_name
 
 
@@ -153,6 +211,8 @@ class JobCreator:
         db_username: str,
         db_password: str,
         runner_sha: str,
+        manila_share_id: str,
+        manila_share_access_id: str,
     ) -> None:
         """
         Takes the meta_data from the message and uses that dictionary for generating the deployment of the pod.
@@ -171,6 +231,9 @@ class JobCreator:
         :param db_password: the database password to use to connect
         :param runner_sha: The sha used for defining what version the runner is
         the containers have permission to use the directories required for outputting data.
+        :param manila_share_id: The id of the manila share to mount for extras
+        :param manila_share_access_id: the id of the access rule for the manila share that provides access to the
+        manila share
         :return: None
         """
         logger.info("Creating PV and PVC for: %s", job_name)
@@ -178,18 +241,26 @@ class JobCreator:
         pv_names = []
         pvc_names = []
         # Setup PVs
-        pv_names.append(_setup_archive_pv(job_name=job_name))
+        pv_names.append(_setup_archive_pv(job_name=job_name, secret_namespace=job_namespace))
         if not self.dev_mode:
             pv_names.append(
                 _setup_ceph_pv(
                     job_name, ceph_creds_k8s_secret_name, ceph_creds_k8s_namespace, cluster_id, fs_name, ceph_mount_path
                 )
             )
+        extras_pv_name = _setup_extras_pv(
+            job_name=job_name,
+            secret_namespace=job_namespace,
+            manila_share_id=manila_share_id,
+            manila_share_access_id=manila_share_access_id,
+        )
+        pv_names.append(extras_pv_name)
 
         # Setup PVCs
         pvc_names.append(_setup_archive_pvc(job_name=job_name, job_namespace=job_namespace))
         if not self.dev_mode:
             pvc_names.append(_setup_ceph_pvc(job_name=job_name, job_namespace=job_namespace))
+        pvc_names.append(_setup_extras_pvc(job_name=job_name, job_namespace=job_namespace, pv_name=extras_pv_name))
 
         # Create the Job
         logger.info("Spawning job: %s", job_name)
@@ -200,6 +271,7 @@ class JobCreator:
             volume_mounts=[
                 client.V1VolumeMount(name="archive-mount", mount_path="/archive"),
                 client.V1VolumeMount(name="ceph-mount", mount_path="/output"),
+                client.V1VolumeMount(name="extras-mount", mount_path="/extras"),
             ],
         )
 
@@ -242,6 +314,12 @@ class JobCreator:
                     ),
                 ),
                 ceph_volume,
+                client.V1Volume(
+                    name="extras-mount",
+                    persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(
+                        claim_name=f"{job_name}-extras-pvc", read_only=True
+                    ),
+                ),
             ],
         )
 
