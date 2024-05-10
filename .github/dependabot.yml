@@ -17,10 +17,18 @@ updates:
       
   # Maintain dependencies for pip
   - package-ecosystem: "pip"
-    directory: "/"
+    directory: "/job_creator"
     schedule:
       interval: "daily"
     groups:
-      python-packages:
+      jobcreator-python-packages:
+        patterns:
+          - "*"
+  - package-ecosystem: "pip"
+    directory: "/job_watcher"
+    schedule:
+      interval: "daily"
+    groups:
+      jobwatcher-python-packages:
         patterns:
           - "*"
