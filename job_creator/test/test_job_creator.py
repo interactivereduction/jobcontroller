@@ -248,6 +248,7 @@ class JobCreatorTest(unittest.TestCase):
         setup_extras_pvc,
         setup_extras_pv,
     ):
+        # pylint: disable = duplicate-code
         job_name = mock.MagicMock()
         script = mock.MagicMock()
         job_namespace = mock.MagicMock()
@@ -347,7 +348,6 @@ class JobCreatorTest(unittest.TestCase):
         self.assertEqual(client.V1Volume.call_count, 3)
         self.assertEqual(client.V1PersistentVolumeClaimVolumeSource.call_count, 3)
         self.assertIn(
-            # pylint: disable = duplicate-code
             call(
                 name="job-watcher",
                 image=f"ghcr.io/fiaisis/jobwatcher@sha256:{watcher_sha}",
