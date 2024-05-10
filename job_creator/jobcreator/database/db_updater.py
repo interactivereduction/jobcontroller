@@ -80,7 +80,7 @@ class Script(Base):  # type: ignore[valid-type, misc]
     script = Column(String)
     sha = Column(String, nullable=True)
     script_hash = Column(String, nullable=True)
-    reductions: Mapped[Reduction] = relationship("Reduction", back_populates="script", uselist=True)
+    reductions: Mapped[List[Reduction]] = relationship("Reduction", back_populates="script", uselist=True)
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Script):
