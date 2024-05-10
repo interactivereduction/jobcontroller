@@ -8,13 +8,12 @@ import uuid
 from pathlib import Path
 from typing import Dict, Any
 
-from jobcreator.database.db_updater import DBUpdater
+from jobcreator.database.db_updater import DBUpdater, Run
 from jobcreator.job_creator import JobCreator
 from jobcreator.queue_consumer import QueueConsumer
 from jobcreator.script_aquisition import acquire_script
 from jobcreator.utils import logger, create_ceph_mount_path
 
-from job_creator.jobcreator.database.db_updater import Run
 
 # Set up the jobcreator environment
 DB_IP = os.environ.get("DB_IP", "")
