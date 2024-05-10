@@ -1,6 +1,7 @@
 """
 Contains the functions for acquiring a script for the reduction workflow
 """
+
 from typing import Tuple
 import requests
 
