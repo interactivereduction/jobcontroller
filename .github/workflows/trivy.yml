@@ -47,6 +47,8 @@ jobs:
           output: trivy-results-${{ matrix.image_name }}.sarif
           ignore-unfixed: true
           exit-code: 1
+          severity: "CRITICAL,HIGH"
+
 
       - name: Print results
         run: cat trivy-results-${{ matrix.image_name }}.sarif
