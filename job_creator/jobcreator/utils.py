@@ -7,8 +7,8 @@ import os
 import sys
 from pathlib import Path
 from typing import List
-from kubernetes import config  # type: ignore[import]
-from kubernetes.config import ConfigException  # type: ignore[import]
+from kubernetes import config  # type: ignore[import-untyped]
+from kubernetes.config import ConfigException  # type: ignore[import-untyped]
 
 stdout_handler = logging.StreamHandler(stream=sys.stdout)
 logging.basicConfig(
