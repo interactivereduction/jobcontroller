@@ -5,8 +5,8 @@ A general utilities module for code that may or may not be reused throughout thi
 import logging
 import os
 import sys
-from kubernetes import config  # type: ignore[import]
-from kubernetes.config import ConfigException  # type: ignore[import]
+from kubernetes import config  # type: ignore[import-untyped]
+from kubernetes.config import ConfigException  # type: ignore[import-untyped]
 
 stdout_handler = logging.StreamHandler(stream=sys.stdout)
 logging.basicConfig(

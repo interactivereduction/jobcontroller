@@ -9,8 +9,8 @@ from json import JSONDecodeError
 from time import sleep
 from typing import Any, Optional, Tuple
 
-from kubernetes import client  # type: ignore[import]
-from kubernetes.client import V1Job, V1Pod, V1ContainerStatus  # type: ignore[import]
+from kubernetes import client  # type: ignore[import-untyped]
+from kubernetes.client import V1Job, V1Pod, V1ContainerStatus  # type: ignore[import-untyped]
 
 from jobwatcher.database.state_enum import State
 from jobwatcher.database.db_updater import DBUpdater
