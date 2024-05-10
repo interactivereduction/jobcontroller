@@ -30,20 +30,20 @@ jobs:
     - name: Build and push jobwatcher Docker image
       uses: docker/build-push-action@v5
       with:
-        file: ./container/job_watcher.D
+        file: ./container/job_watcher.Dockerfile
         push: true
         tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/jobwatcher:${{ github.sha }}
 
     - name: Build and push jobcreator Docker image
       uses: docker/build-push-action@v5
       with:
-        file: ./container/job_creator.D
+        file: ./container/job_creator.Dockerfile
         push: true
         tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/jobcreator:${{ github.sha }}
 
     - name: Build and push runner Docker image
       uses: docker/build-push-action@v5
       with:
-        file: ./container/runner.D
+        file: ./container/runner.Dockerfile
         push: true
         tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/runner:${{ github.sha }}
