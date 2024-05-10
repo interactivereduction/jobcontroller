@@ -161,7 +161,7 @@ class JobCreatorTest(unittest.TestCase):
             ),
             pv_name,
         )
-
+        # pylint: disable = duplicate-code
         client.CoreV1Api.return_value.create_persistent_volume.assert_called_once_with(
             client.V1PersistentVolume.return_value
         )
@@ -192,6 +192,7 @@ class JobCreatorTest(unittest.TestCase):
                 "rootPath": "/isis/instrument" + ceph_mount_path,
             },
         )
+        # pylint: enable = duplicate-code
         client.V1SecretReference.assert_called_once_with(
             name=ceph_creds_k8s_secret_name, namespace=ceph_creds_k8s_namespace
         )
@@ -247,6 +248,7 @@ class JobCreatorTest(unittest.TestCase):
         setup_extras_pvc,
         setup_extras_pv,
     ):
+        # pylint: disable = duplicate-code
         job_name = mock.MagicMock()
         script = mock.MagicMock()
         job_namespace = mock.MagicMock()
@@ -375,7 +377,7 @@ class JobCreatorTest(unittest.TestCase):
             client.V1Container.call_args_list,
         )
         self.assertEqual(client.V1Container.call_count, 2)
-
+        # pylint: enable = duplicate-code
         setup_ceph_pv.assert_called_once_with(
             job_name, ceph_creds_k8s_secret_name, ceph_creds_k8s_namespace, cluster_id, fs_name, ceph_mount_path
         )
@@ -400,6 +402,7 @@ class JobCreatorTest(unittest.TestCase):
         setup_extras_pvc,
         setup_extras_pv,
     ):
+        # pylint: disable = duplicate-code
         job_name = mock.MagicMock()
         script = mock.MagicMock()
         job_namespace = mock.MagicMock()
@@ -417,7 +420,7 @@ class JobCreatorTest(unittest.TestCase):
         job_creator = JobCreator(mock.MagicMock(), True)
         manila_share_id = mock.MagicMock()
         manila_share_access_id = mock.MagicMock()
-
+        # pylint: enable = duplicate-code
         job_creator.spawn_job(
             job_name,
             script,

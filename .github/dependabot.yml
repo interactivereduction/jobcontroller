@@ -32,3 +32,13 @@ updates:
       jobwatcher-python-packages:
         patterns:
           - "*"
+
+  # maintain container images
+  - package-ecosystem: docker
+    directory: /container
+    schedule:
+      interval: daily
+    groups:
+      dockerfiles:
+        patterns:
+          - "*"

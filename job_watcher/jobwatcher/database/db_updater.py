@@ -2,6 +2,7 @@
 This module is responsible for holding the SQL Classes that SQLAlchemy will use and then formatting the SQL queries
 via SQLAlchemy via pre-made functions.
 """
+
 from __future__ import annotations
 from typing import Any, List
 
