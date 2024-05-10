@@ -1,15 +1,33 @@
 name: Image Scan
-on:
-  schedule:
-    - cron: "49 8 * * *"
+on: push
+#  schedule:
+#    - cron: "49 8 * * *"
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository_owner }}
 
 jobs:
-  jobcontroller:
-    name: Trivy image scan
+  dockerfile_matrix:
+    strategy:
+      matrix:
+        image_name: ["jobcreator", "jobwatcher", "runner"]
+        dockerfile: ["job_creator.Dockerfile", "job_watcher.Dockerfile", "runner.Dockerfile"]
+        exclude:
+          - image_name: jobcreator
+            dockerfile: job_watcher.Dockerfile
+          - image_name: jobcreator
+            dockerfile: runner.Dockerfile
+          - image_name: jobwatcher
+            dockerfile: job_creator.Dockerfile
+          - image_name: jobwatcher
+            dockerfile: runner.Dockerfile
+          - image_name: runner
+            dockerfile: job_creator.Dockerfile
+          - image_name: runner
+            dockerfile: job_watcher.Dockerfile
+
+      fail-fast: false
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout code
@@ -18,56 +36,24 @@ jobs:
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
-          file: ./container/jobcontroller.D
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/jobcontroller:${{ github.sha }}
+          file: ./container/${{ matrix.dockerfile }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.image_name }}:${{ github.sha }}
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/jobcontroller:${{ github.sha }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.image_name}}:${{ github.sha }}
           format: sarif
-          output: trivy-results-jobcontroller.sarif
+          output: trivy-results-${{ matrix.image_name }}.sarif
           ignore-unfixed: true
           exit-code: 1
 
       - name: Print results
-        run: cat trivy-results-jobcontroller.sarif
+        run: cat trivy-results-${{ matrix.image_name }}.sarif
         if: failure()
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         if: failure()
         with:
-          sarif_file: trivy-results-jobcontroller.sarif
-
-  runner:
-    name: Trivy runner image scan
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Build Docker image
-        uses: docker/build-push-action@v5
-        with:
-          file: ./container/runner.D
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/runner:${{ github.sha }}
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/runner:${{ github.sha }}
-          format: sarif
-          output: trivy-results-runner.sarif
-          ignore-unfixed: true
-          exit-code: 1
-
-      - name: Print results
-        run: cat trivy-results-runner.sarif
-        if: failure()
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
-        if: failure()
-        with:
-          sarif_file: trivy-results-runner.sarif
+          sarif_file: trivy-results-${{ matrix.image_name }}.sarif
