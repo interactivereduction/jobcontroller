@@ -224,9 +224,13 @@ class DBUpdater:
             )
             # Now create the run_reduction entry and add it
             run_reduction = RunReduction(run_relationship=run, reduction_relationship=reduction)
+            logger.info(reduction)
             session.add(run_reduction)
+
             session.commit()
-            session.refresh(reduction)
+            logger.info(reduction)
+            session.refresh(reduction)  # We refresh so that the object has its ID for future use
+            logger.info(reduction)
 
             logger.info(
                 "Submitted detected-run to the database successfully. Run: %s Instrument %s Reduction: %s",
