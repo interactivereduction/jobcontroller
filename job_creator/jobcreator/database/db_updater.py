@@ -80,7 +80,7 @@ class Script(Base):  # type: ignore[valid-type, misc]
     script = Column(String)
     sha = Column(String, nullable=True)
     script_hash = Column(String, nullable=True)
-    reductions: Mapped[Reduction] = relationship("Reduction", back_populates="script")
+    reductions: Mapped[Reduction] = relationship("Reduction", back_populates="script", uselist=True)
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Script):
@@ -104,7 +104,7 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
     reduction_status_message = Column(String)
     reduction_inputs = Column(JSONB)
     script_id = Column(Integer, ForeignKey("scripts.id"))
-    script: Mapped[Script] = relationship("Script", back_populates="reductions")
+    script: Mapped[Script] = relationship("Script", back_populates="reductions", uselist=False)
     reduction_outputs = Column(String)
     run_reduction_relationship: Mapped[List[Run]] = relationship(
         "RunReduction", back_populates="reduction_relationship"
@@ -224,13 +224,8 @@ class DBUpdater:
             )
             # Now create the run_reduction entry and add it
             run_reduction = RunReduction(run_relationship=run, reduction_relationship=reduction)
-            logger.info(reduction)
             session.add(run_reduction)
-
             session.commit()
-            logger.info(reduction)
-            session.refresh(reduction)  # We refresh so that the object has its ID for future use
-            logger.info(reduction)
 
             logger.info(
                 "Submitted detected-run to the database successfully. Run: %s Instrument %s Reduction: %s",
