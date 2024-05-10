@@ -193,67 +193,26 @@ class DBUpdater:
         self.session_maker_func = sessionmaker(bind=engine)
 
     # pylint: disable=too-many-arguments, too-many-locals
-    def add_detected_run(
-        self,
-        filename: str,
-        title: str,
-        instrument_name: str,
-        users: str,
-        experiment_number: str,
-        run_start: str,
-        run_end: str,
-        good_frames: str,
-        raw_frames: str,
-        reduction_inputs: Dict[str, Any],
-    ) -> int:
+    def add_detected_run(self, instrument_name: str, run: Run, reduction_inputs: Dict[str, Any]) -> int:
         """
         This function submits data to the database from what is initially available on detected-runs message broker
-        station/topic
-        :param filename: the filename of the run that needs to be reduced
-        :param title: The title of the run file
-        :param instrument_name: The name of the instrument for the run
-        :param users: The users entered into the run file
-        :param experiment_number: The RB number of the run entered by users
-        :param run_start: The time at which the run started, created using the standard python time format.
-        :param run_end: The time at which the run ended, created using the standard python time format.
-        :param good_frames: The number of frames that are considered "good" in the file
-        :param raw_frames: The number of frames that are in the file
-        :param reduction_inputs: The inputs to be used by the reduction
+        station/topic\
+        :param instrument_name: str
+        :param run: the run that needs to be reduced
+        :param reduction_inputs: The reduction inputs
         :return: The id of the reduction row entry
         """
-        logger.info(
-            "Submitting detected-run to the database: {filename: %s, title: %s, instrument_name: %s, users: %s, "
-            "experiment_number: %s, run_start: %s, run_end: %s, good_frames: %s, raw_frames: %s, "
-            "reduction_inputs: %s}",
-            filename,
-            title,
-            instrument_name,
-            users,
-            experiment_number,
-            run_start,
-            run_end,
-            good_frames,
-            raw_frames,
-            reduction_inputs,
-        )
+        logger.info("Submitting detected-run to the database:%s %s", instrument_name, run)
         with self.session_maker_func() as session:
             instrument = session.query(Instrument).filter_by(instrument_name=instrument_name).first()
             if instrument is None:
                 instrument = Instrument(instrument_name=instrument_name)
 
-            run = session.query(Run).filter_by(filename=filename).first()
-            if run is None:
-                run = Run(
-                    filename=filename,
-                    title=title,
-                    users=users,
-                    experiment_number=experiment_number,
-                    run_start=run_start,
-                    run_end=run_end,
-                    good_frames=good_frames,
-                    raw_frames=raw_frames,
-                )
+            existing_run = session.query(Run).filter_by(filename=run.filename).first()
+            if existing_run is None:
                 run.instrument = instrument
+            else:
+                run = existing_run
 
             reduction = Reduction(
                 reduction_start=None,
@@ -269,19 +228,10 @@ class DBUpdater:
             session.commit()
 
             logger.info(
-                "Submitted detected-run to the database successfully: {filename: %s, title: %s, instrument_name: %s, "
-                "users: %s, experiment_number: %s, run_start: %s, run_end: %s, good_frames: %s, raw_frames: %s, "
-                "reduction_inputs: %s}",
-                filename,
-                title,
-                instrument_name,
-                users,
-                experiment_number,
-                run_start,
-                run_end,
-                good_frames,
-                raw_frames,
-                reduction_inputs,
+                "Submitted detected-run to the database successfully. Run: %s Instrument %s Reduction: %s",
+                run,
+                instrument,
+                reduction,
             )
 
             return int(reduction.id)

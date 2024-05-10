@@ -14,6 +14,8 @@ from jobcreator.queue_consumer import QueueConsumer
 from jobcreator.script_aquisition import acquire_script
 from jobcreator.utils import logger, create_ceph_mount_path
 
+from job_creator.jobcreator.database.db_updater import Run
+
 # Set up the jobcreator environment
 DB_IP = os.environ.get("DB_IP", "")
 DB_USERNAME = os.environ.get("DB_USERNAME", "")
@@ -78,16 +80,18 @@ def process_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-man
         # Add UUID which will avoid collisions for reruns
         job_name = f"run-{filename.lower()}-{str(uuid.uuid4().hex)}"
         db_reduction_id = DB_UPDATER.add_detected_run(
-            filename=filename,
-            title=title,
-            instrument_name=instrument_name,
-            users=users,
-            experiment_number=experiment_number,
-            run_start=run_start,
-            run_end=run_end,
-            good_frames=good_frames,
-            raw_frames=raw_frames,
-            reduction_inputs=additional_values,
+            instrument_name,
+            Run(
+                filename=filename,
+                title=title,
+                users=users,
+                experiment_number=experiment_number,
+                run_start=run_start,
+                run_end=run_end,
+                good_frames=good_frames,
+                raw_frames=raw_frames,
+            ),
+            additional_values,
         )
         script, script_sha = acquire_script(
             fia_api_host=FIA_API_HOST,
