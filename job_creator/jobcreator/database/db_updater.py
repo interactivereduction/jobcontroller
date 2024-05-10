@@ -193,14 +193,14 @@ class DBUpdater:
         self.session_maker_func = sessionmaker(bind=engine)
 
     # pylint: disable=too-many-arguments, too-many-locals
-    def add_detected_run(self, instrument_name: str, run: Run, reduction_inputs: Dict[str, Any]) -> int:
+    def add_detected_run(self, instrument_name: str, run: Run, reduction_inputs: Dict[str, Any]) -> Reduction:
         """
         This function submits data to the database from what is initially available on detected-runs message broker
         station/topic\
         :param instrument_name: str
         :param run: the run that needs to be reduced
         :param reduction_inputs: The reduction inputs
-        :return: The id of the reduction row entry
+        :return: The created Reduction object
         """
         logger.info("Submitting detected-run to the database:%s %s", instrument_name, run)
         with self.session_maker_func() as session:
@@ -226,6 +226,7 @@ class DBUpdater:
             run_reduction = RunReduction(run_relationship=run, reduction_relationship=reduction)
             session.add(run_reduction)
             session.commit()
+            session.refresh(reduction)
 
             logger.info(
                 "Submitted detected-run to the database successfully. Run: %s Instrument %s Reduction: %s",
@@ -234,19 +235,19 @@ class DBUpdater:
                 reduction,
             )
 
-            return int(reduction.id)
+            return reduction
 
-    def update_script(self, db_reduction_id: int, reduction_script: str, script_sha: str) -> None:
+    def update_script(self, reduction: Reduction, reduction_script: str, script_sha: str) -> None:
         """
         Updates the script tied to a reduction in the DB
-        :param db_reduction_id: The ID for the reduction to be updated
+        :param reduction: The reduction to be updated
         :param reduction_script: The contents of the script to be added
         :param script_sha: The sha of that script
         :return:
         """
         logger.info(
             "Submitting script to the database: {db_reduction_id: %s, reduction_script: %s, script_sha: %s}",
-            db_reduction_id,
+            reduction.id,
             textwrap.shorten(reduction_script, width=10, placeholder="..."),
             script_sha,
         )
@@ -255,12 +256,13 @@ class DBUpdater:
             script = session.query(Script).filter_by(script_hash=script_hash).first()
             if script is None:
                 script = Script(script=reduction_script, sha=script_sha, script_hash=script_hash)
-            reduction = session.query(Reduction).filter_by(id=db_reduction_id).one()
+
             reduction.script = script
+            session.add(reduction)
             session.commit()
             logger.info(
                 "Submitted script to the database: {db_reduction_id: %s, reduction_script: %s, script_sha: %s}",
-                db_reduction_id,
+                reduction.id,
                 textwrap.shorten(reduction_script, width=10, placeholder="..."),
                 script_sha,
             )

@@ -78,7 +78,7 @@ def process_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-man
         additional_values = message["additional_values"]
         # Add UUID which will avoid collisions for reruns
         job_name = f"run-{filename.lower()}-{str(uuid.uuid4().hex)}"
-        db_reduction_id = DB_UPDATER.add_detected_run(
+        reduction = DB_UPDATER.add_detected_run(
             instrument_name,
             Run(
                 filename=filename,
@@ -94,10 +94,10 @@ def process_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-man
         )
         script, script_sha = acquire_script(
             fia_api_host=FIA_API_HOST,
-            reduction_id=db_reduction_id,
+            reduction_id=reduction.id,
             instrument=instrument_name,
         )
-        DB_UPDATER.update_script(db_reduction_id, script, script_sha)
+        DB_UPDATER.update_script(reduction, script, script_sha)
         ceph_mount_path = create_ceph_mount_path(instrument_name, rb_number)
         JOB_CREATOR.spawn_job(
             job_name=job_name,
@@ -108,7 +108,7 @@ def process_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-man
             cluster_id=CLUSTER_ID,
             fs_name=FS_NAME,
             ceph_mount_path=ceph_mount_path,
-            reduction_id=db_reduction_id,
+            reduction_id=reduction.id,
             db_ip=DB_IP,
             db_username=DB_USERNAME,
             db_password=DB_PASSWORD,
