@@ -2,8 +2,8 @@ name: Build and Push Docker Images
 
 on:
   push:
-    branches:
-      - main
+    # branches:
+    #   - main
 
 env:
   REGISTRY: ghcr.io
@@ -27,23 +27,68 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.WRITE_PACKAGE_TOKEN }}
 
+    - name: Checkout the Gitops repository
+      uses: actions/checkout@v4
+      with:
+        repository: fiaisis/gitops
+        token: ${{ secrets.GITOPS_STAGING_EDIT_TOKEN }}
+
     - name: Build and push jobwatcher Docker image
+      id: jobwatcher_build
       uses: docker/build-push-action@v5
       with:
         file: ./container/job_watcher.Dockerfile
         push: true
         tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/jobwatcher:${{ github.sha }}
 
+    - name: Edit the YAML fia-api file for staging for jobwatcher
+      uses: mikefarah/yq@v4.43.1
+      with:
+        cmd: yq e -i '.spec.template.spec.containers[] |= (select(.name == "jobcreator") | .env[] |= select(.name == "WATCHER_SHA").value = "${{ steps.jobwatcher_build.outputs.digest }}")' './components/jobcreator/overlays/staging/jobcreator.yml'
+
+    - name: Commit and push changes for jobwatcher
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git commit -am "Update job watcher to use ${{ steps.docker_build.outputs.digest }}"
+        git push
+
     - name: Build and push jobcreator Docker image
+      id: jobcreator_build
       uses: docker/build-push-action@v5
       with:
         file: ./container/job_creator.Dockerfile
         push: true
         tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/jobcreator:${{ github.sha }}
 
+    - name: Edit the YAML fia-api file for staging for jobcreator
+      uses: mikefarah/yq@v4.43.1
+      with:
+        cmd: yq e -i '.spec.template.spec.containers[] |= select(.name == "jobcreator").image = "ghcr.io/fiaisis/jobcreator@${{ steps.jobcreator_build.outputs.digest }}"' './components/jobcreator/overlays/staging/jobcreator.yml'  
+
+    - name: Commit and push changes for jobcreator
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git commit -am "Update job watcher to use ${{ steps.jobcreator_build.outputs.digest }}"
+        git push
+
     - name: Build and push runner Docker image
+      id: runner_build
       uses: docker/build-push-action@v5
       with:
         file: ./container/runner.Dockerfile
         push: true
         tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/runner:${{ github.sha }}
+
+    - name: Edit the YAML fia-api file for staging for runner
+      uses: mikefarah/yq@v4.43.1
+      with:
+        cmd: yq e -i '.spec.template.spec.containers[] |= (select(.name == "jobcreator") | .env[] |= select(.name == "MANTID_SHA").value = "${{ steps.runner_build.outputs.digest }}")' './components/jobcreator/overlays/staging/jobcreator.yml'
+
+    - name: Commit and push changes for runner
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git commit -am "Update job runner to use ${{ steps.runner_build.outputs.digest }}"
+        git push
