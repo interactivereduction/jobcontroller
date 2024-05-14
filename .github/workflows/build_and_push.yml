@@ -50,7 +50,7 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git commit -am "Update job watcher to use ${{ steps.docker_build.outputs.digest }}"
+        git commit -am "Update job watcher to use ${{ steps.jobwatcher_build.outputs.digest }}"
         git push
 
     - name: Build and push jobcreator Docker image
@@ -70,7 +70,7 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git commit -am "Update job watcher to use ${{ steps.jobcreator_build.outputs.digest }}"
+        git commit -am "Update job creator to use ${{ steps.jobcreator_build.outputs.digest }}"
         git push
 
     - name: Build and push runner Docker image
