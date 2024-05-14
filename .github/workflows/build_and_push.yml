@@ -2,8 +2,8 @@ name: Build and Push Docker Images
 
 on:
   push:
-    # branches:
-    #   - main
+    branches:
+      - main
 
 env:
   REGISTRY: ghcr.io
@@ -47,6 +47,7 @@ jobs:
         cmd: yq e -i '.spec.template.spec.containers[] |= (select(.name == "jobcreator") | .env[] |= select(.name == "WATCHER_SHA").value = "${{ steps.jobwatcher_build.outputs.digest }}")' './components/jobcreator/overlays/staging/jobcreator.yml'
 
     - name: Commit and push changes for jobwatcher
+      continue-on-error: true
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
@@ -67,6 +68,7 @@ jobs:
         cmd: yq e -i '.spec.template.spec.containers[] |= select(.name == "jobcreator").image = "ghcr.io/fiaisis/jobcreator@${{ steps.jobcreator_build.outputs.digest }}"' './components/jobcreator/overlays/staging/jobcreator.yml'  
 
     - name: Commit and push changes for jobcreator
+      continue-on-error: true
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
@@ -87,6 +89,7 @@ jobs:
         cmd: yq e -i '.spec.template.spec.containers[] |= (select(.name == "jobcreator") | .env[] |= select(.name == "MANTID_SHA").value = "${{ steps.runner_build.outputs.digest }}")' './components/jobcreator/overlays/staging/jobcreator.yml'
 
     - name: Commit and push changes for runner
+      continue-on-error: true
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
