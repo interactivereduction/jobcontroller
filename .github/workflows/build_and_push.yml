@@ -41,7 +41,7 @@ jobs:
         push: true
         tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/jobwatcher:${{ github.sha }}
 
-    - name: Edit the YAML fia-api file for staging for jobwatcher
+    - name: Edit the YAML jobcreator.yml file for staging for jobwatcher
       uses: mikefarah/yq@v4.43.1
       with:
         cmd: yq e -i '.spec.template.spec.containers[] |= (select(.name == "jobcreator") | .env[] |= select(.name == "WATCHER_SHA").value = "${{ steps.jobwatcher_build.outputs.digest }}")' './components/jobcreator/overlays/staging/jobcreator.yml'
@@ -62,7 +62,7 @@ jobs:
         push: true
         tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/jobcreator:${{ github.sha }}
 
-    - name: Edit the YAML fia-api file for staging for jobcreator
+    - name: Edit the YAML jobcreator.yml file for staging for jobcreator
       uses: mikefarah/yq@v4.43.1
       with:
         cmd: yq e -i '.spec.template.spec.containers[] |= select(.name == "jobcreator").image = "ghcr.io/fiaisis/jobcreator@${{ steps.jobcreator_build.outputs.digest }}"' './components/jobcreator/overlays/staging/jobcreator.yml'  
@@ -83,7 +83,7 @@ jobs:
         push: true
         tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/runner:${{ github.sha }}
 
-    - name: Edit the YAML fia-api file for staging for runner
+    - name: Edit the YAML jobcreator.yml file for staging for runner
       uses: mikefarah/yq@v4.43.1
       with:
         cmd: yq e -i '.spec.template.spec.containers[] |= (select(.name == "jobcreator") | .env[] |= select(.name == "MANTID_SHA").value = "${{ steps.runner_build.outputs.digest }}")' './components/jobcreator/overlays/staging/jobcreator.yml'
