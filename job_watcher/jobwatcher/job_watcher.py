@@ -370,7 +370,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             output_files=output_files,
             reduction_end=str(end),
             reduction_start=start,
-            stacktrace=stacktrace
+            stacktrace=stacktrace,
         )
 
     def cleanup_job(self) -> None:

@@ -590,20 +590,22 @@ class JobWatcherTest(unittest.TestCase):
             "Random error ahead! Just doing some data processing watch out!",
             "Some data processing output",
             "Traceback (most recent call last):",
-            "  File \"/path/to/example.py\", line 4, in <module>",
+            '  File "/path/to/example.py", line 4, in <module>',
             "    processData('I'm processing data over here!')",
-            "  File \"/path/to/example.py\", line 2, in greet",
+            '  File "/path/to/example.py", line 2, in greet',
             "    dataCreate('Give me the gabagool')",
             "AttributeError: I don't know where the gabagool is Tony",
-            "{{output the failure to get gabagool using json}}"
+            "{{output the failure to get gabagool using json}}",
         ]
         logs.reverse()
-        expected_stacktrace = "Traceback (most recent call last):\n" \
-                              "  File \"/path/to/example.py\", line 4, in <module>\n" \
-                              "    processData('I'm processing data over here!')\n" \
-                              "  File \"/path/to/example.py\", line 2, in greet\n" \
-                              "    dataCreate('Give me the gabagool')\n" \
-                              "AttributeError: I don't know where the gabagool is Tony\n"
+        expected_stacktrace = (
+            "Traceback (most recent call last):\n"
+            '  File "/path/to/example.py", line 4, in <module>\n'
+            "    processData('I'm processing data over here!')\n"
+            '  File "/path/to/example.py", line 2, in greet\n'
+            "    dataCreate('Give me the gabagool')\n"
+            "AttributeError: I don't know where the gabagool is Tony\n"
+        )
         expected_recorded_line = "AttributeError: I don't know where the gabagool is Tony"
 
         recorded_line, stacktrace = _find_latest_raised_error_and_stacktrace_from_reversed_logs(logs)
@@ -625,10 +627,12 @@ class JobWatcherTest(unittest.TestCase):
             tail_lines=50,
             container=jw.container_name,
         )
-        (client.CoreV1Api.return_value.read_namespaced_pod_log.return_value.split.return_value.reverse
-         .assert_called_once_with())
-        return_raised_error_call.assert_called_once_with(client.CoreV1Api.return_value
-                                                         .read_namespaced_pod_log.return_value.split.return_value)
+        (
+            client.CoreV1Api.return_value.read_namespaced_pod_log.return_value.split.return_value.reverse.assert_called_once_with()
+        )
+        return_raised_error_call.assert_called_once_with(
+            client.CoreV1Api.return_value.read_namespaced_pod_log.return_value.split.return_value
+        )
 
     @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
     @mock.patch("jobwatcher.job_watcher.client")
