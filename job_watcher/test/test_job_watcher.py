@@ -13,6 +13,8 @@ from unittest.mock import call
 from jobwatcher.job_watcher import JobWatcher, clean_up_pvcs_for_job, clean_up_pvs_for_job, _find_pod_from_partial_name
 from jobwatcher.database.state_enum import State
 
+from job_watcher import _find_latest_raised_error_and_stacktrace_from_reversed_logs
+
 
 class JobWatcherTest(unittest.TestCase):
     @mock.patch("jobwatcher.job_watcher.client")
@@ -388,32 +390,11 @@ class JobWatcherTest(unittest.TestCase):
 
     @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
     @mock.patch("jobwatcher.job_watcher.client")
-    def test_find_latest_raised_error(self, client, __):
-        jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
-        error_log = """
-        ValueError: oasnfijnasfn
-        
-        Log entry
-        Log entry
-        Ignore this line!
-        """
-        client.CoreV1Api.return_value.read_namespaced_pod_log.return_value = error_log
-
-        self.assertEqual(jw._find_latest_raised_error(), "ValueError: oasnfijnasfn")
-
-    @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
-    @mock.patch("jobwatcher.job_watcher.client")
-    def test_find_latest_raise_error_pod_is_none(self, _, __):
-        jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
-        jw.pod = None
-
-        self.assertRaises(AttributeError, jw._find_latest_raised_error)
-
-    @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
-    @mock.patch("jobwatcher.job_watcher.client")
     def test_process_job_failed(self, _, __):
         jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
-        jw._find_latest_raised_error = mock.MagicMock()
+        status_message = mock.MagicMock()
+        stacktrace = mock.MagicMock()
+        jw._find_latest_raised_error_and_stacktrace = mock.MagicMock(return_value=[status_message, stacktrace])
         start = mock.MagicMock()
         end = mock.MagicMock()
         jw._find_start_and_end_of_pod = mock.MagicMock(return_value=(start, end))
@@ -424,10 +405,11 @@ class JobWatcherTest(unittest.TestCase):
         jw.db_updater.update_completed_run.assert_called_once_with(
             db_reduction_id=jw.job.metadata.annotations["reduction-id"],
             state=State(State.ERROR),
-            status_message=jw._find_latest_raised_error.return_value,
+            status_message=status_message,
             output_files=[],
             reduction_end=str(end),
             reduction_start=start,
+            stacktrace=stacktrace,
         )
 
     @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
@@ -477,6 +459,7 @@ class JobWatcherTest(unittest.TestCase):
             output_files="output_file.nxs",
             reduction_end=str(end),
             reduction_start=start,
+            stacktrace="",
         )
 
     @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
@@ -522,6 +505,7 @@ class JobWatcherTest(unittest.TestCase):
             output_files=[],
             reduction_end=str(end),
             reduction_start=start,
+            stacktrace="",
         )
 
     @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
@@ -549,6 +533,7 @@ class JobWatcherTest(unittest.TestCase):
             output_files=[],
             reduction_end=str(end),
             reduction_start=start,
+            stacktrace="",
         )
 
     @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
@@ -576,6 +561,7 @@ class JobWatcherTest(unittest.TestCase):
             output_files=[],
             reduction_end=str(end),
             reduction_start=start,
+            stacktrace="",
         )
 
     @mock.patch("jobwatcher.job_watcher.clean_up_pvcs_for_job")
@@ -597,3 +583,57 @@ class JobWatcherTest(unittest.TestCase):
         jw.job = None
 
         self.assertRaises(AttributeError, jw.cleanup_job)
+
+    @mock.patch("jobwatcher.job_watcher.client")
+    def test_find_latest_raised_error_and_stacktrace_from_reversed_logs(self, _):
+        logs = [
+            "Random error ahead! Just doing some data processing watch out!",
+            "Some data processing output",
+            "Traceback (most recent call last):",
+            "  File \"/path/to/example.py\", line 4, in <module>",
+            "    processData('I'm processing data over here!')",
+            "  File \"/path/to/example.py\", line 2, in greet",
+            "    dataCreate('Give me the gabagool')",
+            "AttributeError: I don't know where the gabagool is Tony",
+            "{{output the failure to get gabagool using json}}"
+        ]
+        logs.reverse()
+        expected_stacktrace = "Traceback (most recent call last):\n" \
+                              "  File \"/path/to/example.py\", line 4, in <module>\n" \
+                              "    processData('I'm processing data over here!')\n" \
+                              "  File \"/path/to/example.py\", line 2, in greet\n" \
+                              "    dataCreate('Give me the gabagool')\n" \
+                              "AttributeError: I don't know where the gabagool is Tony\n"
+        expected_recorded_line = "AttributeError: I don't know where the gabagool is Tony"
+
+        recorded_line, stacktrace = _find_latest_raised_error_and_stacktrace_from_reversed_logs(logs)
+
+        self.assertEqual(recorded_line, expected_recorded_line)
+        self.assertEqual(stacktrace, expected_stacktrace)
+
+    @mock.patch("jobwatcher.job_watcher._find_latest_raised_error_and_stacktrace_from_reversed_logs")
+    @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
+    @mock.patch("jobwatcher.job_watcher.client")
+    def test_find_latest_raised_error_and_stacktrace(self, client, _, return_raised_error_call):
+        jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+
+        jw._find_latest_raised_error_and_stacktrace()
+
+        client.CoreV1Api.return_value.read_namespaced_pod_log.assert_called_once_with(
+            name=jw.pod.metadata.name,
+            namespace=jw.pod.metadata.namespace,
+            tail_lines=50,
+            container=jw.container_name,
+        )
+        (client.CoreV1Api.return_value.read_namespaced_pod_log.return_value.split.return_value.reverse
+         .assert_called_once_with())
+        return_raised_error_call.assert_called_once_with(client.CoreV1Api.return_value
+                                                         .read_namespaced_pod_log.return_value.split.return_value)
+
+    @mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name")
+    @mock.patch("jobwatcher.job_watcher.client")
+    def test_find_latest_raised_error_and_stacktrace_raises_error_on_pod_is_none(self, _, __):
+        jw = JobWatcher(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+        jw.pod = None
+
+        self.assertRaises(AttributeError, jw._find_latest_raised_error_and_stacktrace)

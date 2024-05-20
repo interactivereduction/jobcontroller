@@ -97,6 +97,7 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
     reduction_end = Column(DateTime)
     reduction_state = Column(Enum(State))
     reduction_status_message = Column(String)
+    reduction_stack_trace = Column(String)
     reduction_inputs = Column(JSONB)
     script_id = Column(Integer, ForeignKey("scripts.id"))
     script: Mapped[Script] = relationship("Script", back_populates="reductions")
@@ -112,6 +113,7 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
                 and self.reduction_end == other.reduction_end
                 and self.reduction_state == other.reduction_state
                 and self.reduction_status_message == other.reduction_status_message
+                and self.reduction_stack_trace == other.reduction_stack_trace
                 and self.reduction_inputs == other.reduction_inputs
                 and self.script_id == other.script_id
                 and self.reduction_outputs == other.reduction_outputs
@@ -187,6 +189,7 @@ class DBUpdater:
         output_files: List[str],
         reduction_start: str,
         reduction_end: str,
+        stacktrace: str,
     ) -> None:
         """
         This function submits data to the database from what is initially available on completed-runs message broker
@@ -201,27 +204,31 @@ class DBUpdater:
         :return:
         """
         logger.info(
-            "Updating completed-run in the database: {id: %s, state: %s, status_message: %s, output_files: %s}",
+            "Updating completed-run in the database: {id: %s, state: %s, status_message: %s, output_files: %s,"
+            " stacktrace: %s}",
             db_reduction_id,
             str(state),
             status_message,
             output_files,
+            stacktrace,
         )
         with self.session_maker_func() as session:
             reduction = session.query(Reduction).filter_by(id=db_reduction_id).one()
             reduction.reduction_state = state
             reduction.reduction_outputs = str(output_files)
             reduction.reduction_status_message = status_message
+            reduction.reduction_stack_trace = stacktrace
             reduction.reduction_start = reduction_start
             reduction.reduction_end = reduction_end
             session.commit()
             logger.info(
                 "Submitted completed-run to the database successfully: {id: %s, state: %s, "
-                "status_message: %s, output_files: %s}",
+                "status_message: %s, output_files: %s, stacktrace: %s}",
                 db_reduction_id,
                 str(state),
                 status_message,
                 output_files,
+                stacktrace,
             )
 
 

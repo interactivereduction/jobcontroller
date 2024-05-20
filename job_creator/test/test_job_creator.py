@@ -307,12 +307,26 @@ class JobCreatorTest(unittest.TestCase):
                 ),
                 "kubectl.kubernetes.io/default-container": client.V1Container.return_value.name,
             },
+            labels={
+                "reduce.isis.cclrc.ac.uk/job-source": "automated-reduction"
+            }
         )
         client.V1JobSpec.assert_called_once_with(
             template=client.V1PodTemplateSpec.return_value, backoff_limit=0, ttl_seconds_after_finished=21600
         )
         client.V1PodTemplateSpec.assert_called_once_with(spec=client.V1PodSpec.return_value)
+        client.V1LabelSelector.assert_called_once_with(match_labels=
+                                                       {"reduce.isis.cclrc.ac.uk/job-source": "automated-reduction"})
+        client.V1PodAffinityTerm.assert_called_once_with(label_selector=client.V1LabelSelector.return_value)
+        client.V1WeightedPodAffinityTerm.assert_called_once_with(
+            weight=100,
+            pod_affinity_term=client.V1PodAffinityTerm.return_value
+        )
+        client.V1PodAntiAffinity.assert_called_once_with(preferred_during_scheduling_ignored_during_execution=[
+            client.V1WeightedPodAffinityTerm.return_value])
+        client.V1Affinity.assert_called_once_with(pod_anti_affinity=client.V1PodAntiAffinity.return_value)
         client.V1PodSpec.assert_called_once_with(
+            affinity=client.V1Affinity.return_value,
             service_account_name="jobwatcher",
             containers=[client.V1Container.return_value, client.V1Container.return_value],
             restart_policy="Never",
@@ -445,6 +459,9 @@ class JobCreatorTest(unittest.TestCase):
                 "pvcs": str([setup_archive_pvc.return_value, setup_extras_pvc.return_value]),
                 "kubectl.kubernetes.io/default-container": client.V1Container.return_value.name,
             },
+            labels={
+                "reduce.isis.cclrc.ac.uk/job-source": "automated-reduction"
+            }
         )
         self.assertIn(
             call(name="ceph-mount", empty_dir=client.V1EmptyDirVolumeSource.return_value),

@@ -31,6 +31,6 @@ def apply_json_output(script: str) -> str:
     script_addon = (
         "import json\n"
         "\n"
-        "print(json.dumps({'status': 'Successful', 'status_message': '', 'output_files': output}))\n"
+        "print(json.dumps({'status': 'Successful', 'status_message': '', 'output_files': output}, 'stacktrace': ''))\n"
     )
     return script + "\n" + script_addon

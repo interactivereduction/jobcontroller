@@ -6,7 +6,7 @@ import json
 import os
 from json import JSONDecodeError
 from time import sleep
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, List
 
 from kubernetes import client  # type: ignore[import]
 from kubernetes.client import V1Job, V1Pod, V1ContainerStatus  # type: ignore[import]
@@ -68,6 +68,34 @@ def _find_pod_from_partial_name(partial_pod_name: str, namespace: str) -> Option
         if partial_pod_name in pod.metadata.name:
             return pod
     return None
+
+
+def _find_latest_raised_error_and_stacktrace_from_reversed_logs(reversed_logs: List[str]) -> Tuple[str, str]:
+    """
+    Find the stacktrace in the logs and then return that as a string, find the line that has the error in it and
+    also return that
+    :param reverse_logs: list[str], a list of logs in reverse real order so the most recent is at pos 0.
+    :return: Tuple[str, str], pos1 contains the error_line, pos2 contains the stacktrace from the logs if one exists
+    """
+    line_to_record: str = str(reversed_logs[0])  # Last line in the logs (already reversed)
+    stacktrace_lines = []
+    # Find the error line, then record every line
+    for line in reversed_logs:
+        if not stacktrace_lines:  # Empty list
+            if "Error:" in line:
+                line_to_record = line
+                stacktrace_lines.append(line)
+        elif "Traceback (most recent call last):" not in line:
+            stacktrace_lines.append(line)
+        else:
+            # Will contain Traceback
+            stacktrace_lines.append(line)
+            break
+    stacktrace_lines.reverse()  # Correct the incorrect order making "Traceback: ..." first
+    stacktrace = ""
+    for line in stacktrace_lines:
+        stacktrace += line + "\n"
+    return line_to_record, stacktrace
 
 
 class JobWatcher:  # pylint: disable=too-many-instance-attributes
@@ -239,12 +267,11 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             end_time = container_status.state.terminated.finished_at
         return start_time, end_time
 
-    def _find_latest_raised_error(self) -> str:
+    def _find_latest_raised_error_and_stacktrace(self) -> Tuple[str, str]:
         """
-        For this we will make an assumption that contains "Error:" is the line that we
-        want to grab and store. This is usually found at the bottom of a traceback for a
-        failure. However, will default to the last line in the pod otherwise.
-        :return: string containing the error found last in the logs.
+        Find the stacktrace in the logs and then return that as a string, find the line that has the error in it and
+        also return that.
+        :return: Tuple[str, str], pos1 contains the error_line, pos2 contains the stacktrace from the logs if one exists
         """
         if self.pod is None:
             raise AttributeError("Pod must be set in the JobWatcher before calling this function.")
@@ -255,13 +282,8 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             tail_lines=50,
             container=self.container_name,
         ).split("\n")
-        line_to_record: str = str(logs[-1])
         logs.reverse()
-        for line in logs:
-            if "Error:" in line:
-                line_to_record = line
-                break
-        return line_to_record.strip()
+        return _find_latest_raised_error_and_stacktrace_from_reversed_logs(logs)
 
     def process_job_failed(self) -> None:
         """
@@ -270,17 +292,18 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         """
         if self.pod is None or self.job is None:
             raise AttributeError("Pod and job must be set in the JobWatcher before calling this function.")
-        message = self._find_latest_raised_error()
-        logger.info("Job %s has failed, with message: %s", self.job.metadata.name, message)
+        raised_error, stacktrace = self._find_latest_raised_error_and_stacktrace()
+        logger.info("Job %s has failed, with message: %s", self.job.metadata.name, raised_error)
         reduction_id = self.job.metadata.annotations["reduction-id"]
         start, end = self._find_start_and_end_of_pod(self.pod)
         self.db_updater.update_completed_run(
             db_reduction_id=reduction_id,
             state=State(State.ERROR),
-            status_message=message,
+            status_message=raised_error,
             output_files=[],
             reduction_end=str(end),
             reduction_start=start,
+            stacktrace=stacktrace,
         )
 
     def process_job_success(self) -> None:
@@ -313,6 +336,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 "status": "Unsuccessful",
                 "output_files": [],
                 "status_message": f"{str(exception)}",
+                "stacktrace": "",
             }
         except TypeError as exception:
             logger.error("Last message from job is not a string: %s", str(exception))
@@ -321,6 +345,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 "status": "Unsuccessful",
                 "output_files": [],
                 "status_message": f"{str(exception)}",
+                "stacktrace": "",
             }
         except Exception as exception:  # pylint:disable=broad-exception-caught
             logger.error("There was a problem recovering the job output")
@@ -329,11 +354,13 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 "status": "Unsuccessful",
                 "output_files": [],
                 "status_message": f"{str(exception)}",
+                "stacktrace": "",
             }
 
         # Grab status from output
         status = job_output.get("status", "Unsuccessful")
         status_message = job_output.get("status_message", "")
+        stacktrace = job_output.get("stacktrace", "")
         output_files = job_output.get("output_files", [])
         start, end = self._find_start_and_end_of_pod(self.pod)
         self.db_updater.update_completed_run(
@@ -343,6 +370,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             output_files=output_files,
             reduction_end=str(end),
             reduction_start=start,
+            stacktrace=stacktrace
         )
 
     def cleanup_job(self) -> None:
