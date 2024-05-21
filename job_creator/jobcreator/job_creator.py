@@ -301,7 +301,24 @@ class JobCreator:
                 name="ceph-mount", empty_dir=client.V1EmptyDirVolumeSource(size_limit="10000Mi")
             )
 
+        pod_affinity_label_selector = client.V1LabelSelector(
+            match_labels={"reduce.isis.cclrc.ac.uk/job-source": "automated-reduction"}
+        )
+
+        pod_affinity_term = client.V1PodAffinityTerm(
+            topology_key="kubernetes.io/hostname", label_selector=pod_affinity_label_selector
+        )
+
+        weighted_pod_affinity = client.V1WeightedPodAffinityTerm(weight=100, pod_affinity_term=pod_affinity_term)
+
+        anti_affinity = client.V1PodAntiAffinity(
+            preferred_during_scheduling_ignored_during_execution=[weighted_pod_affinity]
+        )
+
+        affinity = client.V1Affinity(pod_anti_affinity=anti_affinity)
+
         pod_spec = client.V1PodSpec(
+            affinity=affinity,
             service_account_name="jobwatcher",
             containers=[main_container, watcher_container],
             restart_policy="Never",
@@ -339,6 +356,7 @@ class JobCreator:
                 "pvcs": str(pvc_names),
                 "kubectl.kubernetes.io/default-container": main_container.name,
             },
+            labels={"reduce.isis.cclrc.ac.uk/job-source": "automated-reduction"},
         )
 
         job = client.V1Job(
