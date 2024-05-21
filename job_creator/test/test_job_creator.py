@@ -316,7 +316,8 @@ class JobCreatorTest(unittest.TestCase):
         client.V1LabelSelector.assert_called_once_with(
             match_labels={"reduce.isis.cclrc.ac.uk/job-source": "automated-reduction"}
         )
-        client.V1PodAffinityTerm.assert_called_once_with(label_selector=client.V1LabelSelector.return_value)
+        client.V1PodAffinityTerm.assert_called_once_with(topology_key="kubernetes.io/hostname",
+                                                         label_selector=client.V1LabelSelector.return_value)
         client.V1WeightedPodAffinityTerm.assert_called_once_with(
             weight=100, pod_affinity_term=client.V1PodAffinityTerm.return_value
         )

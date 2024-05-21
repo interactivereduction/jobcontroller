@@ -20,7 +20,8 @@ class ScriptAquisitionTest(unittest.TestCase):
             "some value\n"
             "import json\n"
             "\n"
-            "print(json.dumps({'status': 'Successful', 'status_message': '', 'output_files': output}))\n"
+            "print(json.dumps({'status': 'Successful', 'status_message': '', 'output_files': output,"
+            " 'stacktrace': ''}))\n"
         ), "some sha"
 
         assert out == expected_value
@@ -42,6 +43,6 @@ class ScriptAquisitionTest(unittest.TestCase):
 
         expected_output = (
             input_script + "\nimport json\n\nprint(json.dumps({'status': 'Successful', "
-            "'status_message': '', 'output_files': output}))\n"
+            "'status_message': '', 'output_files': output, 'stacktrace': ''}))\n"
         )
         self.assertEqual(expected_output, output)

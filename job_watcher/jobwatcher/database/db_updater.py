@@ -3,6 +3,8 @@ This module is responsible for holding the SQL Classes that SQLAlchemy will use 
 via SQLAlchemy via pre-made functions.
 """
 from __future__ import annotations
+
+import textwrap
 from typing import Any, List
 
 from sqlalchemy import (  # type: ignore[attr-defined]
@@ -97,11 +99,11 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
     reduction_end = Column(DateTime)
     reduction_state = Column(Enum(State))
     reduction_status_message = Column(String)
-    reduction_stack_trace = Column(String)
     reduction_inputs = Column(JSONB)
     script_id = Column(Integer, ForeignKey("scripts.id"))
     script: Mapped[Script] = relationship("Script", back_populates="reductions")
     reduction_outputs = Column(String)
+    stacktrace = Column(String)
     run_reduction_relationship: Mapped[List[Run]] = relationship(
         "RunReduction", back_populates="reduction_relationship"
     )
@@ -210,14 +212,14 @@ class DBUpdater:
             str(state),
             status_message,
             output_files,
-            stacktrace,
+            textwrap.shorten(stacktrace, width=20, placeholder="..."),
         )
         with self.session_maker_func() as session:
             reduction = session.query(Reduction).filter_by(id=db_reduction_id).one()
             reduction.reduction_state = state
             reduction.reduction_outputs = str(output_files)
             reduction.reduction_status_message = status_message
-            reduction.reduction_stack_trace = stacktrace
+            reduction.stacktrace = stacktrace
             reduction.reduction_start = reduction_start
             reduction.reduction_end = reduction_end
             session.commit()
@@ -228,7 +230,7 @@ class DBUpdater:
                 str(state),
                 status_message,
                 output_files,
-                stacktrace,
+                textwrap.shorten(stacktrace, width=20, placeholder="..."),
             )
 
 

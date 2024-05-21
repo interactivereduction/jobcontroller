@@ -305,7 +305,8 @@ class JobCreator:
             match_labels={"reduce.isis.cclrc.ac.uk/job-source": "automated-reduction"}
         )
 
-        pod_affinity_term = client.V1PodAffinityTerm(label_selector=pod_affinity_label_selector)
+        pod_affinity_term = client.V1PodAffinityTerm(topology_key="kubernetes.io/hostname",
+                                                     label_selector=pod_affinity_label_selector)
 
         weighted_pod_affinity = client.V1WeightedPodAffinityTerm(weight=100, pod_affinity_term=pod_affinity_term)
 
