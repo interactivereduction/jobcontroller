@@ -10,10 +10,9 @@ from json import JSONDecodeError
 from unittest import mock
 from unittest.mock import call
 
-from jobwatcher.job_watcher import JobWatcher, clean_up_pvcs_for_job, clean_up_pvs_for_job, _find_pod_from_partial_name
+from jobwatcher.job_watcher import (JobWatcher, clean_up_pvcs_for_job, clean_up_pvs_for_job,
+                                    _find_pod_from_partial_name, _find_latest_raised_error_and_stacktrace_from_reversed_logs)
 from jobwatcher.database.state_enum import State
-
-from job_watcher import _find_latest_raised_error_and_stacktrace_from_reversed_logs
 
 
 class JobWatcherTest(unittest.TestCase):
