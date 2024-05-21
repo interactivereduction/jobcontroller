@@ -21,16 +21,16 @@ formatting = [
 ]
 
 test = [
-    "pytest==8.2.0",
+    "pytest==8.2.1",
     "pytest-cov==5.0.0",
     "pytest-random-order==1.1.1"
 ]
 
 code-inspection = [
-    "pylint==3.1.0",
+    "pylint==3.2.2",
     "mypy==1.10.0",
     "sqlalchemy-stubs==0.4",
-    "types-requests==2.31.0.20240406"
+    "types-requests==2.32.0.20240521"
 ]
 
 [tool.setuptools]
