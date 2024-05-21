@@ -81,31 +81,3 @@ jobs:
         git config --local user.name "GitHub Action"
         git commit -am "Update job creator to use ${{ steps.jobcreator_build.outputs.digest }}"
         git push
-
-    - name: Build and push runner Docker image
-      id: runner_build
-      uses: docker/build-push-action@v5
-      with:
-        file: ./container/runner.Dockerfile
-        push: true
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/runner:${{ github.sha }}
-
-    - name: Remove sha256 from the builds digest
-      id: remove_sha256_runner
-      run: |
-        DIGEST=${{ steps.runner_build.outputs.digest }}
-        FILTERED_DIGEST=${DIGEST#sha256:}
-        echo "::set-output name=digest::$FILTERED_DIGEST"
-
-    - name: Edit the YAML jobcreator.yml file for staging for runner
-      uses: mikefarah/yq@v4.43.1
-      with:
-        cmd: yq e -i '.spec.template.spec.containers[] |= (select(.name == "jobcreator") | .env[] |= select(.name == "MANTID_SHA").value = "${{ steps.remove_sha256_runner.outputs.filtered-digest }}")' './components/jobcreator/overlays/staging/jobcreator.yml'
-
-    - name: Commit and push changes for runner
-      continue-on-error: true
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git commit -am "Update job runner to use ${{ steps.runner_build.outputs.digest }}"
-        git push
