@@ -2,6 +2,7 @@
 This module is responsible for holding the SQL Classes that SQLAlchemy will use and then formatting the SQL queries
 via SQLAlchemy via pre-made functions.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -79,7 +80,7 @@ class Script(Base):  # type: ignore[valid-type, misc]
     script = Column(String)
     sha = Column(String, nullable=True)
     script_hash = Column(String, nullable=True)
-    reductions: Mapped[Reduction] = relationship("Reduction", back_populates="script")
+    reductions: Mapped[List[Reduction]] = relationship("Reduction", back_populates="script", uselist=True)
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Script):
@@ -103,7 +104,7 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
     reduction_status_message = Column(String)
     reduction_inputs = Column(JSONB)
     script_id = Column(Integer, ForeignKey("scripts.id"))
-    script: Mapped[Script] = relationship("Script", back_populates="reductions")
+    script: Mapped[Script] = relationship("Script", back_populates="reductions", uselist=False)
     reduction_outputs = Column(String)
     run_reduction_relationship: Mapped[List[Run]] = relationship(
         "RunReduction", back_populates="reduction_relationship"
@@ -192,67 +193,26 @@ class DBUpdater:
         self.session_maker_func = sessionmaker(bind=engine)
 
     # pylint: disable=too-many-arguments, too-many-locals
-    def add_detected_run(
-        self,
-        filename: str,
-        title: str,
-        instrument_name: str,
-        users: str,
-        experiment_number: str,
-        run_start: str,
-        run_end: str,
-        good_frames: str,
-        raw_frames: str,
-        reduction_inputs: Dict[str, Any],
-    ) -> int:
+    def add_detected_run(self, instrument_name: str, run: Run, reduction_inputs: Dict[str, Any]) -> Reduction:
         """
         This function submits data to the database from what is initially available on detected-runs message broker
-        station/topic
-        :param filename: the filename of the run that needs to be reduced
-        :param title: The title of the run file
-        :param instrument_name: The name of the instrument for the run
-        :param users: The users entered into the run file
-        :param experiment_number: The RB number of the run entered by users
-        :param run_start: The time at which the run started, created using the standard python time format.
-        :param run_end: The time at which the run ended, created using the standard python time format.
-        :param good_frames: The number of frames that are considered "good" in the file
-        :param raw_frames: The number of frames that are in the file
-        :param reduction_inputs: The inputs to be used by the reduction
-        :return: The id of the reduction row entry
+        station/topic\
+        :param instrument_name: str
+        :param run: the run that needs to be reduced
+        :param reduction_inputs: The reduction inputs
+        :return: The created Reduction object
         """
-        logger.info(
-            "Submitting detected-run to the database: {filename: %s, title: %s, instrument_name: %s, users: %s, "
-            "experiment_number: %s, run_start: %s, run_end: %s, good_frames: %s, raw_frames: %s, "
-            "reduction_inputs: %s}",
-            filename,
-            title,
-            instrument_name,
-            users,
-            experiment_number,
-            run_start,
-            run_end,
-            good_frames,
-            raw_frames,
-            reduction_inputs,
-        )
+        logger.info("Submitting detected-run to the database:%s %s", instrument_name, run)
         with self.session_maker_func() as session:
             instrument = session.query(Instrument).filter_by(instrument_name=instrument_name).first()
             if instrument is None:
                 instrument = Instrument(instrument_name=instrument_name)
 
-            run = session.query(Run).filter_by(filename=filename).first()
-            if run is None:
-                run = Run(
-                    filename=filename,
-                    title=title,
-                    users=users,
-                    experiment_number=experiment_number,
-                    run_start=run_start,
-                    run_end=run_end,
-                    good_frames=good_frames,
-                    raw_frames=raw_frames,
-                )
+            existing_run = session.query(Run).filter_by(filename=run.filename).first()
+            if existing_run is None:
                 run.instrument = instrument
+            else:
+                run = existing_run
 
             reduction = Reduction(
                 reduction_start=None,
@@ -268,34 +228,25 @@ class DBUpdater:
             session.commit()
 
             logger.info(
-                "Submitted detected-run to the database successfully: {filename: %s, title: %s, instrument_name: %s, "
-                "users: %s, experiment_number: %s, run_start: %s, run_end: %s, good_frames: %s, raw_frames: %s, "
-                "reduction_inputs: %s}",
-                filename,
-                title,
-                instrument_name,
-                users,
-                experiment_number,
-                run_start,
-                run_end,
-                good_frames,
-                raw_frames,
-                reduction_inputs,
+                "Submitted detected-run to the database successfully. Run: %s Instrument %s Reduction: %s",
+                run,
+                instrument,
+                reduction,
             )
 
-            return int(reduction.id)
+            return reduction
 
-    def update_script(self, db_reduction_id: int, reduction_script: str, script_sha: str) -> None:
+    def update_script(self, reduction: Reduction, reduction_script: str, script_sha: str) -> None:
         """
         Updates the script tied to a reduction in the DB
-        :param db_reduction_id: The ID for the reduction to be updated
+        :param reduction: The reduction to be updated
         :param reduction_script: The contents of the script to be added
         :param script_sha: The sha of that script
         :return:
         """
         logger.info(
             "Submitting script to the database: {db_reduction_id: %s, reduction_script: %s, script_sha: %s}",
-            db_reduction_id,
+            reduction.id,
             textwrap.shorten(reduction_script, width=10, placeholder="..."),
             script_sha,
         )
@@ -304,12 +255,13 @@ class DBUpdater:
             script = session.query(Script).filter_by(script_hash=script_hash).first()
             if script is None:
                 script = Script(script=reduction_script, sha=script_sha, script_hash=script_hash)
-            reduction = session.query(Reduction).filter_by(id=db_reduction_id).one()
+
             reduction.script = script
+            session.add(reduction)
             session.commit()
             logger.info(
                 "Submitted script to the database: {db_reduction_id: %s, reduction_script: %s, script_sha: %s}",
-                db_reduction_id,
+                reduction.id,
                 textwrap.shorten(reduction_script, width=10, placeholder="..."),
                 script_sha,
             )

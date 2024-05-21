@@ -2,7 +2,7 @@
 Communicate to a kubernetes API to spawn a pod with the metadata passed by message to the RunMaker
 """
 
-from kubernetes import client  # type: ignore[import]
+from kubernetes import client  # type: ignore[import-untyped]
 
 from jobcreator.utils import logger, load_kubernetes_config
 
