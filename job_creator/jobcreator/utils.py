@@ -131,8 +131,7 @@ def get_sha256_using_image_from_ghcr(user_image: str, version: str = "") -> str:
     headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.docker.distribution.manifest.v2+json"}
 
     # Get response from ghcr for digest
-    manifest_response = requests.get(f"https://ghcr.io/v2/{user_image}/manifests/{version}",
-                                     headers=headers, timeout=5)
+    manifest_response = requests.get(f"https://ghcr.io/v2/{user_image}/manifests/{version}", headers=headers, timeout=5)
     manifest = manifest_response.text
     sha256 = hashlib.sha256(manifest.encode("utf-8")).hexdigest()
 
