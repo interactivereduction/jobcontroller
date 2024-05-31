@@ -99,7 +99,7 @@ def create_ceph_mount_path(instrument_name: str, rb_number: str, mount_path: str
     return os.path.join(mount_path, ceph_path)
 
 
-def extract_useful_parts_from_image(image_path: str) -> Tuple[str, str, str]:
+def get_org_image_name_and_version_from_image_path(image_path: str) -> Tuple[str, str, str]:
     """
     Takes the image path and extracts just the user image parts.
     :param image_path: str, the image path to process either ghcr.io/fiaisis/mantid:6.9.1 or
@@ -151,7 +151,7 @@ def find_sha256_of_image(image: str) -> str:
         # If sha256 is present in image assume it is already correct.
         if "sha256:" in image:
             return image
-        org_name, image_name, version = extract_useful_parts_from_image(image)
+        org_name, image_name, version = get_org_image_name_and_version_from_image_path(image)
         user_image = org_name + "/" + image_name
         logger.info("Found user image to use: %s", user_image)
         version_to_use = get_sha256_using_image_from_ghcr(user_image, version)

@@ -10,7 +10,7 @@ from jobcreator.utils import (
     load_kubernetes_config,
     ensure_ceph_path_exists,
     find_sha256_of_image,
-    extract_useful_parts_from_image,
+    get_org_image_name_and_version_from_image_path,
     get_sha256_using_image_from_ghcr,
 )
 
@@ -59,19 +59,19 @@ class UtilTests(unittest.TestCase):
         self.assertEqual(end_path, "/tmp/ceph/mari/RBNumber/unknown/autoreduced")
         os.removedirs("/tmp/ceph/mari/RBNumber/unknown/autoreduced")
 
-    def test_extract_useful_parts_from_image_with_https(self):
+    def test_get_org_image_name_and_version_from_image_path_with_https(self):
         image_path = "https://ghcr.io/fiaisis/mantid:6.9.1"
 
-        org_name, image_name, version = extract_useful_parts_from_image(image_path)
+        org_name, image_name, version = get_org_image_name_and_version_from_image_path(image_path)
 
         self.assertEqual(org_name, "fiaisis")
         self.assertEqual(image_name, "mantid")
         self.assertEqual(version, "6.9.1")
 
-    def test_extract_useful_parts_from_image_without_https(self):
+    def test_get_org_image_name_and_version_from_image_path_without_https(self):
         image_path = "ghcr.io/fiaisis/mantid:6.9.1"
 
-        org_name, image_name, version = extract_useful_parts_from_image(image_path)
+        org_name, image_name, version = get_org_image_name_and_version_from_image_path(image_path)
 
         self.assertEqual(org_name, "fiaisis")
         self.assertEqual(image_name, "mantid")
