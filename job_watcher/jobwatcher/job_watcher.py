@@ -79,7 +79,7 @@ def _find_latest_raised_error_and_stacktrace_from_reversed_logs(reversed_logs: L
     :return: Tuple[str, str], pos1 contains the error_line, pos2 contains the stacktrace from the logs if one exists
     """
     line_to_record: str = str(reversed_logs[0])  # Last line in the logs (already reversed)
-    stacktrace_lines = []
+    stacktrace_lines: List[str] = []
     # Find the error line, then record every line
     for line in reversed_logs:
         if not stacktrace_lines:  # Empty list

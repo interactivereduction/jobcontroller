@@ -104,6 +104,7 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
     reduction_status_message = Column(String)
     reduction_inputs = Column(JSONB)
     script_id = Column(Integer, ForeignKey("scripts.id"))
+    runner_image = Column(String)
     script: Mapped[Script] = relationship("Script", back_populates="reductions", uselist=False)
     reduction_outputs = Column(String)
     run_reduction_relationship: Mapped[List[Run]] = relationship(
@@ -118,6 +119,7 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
                 and self.reduction_state == other.reduction_state
                 and self.reduction_status_message == other.reduction_status_message
                 and self.reduction_inputs == other.reduction_inputs
+                and self.runner_image == other.runner_image
                 and self.script_id == other.script_id
                 and self.reduction_outputs == other.reduction_outputs
             )
@@ -193,13 +195,16 @@ class DBUpdater:
         self.session_maker_func = sessionmaker(bind=engine)
 
     # pylint: disable=too-many-arguments, too-many-locals
-    def add_detected_run(self, instrument_name: str, run: Run, reduction_inputs: Dict[str, Any]) -> Reduction:
+    def add_detected_run(
+        self, instrument_name: str, run: Run, reduction_inputs: Dict[str, Any], runner_image: str
+    ) -> Reduction:
         """
         This function submits data to the database from what is initially available on detected-runs message broker
         station/topic\
         :param instrument_name: str
         :param run: the run that needs to be reduced
         :param reduction_inputs: The reduction inputs
+        :param runner_image: The image to be used by the runner
         :return: The created Reduction object
         """
         logger.info("Submitting detected-run to the database:%s %s", instrument_name, run)
@@ -221,6 +226,7 @@ class DBUpdater:
                 reduction_inputs=reduction_inputs,
                 script_id=None,
                 reduction_outputs=None,
+                runner_image=runner_image,
             )
             # Now create the run_reduction entry and add it
             run_reduction = RunReduction(run_relationship=run, reduction_relationship=reduction)
