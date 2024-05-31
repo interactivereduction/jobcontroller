@@ -195,8 +195,9 @@ class DBUpdater:
         self.session_maker_func = sessionmaker(bind=engine)
 
     # pylint: disable=too-many-arguments, too-many-locals
-    def add_detected_run(self, instrument_name: str, run: Run, reduction_inputs: Dict[str, Any],
-                         runner_image: str) -> Reduction:
+    def add_detected_run(
+        self, instrument_name: str, run: Run, reduction_inputs: Dict[str, Any], runner_image: str
+    ) -> Reduction:
         """
         This function submits data to the database from what is initially available on detected-runs message broker
         station/topic\
@@ -225,7 +226,7 @@ class DBUpdater:
                 reduction_inputs=reduction_inputs,
                 script_id=None,
                 reduction_outputs=None,
-                runner_image=runner_image
+                runner_image=runner_image,
             )
             # Now create the run_reduction entry and add it
             run_reduction = RunReduction(run_relationship=run, reduction_relationship=reduction)

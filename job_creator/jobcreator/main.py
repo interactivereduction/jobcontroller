@@ -94,7 +94,7 @@ def process_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-man
                 raw_frames=raw_frames,
             ),
             additional_values,
-            runner_image
+            runner_image,
         )
         script, script_sha = acquire_script(
             fia_api_host=FIA_API_HOST,

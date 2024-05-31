@@ -1,6 +1,7 @@
 """
 A general utilities module for code that may or may not be reused throughout this repository
 """
+
 import hashlib
 import logging
 import os
@@ -105,8 +106,8 @@ def extract_useful_parts_from_image(image_path: str) -> Tuple[str, str, str]:
     https://ghcr.io/fiaisis/mantid:6.9.1
     :return: Tuple(str, str, str), organisation name, image name, version tag in that order
     """
-    image_path_without_https = image_path.split('://')[-1]
-    split_image_path = image_path_without_https.split('/')
+    image_path_without_https = image_path.split("://")[-1]
+    split_image_path = image_path_without_https.split("/")
     org_name = split_image_path[1]
     image_name, version = split_image_path[2].split(":")
     return org_name, image_name, version  # Use organisation and image name without ghcr.io
@@ -127,15 +128,12 @@ def get_sha256_using_image_from_ghcr(user_image: str, version: str = "") -> str:
     token = token_response.json().get("token")
 
     # Create header
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Accept": "application/vnd.docker.distribution.manifest.v2+json"
-    }
+    headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.docker.distribution.manifest.v2+json"}
 
     # Get response from ghcr for digest
     manifest_response = requests.get(f"https://ghcr.io/v2/{user_image}/manifests/{version}", headers=headers)
     manifest = manifest_response.text
-    sha256 = hashlib.sha256(manifest.encode('utf-8')).hexdigest()
+    sha256 = hashlib.sha256(manifest.encode("utf-8")).hexdigest()
 
     return sha256
 
