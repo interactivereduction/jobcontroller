@@ -93,7 +93,7 @@ def test_find_sha256_of_image_exception_is_raised(_, __, logger):
 
     return_value = find_sha256_of_image(image)
 
-    logger.warning.assert_called_once_with(str(Exception('')))
+    logger.warning.assert_called_once_with(str(Exception("")))
     assert image == return_value
 
 
