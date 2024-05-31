@@ -125,7 +125,7 @@ class UtilTests(unittest.TestCase):
         )
 
     def raise_exception(self):
-        raise Exception("Crazy Exception!")
+        raise Exception("Crazy Exception!")  # pylint: disable=broad-exception-raised
 
     @mock.patch("jobcreator.utils.logger")
     @mock.patch("jobcreator.utils.get_sha256_using_image_from_ghcr")
@@ -157,5 +157,5 @@ class UtilTests(unittest.TestCase):
 
         self.assertEqual(
             return_value,
-            "ghcr.io/fiaisis/mantid@sha256:" "6e5f2d070bb67742f354948d68f837a740874d230714eaa476d35ab6ad56caec",
+            "ghcr.io/fiaisis/mantid@sha256:6e5f2d070bb67742f354948d68f837a740874d230714eaa476d35ab6ad56caec",
         )

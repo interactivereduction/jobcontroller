@@ -34,8 +34,7 @@ else:
 DEFAULT_RUNNER_SHA: Any = os.environ.get("DEFAULT_RUNNER_SHA", None)
 if DEFAULT_RUNNER_SHA is None:
     raise OSError("DEFAULT_RUNNER_SHA not set in the environment, please add it.")
-else:
-    DEFAULT_RUNNER = f"ghcr.io/fiaisis/mantid@sha256:{DEFAULT_RUNNER_SHA}"
+DEFAULT_RUNNER = f"ghcr.io/fiaisis/mantid@sha256:{DEFAULT_RUNNER_SHA}"
 WATCHER_SHA = os.environ.get("WATCHER_SHA", None)
 if WATCHER_SHA is None:
     raise OSError("WATCHER_SHA not set in the environment, please add it.")

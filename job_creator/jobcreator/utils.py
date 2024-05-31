@@ -124,14 +124,15 @@ def get_sha256_using_image_from_ghcr(user_image: str, version: str = "") -> str:
         version = version.split(":")[-1]
 
     # Get token
-    token_response = requests.get(f"https://ghcr.io/token?scope=repository:{user_image}:pull")
+    token_response = requests.get(f"https://ghcr.io/token?scope=repository:{user_image}:pull", timeout=5)
     token = token_response.json().get("token")
 
     # Create header
     headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.docker.distribution.manifest.v2+json"}
 
     # Get response from ghcr for digest
-    manifest_response = requests.get(f"https://ghcr.io/v2/{user_image}/manifests/{version}", headers=headers)
+    manifest_response = requests.get(f"https://ghcr.io/v2/{user_image}/manifests/{version}",
+                                     headers=headers, timeout=5)
     manifest = manifest_response.text
     sha256 = hashlib.sha256(manifest.encode("utf-8")).hexdigest()
 
@@ -143,8 +144,9 @@ def find_sha256_of_image(image: str) -> str:
     Return the sha256 version of the image and return the full image path.
     There is an assumption in this that the image is present on ghcr.io, if not this will fail.
     :param image: str, the image to process e.g. ghcr.io/fiaisis/mantid:6.9.1
-    :return: str, Return the exact image sha256 if possible based on the image that was passed, if not possible just return
-    the input. e.g. ghcr.io/fiaisis/mantid@sha256:6e5f2d070bb67742f354948d68f837a740874d230714eaa476d35ab6ad56caec
+    :return: str, Return the exact image sha256 if possible based on the image that was passed, if not possible just
+    return the input. e.g.
+    ghcr.io/fiaisis/mantid@sha256:6e5f2d070bb67742f354948d68f837a740874d230714eaa476d35ab6ad56caec
     """
     try:
         # If sha256 is present in image assume it is already correct.
@@ -157,6 +159,6 @@ def find_sha256_of_image(image: str) -> str:
         logger.info("Found sha256 tag for %s: %s", user_image, version_to_use)
         full_image_name = f"ghcr.io/{org_name}/{image_name}@sha256:{version_to_use}"
         return full_image_name
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         logger.warning(str(e))
         return image
