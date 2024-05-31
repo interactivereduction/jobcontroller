@@ -12,8 +12,7 @@ from jobcreator.database.db_updater import DBUpdater, Run
 from jobcreator.job_creator import JobCreator
 from jobcreator.queue_consumer import QueueConsumer
 from jobcreator.script_aquisition import acquire_script
-from jobcreator.utils import logger, create_ceph_mount_path
-
+from jobcreator.utils import logger, create_ceph_mount_path, find_sha256_of_image
 
 # Set up the jobcreator environment
 DB_IP = os.environ.get("DB_IP", "")
@@ -32,9 +31,11 @@ if DEV_MODE:
 else:
     logger.info("Launched in production mode")
 
-MANTID_SHA: Any = os.environ.get("MANTID_SHA", None)
-if MANTID_SHA is None:
-    raise OSError("MANTID_SHA not set in the environment, please add it.")
+DEFAULT_RUNNER_SHA: Any = os.environ.get("DEFAULT_RUNNER_SHA", None)
+if DEFAULT_RUNNER_SHA is None:
+    raise OSError("DEFAULT_RUNNER_SHA not set in the environment, please add it.")
+else:
+    DEFAULT_RUNNER = f"ghcr.io/fiaisis/mantid@sha256:{DEFAULT_RUNNER_SHA}"
 WATCHER_SHA = os.environ.get("WATCHER_SHA", None)
 if WATCHER_SHA is None:
     raise OSError("WATCHER_SHA not set in the environment, please add it.")
@@ -76,6 +77,8 @@ def process_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-man
         good_frames = message["good_frames"]
         raw_frames = message["raw_frames"]
         additional_values = message["additional_values"]
+        runner_image = message.get("runner_image", DEFAULT_RUNNER)
+        runner_image = find_sha256_of_image(runner_image)
         # Add UUID which will avoid collisions for reruns
         job_name = f"run-{filename.lower()}-{str(uuid.uuid4().hex)}"
         reduction = DB_UPDATER.add_detected_run(
@@ -91,6 +94,7 @@ def process_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-man
                 raw_frames=raw_frames,
             ),
             additional_values,
+            runner_image
         )
         script, script_sha = acquire_script(
             fia_api_host=FIA_API_HOST,
@@ -113,7 +117,7 @@ def process_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-man
             db_username=DB_USERNAME,
             db_password=DB_PASSWORD,
             max_time_to_complete_job=MAX_TIME_TO_COMPLETE,
-            runner_sha=MANTID_SHA,
+            runner_image=runner_image,
             manila_share_id=MANILA_SHARE_ID,
             manila_share_access_id=MANILA_SHARE_ACCESS_ID,
         )

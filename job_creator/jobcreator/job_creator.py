@@ -210,7 +210,7 @@ class JobCreator:
         db_ip: str,
         db_username: str,
         db_password: str,
-        runner_sha: str,
+        runner_image: str,
         manila_share_id: str,
         manila_share_access_id: str,
     ) -> None:
@@ -229,8 +229,8 @@ class JobCreator:
         :param db_ip: The database ip to connect to
         :param db_username: the database username to use to connect
         :param db_password: the database password to use to connect
-        :param runner_sha: The sha used for defining what version the runner is
-        the containers have permission to use the directories required for outputting data.
+        :param runner_image: the container image that has is to be used the containers have permission to use the
+        directories required for outputting data.
         :param manila_share_id: The id of the manila share to mount for extras
         :param manila_share_access_id: the id of the access rule for the manila share that provides access to the
         manila share
@@ -266,7 +266,7 @@ class JobCreator:
         logger.info("Spawning job: %s", job_name)
         main_container = client.V1Container(
             name=job_name,
-            image=f"ghcr.io/fiaisis/runner@sha256:{runner_sha}",
+            image=runner_image,
             args=[script],
             volume_mounts=[
                 client.V1VolumeMount(name="archive-mount", mount_path="/archive"),

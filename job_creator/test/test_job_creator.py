@@ -262,9 +262,9 @@ class JobCreatorTest(unittest.TestCase):
         db_ip = mock.MagicMock()
         db_username = mock.MagicMock()
         db_password = mock.MagicMock()
-        runner_sha = mock.MagicMock()
         watcher_sha = mock.MagicMock()
         job_creator = JobCreator(watcher_sha, False)
+        runner_image = mock.MagicMock()
         manila_share_id = mock.MagicMock()
         manila_share_access_id = mock.MagicMock()
 
@@ -282,7 +282,7 @@ class JobCreatorTest(unittest.TestCase):
             db_ip,
             db_username,
             db_password,
-            runner_sha,
+            runner_image,
             manila_share_id,
             manila_share_access_id,
         )
@@ -381,7 +381,7 @@ class JobCreatorTest(unittest.TestCase):
         self.assertIn(
             call(
                 name=job_name,
-                image=f"ghcr.io/fiaisis/runner@sha256:{runner_sha}",
+                image=runner_image,
                 args=[script],
                 volume_mounts=[
                     client.V1VolumeMount(name="archive-mount", mount_path="/archive"),

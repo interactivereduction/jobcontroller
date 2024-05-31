@@ -102,6 +102,7 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
     reduction_status_message = Column(String)
     reduction_inputs = Column(JSONB)
     script_id = Column(Integer, ForeignKey("scripts.id"))
+    runner_image = Column(String)
     script: Mapped[Script] = relationship("Script", back_populates="reductions")
     reduction_outputs = Column(String)
     stacktrace = Column(String)
@@ -118,6 +119,7 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
                 and self.reduction_status_message == other.reduction_status_message
                 and self.reduction_stack_trace == other.reduction_stack_trace
                 and self.reduction_inputs == other.reduction_inputs
+                and self.runner_image == other.runner_image
                 and self.script_id == other.script_id
                 and self.reduction_outputs == other.reduction_outputs
             )
@@ -127,7 +129,7 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
         return (
             f"<Reduction(id={self.id}, reduction_start={self.reduction_start}, reduction_end={self.reduction_end},"
             f" reduction_state={self.reduction_state}, reduction_status_message={self.reduction_status_message},"
-            f" reduction_inputs={self.reduction_inputs}, script_id={self.script_id},"
+            f" reduction_inputs={self.reduction_inputs}, script_id={self.script_id}, runner_image={self.runner_image}"
             f" reduction_outputs={self.reduction_outputs})>"
         )
 
