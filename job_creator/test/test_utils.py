@@ -77,11 +77,12 @@ def test_get_sha256_using_image_from_ghcr(requests, version, expected_version):
     get_sha256_using_image_from_ghcr(user_image, version)
 
     assert requests.get.call_count == 2
-    assert (requests.get.call_args_list[0] ==
-            mock.call(f"https://ghcr.io/token?scope=repository:{user_image}:pull", timeout=5))
-    assert (requests.get.call_args_list[1] ==
-            mock.call(f"https://ghcr.io/v2/{user_image}/manifests/{expected_version}",
-                      timeout=5, headers=expected_headers))
+    assert requests.get.call_args_list[0] == mock.call(
+        f"https://ghcr.io/token?scope=repository:{user_image}:pull", timeout=5
+    )
+    assert requests.get.call_args_list[1] == mock.call(
+        f"https://ghcr.io/v2/{user_image}/manifests/{expected_version}", timeout=5, headers=expected_headers
+    )
 
 
 def raise_exception(_):
@@ -112,15 +113,17 @@ def test_find_sha256_of_image_sha256_in_image():
     "jobcreator.utils.get_sha256_using_image_from_ghcr",
     return_value="6e5f2d070bb67742f354948d68f837a740874d230714eaa476d35ab6ad56caec",
 )
-@mock.patch("jobcreator.utils.get_org_image_name_and_version_from_image_path",
-            return_value=("fiaisis", "mantid", "6.9.1"))
+@mock.patch(
+    "jobcreator.utils.get_org_image_name_and_version_from_image_path", return_value=("fiaisis", "mantid", "6.9.1")
+)
 def test_find_sha256_of_image_just_version(_, __):
     image_path = "https://ghcr.io/fiaisis/mantid:6.9.1"
 
     return_value = find_sha256_of_image(image_path)
 
-    assert (return_value ==
-            "ghcr.io/fiaisis/mantid@sha256:6e5f2d070bb67742f354948d68f837a740874d230714eaa476d35ab6ad56caec")
+    assert (
+        return_value == "ghcr.io/fiaisis/mantid@sha256:6e5f2d070bb67742f354948d68f837a740874d230714eaa476d35ab6ad56caec"
+    )
 
 
 @pytest.mark.parametrize("https", ["https://", ""])
