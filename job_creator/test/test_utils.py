@@ -120,13 +120,12 @@ class UtilTests(unittest.TestCase):
 
         self.assertEqual(requests.get.call_count, 2)
         self.assertEqual(
-            requests.get.call_args_list[0], mock.call(f"https://ghcr.io/token?scope=repository:{user_image}:pull",
-                                                      timeout=5)
+            requests.get.call_args_list[0],
+            mock.call(f"https://ghcr.io/token?scope=repository:{user_image}:pull", timeout=5),
         )
         self.assertEqual(
             requests.get.call_args_list[1],
-            mock.call(f"https://ghcr.io/v2/{user_image}/manifests/{version}",
-                      timeout=5, headers=expected_headers),
+            mock.call(f"https://ghcr.io/v2/{user_image}/manifests/{version}", timeout=5, headers=expected_headers),
         )
 
     def raise_exception(self):
