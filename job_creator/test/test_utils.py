@@ -24,11 +24,8 @@ def test_config_grabbed_from_incluster(kubernetes_config):
 
 @mock.patch("jobcreator.utils.config")
 def test_not_in_cluster_grab_kubeconfig_from_env_var(kubernetes_config):
-    def raise_config_exception():
-        raise ConfigException()
-
     kubeconfig_path = mock.MagicMock()
-    kubernetes_config.load_incluster_config = mock.MagicMock(side_effect=raise_config_exception)
+    kubernetes_config.load_incluster_config = mock.MagicMock(side_effect=ConfigException)
     os.environ["KUBECONFIG"] = str(kubeconfig_path)
 
     load_kubernetes_config()
@@ -41,11 +38,7 @@ def test_not_in_cluster_grab_kubeconfig_from_env_var(kubernetes_config):
 @mock.patch("jobcreator.utils.config")
 def test_not_in_cluster_and_not_in_env_grab_kubeconfig_from_default_location(kubernetes_config):
     os.environ.pop("KUBECONFIG", None)
-
-    def raise_config_exception():
-        raise ConfigException()
-
-    kubernetes_config.load_incluster_config = mock.MagicMock(side_effect=raise_config_exception)
+    kubernetes_config.load_incluster_config = mock.MagicMock(side_effect=ConfigException)
 
     load_kubernetes_config()
 
