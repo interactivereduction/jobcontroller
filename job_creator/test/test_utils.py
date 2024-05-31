@@ -85,19 +85,15 @@ def test_get_sha256_using_image_from_ghcr(requests, version, expected_version):
     )
 
 
-def raise_exception(_):
-    raise Exception("Crazy Exception!")  # pylint: disable=broad-exception-raised
-
-
 @mock.patch("jobcreator.utils.logger")
 @mock.patch("jobcreator.utils.get_sha256_using_image_from_ghcr")
-@mock.patch("jobcreator.utils.get_org_image_name_and_version_from_image_path", side_effect=raise_exception)
+@mock.patch("jobcreator.utils.get_org_image_name_and_version_from_image_path", side_effect=Exception)
 def test_find_sha256_of_image_exception_is_raised(_, __, logger):
     image = str(mock.MagicMock())
 
     return_value = find_sha256_of_image(image)
 
-    logger.warning.assert_called_once_with(str(Exception("Crazy Exception!")))
+    logger.warning.assert_called_once_with(str(Exception('')))
     assert image == return_value
 
 
