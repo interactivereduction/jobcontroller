@@ -51,7 +51,7 @@ jobs:
     - name: Edit the YAML jobcreator.yml file for staging for jobwatcher
       uses: mikefarah/yq@v4.43.1
       with:
-        cmd: yq e -i '.spec.template.spec.containers[] |= (select(.name == "jobcreator") | .env[] |= select(.name == "WATCHER_SHA").value = "${{ steps.remove_sha256_watcher.outputs.digest }}")' './components/jobcreator/overlays/staging/jobcreator.yml'
+        cmd: yq e -i '.spec.template.spec.containers[] |= (select(.name == "jobcreator") | .env[] |= select(.name == "WATCHER_SHA").value = "${{ steps.remove_sha256_watcher.outputs.digest }}")' './components/jobcreator/envs/staging/jobcreator.yml'
 
     - name: Commit and push changes for jobwatcher
       continue-on-error: true
@@ -72,7 +72,7 @@ jobs:
     - name: Edit the YAML jobcreator.yml file for staging for jobcreator
       uses: mikefarah/yq@v4.43.1
       with:
-        cmd: yq e -i '.spec.template.spec.containers[] |= select(.name == "jobcreator").image = "ghcr.io/fiaisis/jobcreator@${{ steps.jobcreator_build.outputs.digest }}"' './components/jobcreator/overlays/staging/jobcreator.yml'  
+        cmd: yq e -i '.spec.template.spec.containers[] |= select(.name == "jobcreator").image = "ghcr.io/fiaisis/jobcreator@${{ steps.jobcreator_build.outputs.digest }}"' './components/jobcreator/envs/staging/jobcreator.yml'  
 
     - name: Commit and push changes for jobcreator
       continue-on-error: true
