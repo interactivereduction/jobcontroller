@@ -3,7 +3,7 @@ name = "jobwatcher"
 readme = "README.md"
 version = "0.0.1"
 dependencies = [
-    "kubernetes==29.0.0",
+    "kubernetes==30.1.0",
     "psycopg2-binary==2.9.9",
     "SQLAlchemy==2.0.30",
 ]
@@ -27,7 +27,7 @@ test = [
 ]
 
 code-inspection = [
-    "pylint==3.2.2",
+    "pylint==3.2.3",
     "mypy==1.10.0",
     "sqlalchemy-stubs==0.4",
     "types-requests==2.32.0.20240602"
