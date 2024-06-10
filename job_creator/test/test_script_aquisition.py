@@ -17,12 +17,15 @@ class ScriptAquisitionTest(unittest.TestCase):
         out = acquire_script("", 1, "")
 
         expected_value = (
-            "some value\n"
-            "import json\n"
-            "\n"
-            "print(json.dumps({'status': 'Successful', 'status_message': '', 'output_files': output,"
-            " 'stacktrace': ''}))\n"
-        ), "some sha"
+            (
+                "some value\n"
+                "import json\n"
+                "\n"
+                "print(json.dumps({'status': 'Successful', 'status_message': '', 'output_files': output,"
+                " 'stacktrace': ''}))\n"
+            ),
+            "some sha",
+        )
 
         assert out == expected_value
 

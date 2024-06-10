@@ -17,7 +17,7 @@ jobwatcher = "jobwatcher.main:main"
 [project.optional-dependencies]
 formatting = [
     "toml==0.10.2",
-    "black==24.4.2",
+    "ruff==0.4.8",
 ]
 
 test = [
@@ -35,3 +35,6 @@ code-inspection = [
 
 [tool.setuptools]
 packages = ["jobwatcher", "jobwatcher.database"]
+
+[tool.ruff]
+line-length = 120
