@@ -7,7 +7,6 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 import requests
 from kubernetes import config  # type: ignore[import-untyped]
@@ -22,17 +21,17 @@ logging.basicConfig(
 logger = logging.getLogger("jobcreator")
 
 
-def create_ceph_path(instrument_name: str, rb_number: str) -> str:
+def create_ceph_path(instrument_name: str, rb_number: str) -> Path:
     """
     Create the path that the files should store outputs in on CEPH
     :param instrument_name: The name of the instrument that the file is from
     :param rb_number: The experiment number that the file was generated as part of
     :return: The path that the output should be in
     """
-    return os.path.join("/ceph", instrument_name, "RBNumber", f"RB{rb_number}", "autoreduced")
+    return Path("/ceph") / instrument_name / "RBNumber" / f"RB{rb_number}" / "autoreduced"
 
 
-def add_ceph_path_to_output_files(ceph_path: str, output_files: List[str]) -> List[str]:
+def add_ceph_path_to_output_files(ceph_path: str, output_files: list[str]) -> list[Path]:
     """
     Add the ceph path to the beginning of output files
     :param ceph_path: The ceph path to be appended to the front of the output files in the list
@@ -40,7 +39,7 @@ def add_ceph_path_to_output_files(ceph_path: str, output_files: List[str]) -> Li
     the ceph_path
     :return: A list with the new paths
     """
-    return [os.path.join(ceph_path, output) for output in output_files]
+    return [Path(ceph_path).joinpath(output) for output in output_files]
 
 
 def load_kubernetes_config() -> None:
@@ -60,16 +59,15 @@ def load_kubernetes_config() -> None:
             config.load_kube_config()
 
 
-def ensure_ceph_path_exists(ceph_path_str: str) -> str:
+def ensure_ceph_path_exists(ceph_path: Path) -> str:
     """
     Takes a path that is intended to be on ceph and ensures that it will be correct for what we should mount and
     apply output to.
-    :param ceph_path_str: Is the string path to where we should output to ceph
+    :param ceph_path: Is the path to where we should output to ceph
     :return: The corrected path for output to ceph path
     """
-    ceph_path = Path(ceph_path_str)
     if not ceph_path.exists():
-        logger.info("Ceph path does not exist: %s", ceph_path_str)
+        logger.info("Ceph path does not exist: %s", ceph_path)
         rb_folder = ceph_path.parent
         if not rb_folder.exists():
             logger.info("RBFolder (%s) does not exist, setting RBNumber folder to unknown", str(rb_folder))
@@ -83,7 +81,7 @@ def ensure_ceph_path_exists(ceph_path_str: str) -> str:
     return str(ceph_path)
 
 
-def create_ceph_mount_path(instrument_name: str, rb_number: str, mount_path: str = "/isis/instrument") -> str:
+def create_ceph_mount_path(instrument_name: str, rb_number: str, mount_path: str = "/isis/instrument") -> Path:
     """
     Creates the ceph mount for the job to output to
     :param instrument_name: str, name of the instrument
@@ -96,10 +94,10 @@ def create_ceph_mount_path(instrument_name: str, rb_number: str, mount_path: str
     ceph_path = ensure_ceph_path_exists(ceph_path)
     # There is an assumption that the ceph_path will have /ceph at the start that needs to be removed
     ceph_path = ceph_path.replace("/ceph", "")
-    return os.path.join(mount_path, ceph_path)
+    return Path(mount_path) / ceph_path
 
 
-def get_org_image_name_and_version_from_image_path(image_path: str) -> Tuple[str, str, str]:
+def get_org_image_name_and_version_from_image_path(image_path: str) -> tuple[str, str, str]:
     """
     Takes the image path and extracts just the user image parts.
     :param image_path: str, the image path to process either ghcr.io/fiaisis/mantid:6.9.1 or
@@ -133,9 +131,7 @@ def get_sha256_using_image_from_ghcr(user_image: str, version: str = "") -> str:
     # Get response from ghcr for digest
     manifest_response = requests.get(f"https://ghcr.io/v2/{user_image}/manifests/{version}", headers=headers, timeout=5)
     manifest = manifest_response.text
-    sha256 = hashlib.sha256(manifest.encode("utf-8")).hexdigest()
-
-    return sha256
+    return hashlib.sha256(manifest.encode("utf-8")).hexdigest()
 
 
 def find_sha256_of_image(image: str) -> str:
@@ -156,8 +152,7 @@ def find_sha256_of_image(image: str) -> str:
         logger.info("Found user image to use: %s", user_image)
         version_to_use = get_sha256_using_image_from_ghcr(user_image, version)
         logger.info("Found sha256 tag for %s: %s", user_image, version_to_use)
-        full_image_name = f"ghcr.io/{org_name}/{image_name}@sha256:{version_to_use}"
-        return full_image_name
+        return f"ghcr.io/{org_name}/{image_name}@sha256:{version_to_use}"
     except Exception as e:  # pylint: disable=broad-exception-caught
         logger.warning(str(e))
         return image

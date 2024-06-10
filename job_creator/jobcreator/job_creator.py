@@ -4,7 +4,7 @@ Communicate to a kubernetes API to spawn a pod with the metadata passed by messa
 
 from kubernetes import client  # type: ignore[import-untyped]
 
-from jobcreator.utils import logger, load_kubernetes_config
+from jobcreator.utils import load_kubernetes_config, logger
 
 
 def _setup_archive_pv(job_name: str, secret_namespace: str) -> str:
@@ -53,7 +53,10 @@ def _setup_archive_pvc(job_name: str, job_namespace: str) -> str:
         storage_class_name="",
     )
     archive_pvc = client.V1PersistentVolumeClaim(
-        api_version="v1", kind="PersistentVolumeClaim", metadata=metadata, spec=spec
+        api_version="v1",
+        kind="PersistentVolumeClaim",
+        metadata=metadata,
+        spec=spec,
     )
     client.CoreV1Api().create_namespaced_persistent_volume_claim(namespace=job_namespace, body=archive_pvc)
     return pvc_name
@@ -110,7 +113,10 @@ def _setup_extras_pvc(job_name: str, job_namespace: str, pv_name: str) -> str:
         storage_class_name="",
     )
     extras_pvc = client.V1PersistentVolumeClaim(
-        api_version="v1", kind="PersistentVolumeClaim", metadata=metadata, spec=spec
+        api_version="v1",
+        kind="PersistentVolumeClaim",
+        metadata=metadata,
+        spec=spec,
     )
     client.CoreV1Api().create_namespaced_persistent_volume_claim(namespace=job_namespace, body=extras_pvc)
     return pvc_name
@@ -168,10 +174,16 @@ def _setup_ceph_pvc(job_name: str, job_namespace: str) -> str:
     metadata = client.V1ObjectMeta(name=pvc_name)
     resources = client.V1ResourceRequirements(requests={"storage": "1000Gi"})
     spec = client.V1PersistentVolumeClaimSpec(
-        access_modes=["ReadWriteMany"], resources=resources, volume_name=f"{job_name}-ceph-pv", storage_class_name=""
+        access_modes=["ReadWriteMany"],
+        resources=resources,
+        volume_name=f"{job_name}-ceph-pv",
+        storage_class_name="",
     )
     ceph_pvc = client.V1PersistentVolumeClaim(
-        api_version="v1", kind="PersistentVolumeClaim", metadata=metadata, spec=spec
+        api_version="v1",
+        kind="PersistentVolumeClaim",
+        metadata=metadata,
+        spec=spec,
     )
     client.CoreV1Api().create_namespaced_persistent_volume_claim(namespace=job_namespace, body=ceph_pvc)
     return pvc_name
@@ -194,8 +206,7 @@ class JobCreator:
         self.watcher_sha = watcher_sha
         self.dev_mode = dev_mode
 
-    # pylint: disable=too-many-arguments, too-many-locals
-    def spawn_job(
+    def spawn_job(  # noqa: PLR0913
         self,
         job_name: str,
         script: str,
@@ -245,8 +256,13 @@ class JobCreator:
         if not self.dev_mode:
             pv_names.append(
                 _setup_ceph_pv(
-                    job_name, ceph_creds_k8s_secret_name, ceph_creds_k8s_namespace, cluster_id, fs_name, ceph_mount_path
-                )
+                    job_name,
+                    ceph_creds_k8s_secret_name,
+                    ceph_creds_k8s_namespace,
+                    cluster_id,
+                    fs_name,
+                    ceph_mount_path,
+                ),
             )
         extras_pv_name = _setup_extras_pv(
             job_name=job_name,
@@ -293,26 +309,29 @@ class JobCreator:
             ceph_volume = client.V1Volume(
                 name="ceph-mount",
                 persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(
-                    claim_name=f"{job_name}-ceph-pvc", read_only=False
+                    claim_name=f"{job_name}-ceph-pvc",
+                    read_only=False,
                 ),
             )
         else:
             ceph_volume = client.V1Volume(
-                name="ceph-mount", empty_dir=client.V1EmptyDirVolumeSource(size_limit="10000Mi")
+                name="ceph-mount",
+                empty_dir=client.V1EmptyDirVolumeSource(size_limit="10000Mi"),
             )
 
         pod_affinity_label_selector = client.V1LabelSelector(
-            match_labels={"reduce.isis.cclrc.ac.uk/job-source": "automated-reduction"}
+            match_labels={"reduce.isis.cclrc.ac.uk/job-source": "automated-reduction"},
         )
 
         pod_affinity_term = client.V1PodAffinityTerm(
-            topology_key="kubernetes.io/hostname", label_selector=pod_affinity_label_selector
+            topology_key="kubernetes.io/hostname",
+            label_selector=pod_affinity_label_selector,
         )
 
         weighted_pod_affinity = client.V1WeightedPodAffinityTerm(weight=100, pod_affinity_term=pod_affinity_term)
 
         anti_affinity = client.V1PodAntiAffinity(
-            preferred_during_scheduling_ignored_during_execution=[weighted_pod_affinity]
+            preferred_during_scheduling_ignored_during_execution=[weighted_pod_affinity],
         )
 
         affinity = client.V1Affinity(pod_anti_affinity=anti_affinity)
@@ -327,14 +346,16 @@ class JobCreator:
                 client.V1Volume(
                     name="archive-mount",
                     persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(
-                        claim_name=f"{job_name}-archive-pvc", read_only=True
+                        claim_name=f"{job_name}-archive-pvc",
+                        read_only=True,
                     ),
                 ),
                 ceph_volume,
                 client.V1Volume(
                     name="extras-mount",
                     persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(
-                        claim_name=f"{job_name}-extras-pvc", read_only=True
+                        claim_name=f"{job_name}-extras-pvc",
+                        read_only=True,
                     ),
                 ),
             ],

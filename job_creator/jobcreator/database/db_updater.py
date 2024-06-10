@@ -7,20 +7,20 @@ from __future__ import annotations
 
 import hashlib
 import textwrap
-from typing import Any, Dict, List
+from typing import Any
 
 from sqlalchemy import (  # type: ignore[attr-defined]
-    create_engine,
     Column,
-    Integer,
-    String,
     DateTime,
-    ForeignKey,
-    NullPool,
     Enum,
+    ForeignKey,
+    Integer,
+    NullPool,
+    String,
+    create_engine,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import relationship, sessionmaker, declarative_base, Mapped  # type: ignore[attr-defined]
+from sqlalchemy.orm import Mapped, declarative_base, relationship, sessionmaker  # type: ignore[attr-defined]
 
 from jobcreator.database.state_enum import State
 from jobcreator.utils import logger
@@ -44,7 +44,7 @@ class Run(Base):  # type: ignore[valid-type, misc]
     run_end = Column(DateTime)
     good_frames = Column(Integer)
     raw_frames = Column(Integer)
-    reductions: Mapped[List[Reduction]] = relationship("RunReduction", back_populates="run_relationship")
+    reductions: Mapped[list[Reduction]] = relationship("RunReduction", back_populates="run_relationship")
     instrument: Mapped[Instrument] = relationship("Instrument")
 
     def __eq__(self, other: Any) -> bool:
@@ -80,7 +80,7 @@ class Script(Base):  # type: ignore[valid-type, misc]
     script = Column(String)
     sha = Column(String, nullable=True)
     script_hash = Column(String, nullable=True)
-    reductions: Mapped[List[Reduction]] = relationship("Reduction", back_populates="script", uselist=True)
+    reductions: Mapped[list[Reduction]] = relationship("Reduction", back_populates="script", uselist=True)
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Script):
@@ -107,8 +107,9 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
     runner_image = Column(String)
     script: Mapped[Script] = relationship("Script", back_populates="reductions", uselist=False)
     reduction_outputs = Column(String)
-    run_reduction_relationship: Mapped[List[Run]] = relationship(
-        "RunReduction", back_populates="reduction_relationship"
+    run_reduction_relationship: Mapped[list[Run]] = relationship(
+        "RunReduction",
+        back_populates="reduction_relationship",
     )
 
     def __eq__(self, other: Any) -> bool:
@@ -196,7 +197,11 @@ class DBUpdater:
 
     # pylint: disable=too-many-arguments, too-many-locals
     def add_detected_run(
-        self, instrument_name: str, run: Run, reduction_inputs: Dict[str, Any], runner_image: str
+        self,
+        instrument_name: str,
+        run: Run,
+        reduction_inputs: dict[str, Any],
+        runner_image: str,
     ) -> Reduction:
         """
         This function submits data to the database from what is initially available on detected-runs message broker
