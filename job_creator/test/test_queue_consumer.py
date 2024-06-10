@@ -99,6 +99,7 @@ def test_start_cons(setup_queue_consumer):
 @pytest.mark.usefixtures("setup_queue_consumer")
 def test_start_consumer_will_handle_exceptions_as_warnings(setup_queue_consumer):
     quc, blocking_connection, connection_parameters = setup_queue_consumer
+
     def raise_exception():
         raise Exception("The worst exception!")
 

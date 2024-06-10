@@ -31,7 +31,7 @@ def create_ceph_path(instrument_name: str, rb_number: str) -> Path:
     return Path("/ceph") / instrument_name / "RBNumber" / f"RB{rb_number}" / "autoreduced"
 
 
-def add_ceph_path_to_output_files(ceph_path: str, output_files: list[str]) -> list[Path]:
+def add_ceph_path_to_output_files(ceph_path: str, output_files: list[Path]) -> list[Path]:
     """
     Add the ceph path to the beginning of output files
     :param ceph_path: The ceph path to be appended to the front of the output files in the list
