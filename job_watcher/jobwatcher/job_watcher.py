@@ -7,13 +7,13 @@ import json
 import os
 from json import JSONDecodeError
 from time import sleep
-from typing import Any, Optional, Tuple, List
+from typing import Any
 
 from kubernetes import client  # type: ignore[import-untyped]
-from kubernetes.client import V1Job, V1Pod, V1ContainerStatus  # type: ignore[import-untyped]
+from kubernetes.client import V1ContainerStatus, V1Job, V1Pod  # type: ignore[import-untyped]
 
-from jobwatcher.database.state_enum import State
 from jobwatcher.database.db_updater import DBUpdater
+from jobwatcher.database.state_enum import State
 from jobwatcher.utils import logger
 
 
@@ -56,7 +56,7 @@ def clean_up_pvs_for_job(job: V1Job) -> None:
             logger.info("Deleted pv: %s", pv)
 
 
-def _find_pod_from_partial_name(partial_pod_name: str, namespace: str) -> Optional[V1Pod]:
+def _find_pod_from_partial_name(partial_pod_name: str, namespace: str) -> V1Pod | None:
     """
     Find a pod from a partial name and it's namespace
     :param partial_pod_name: str, the partial name of the pod
@@ -71,7 +71,7 @@ def _find_pod_from_partial_name(partial_pod_name: str, namespace: str) -> Option
     return None
 
 
-def _find_latest_raised_error_and_stacktrace_from_reversed_logs(reversed_logs: List[str]) -> Tuple[str, str]:
+def _find_latest_raised_error_and_stacktrace_from_reversed_logs(reversed_logs: list[str]) -> tuple[str, str]:
     """
     Find the stacktrace in the logs and then return that as a string, find the line that has the error in it and
     also return that
@@ -79,7 +79,7 @@ def _find_latest_raised_error_and_stacktrace_from_reversed_logs(reversed_logs: L
     :return: Tuple[str, str], pos1 contains the error_line, pos2 contains the stacktrace from the logs if one exists
     """
     line_to_record: str = str(reversed_logs[0])  # Last line in the logs (already reversed)
-    stacktrace_lines: List[str] = []
+    stacktrace_lines: list[str] = []
     # Find the error line, then record every line
     for line in reversed_logs:
         if not stacktrace_lines:  # Empty list
@@ -127,9 +127,9 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         self.done_watching = False
         self.job_name = job_name
         self.container_name = container_name
-        self.job: Optional[V1Job] = None
-        self.pod_name: Optional[str] = None
-        self.pod: Optional[V1Pod] = None
+        self.job: V1Job | None = None
+        self.pod_name: str | None = None
+        self.pod: V1Pod | None = None
 
         self.update_current_container_info(partial_pod_name)
 
@@ -147,7 +147,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
                 logger.info("Container still busy: %s", self.container_name)
                 sleep(0.5)
 
-    def update_current_container_info(self, partial_pod_name: Optional[str] = None) -> None:
+    def update_current_container_info(self, partial_pod_name: str | None = None) -> None:
         """
         Updates the current container info that the job watcher is aware of.
         :param partial_pod_name: optional str, the partial name of the pod that the job is running
@@ -185,7 +185,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             self.cleanup_job()
             self.done_watching = True
 
-    def get_container_status(self) -> Optional[V1ContainerStatus]:
+    def get_container_status(self) -> V1ContainerStatus | None:
         """
         Get and return the current container status, ignoring the job watcher's container
         :return: Optional[V1ContainerStatus], The job's main container status
@@ -232,7 +232,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
         v1_core = client.CoreV1Api()
         seconds_in_30_minutes = 60 * 30
         # If pod is younger than 30 minutes it can't be stalled for 30 minutes, if older, then check.
-        if (datetime.datetime.now(datetime.timezone.utc) - self.pod.metadata.creation_timestamp) > datetime.timedelta(
+        if (datetime.datetime.now(datetime.UTC) - self.pod.metadata.creation_timestamp) > datetime.timedelta(
             seconds=seconds_in_30_minutes
         ):
             logs = v1_core.read_namespaced_pod_log(
@@ -246,14 +246,14 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             if logs == "":
                 logger.info("No new logs for pod %s in %s seconds", self.pod.metadata.name, seconds_in_30_minutes)
                 return True
-        if (datetime.datetime.now(datetime.timezone.utc) - self.pod.metadata.creation_timestamp) > datetime.timedelta(
+        if (datetime.datetime.now(datetime.UTC) - self.pod.metadata.creation_timestamp) > datetime.timedelta(
             seconds=self.max_time_to_complete
         ):
             logger.info("Pod has timed out: %s", self.pod.metadata.name)
             return True
         return False
 
-    def _find_start_and_end_of_pod(self, pod: V1Pod) -> Tuple[Any, Optional[Any]]:
+    def _find_start_and_end_of_pod(self, pod: V1Pod) -> tuple[Any, Any | None]:
         """
         Find the start and end of the pod
         :param pod: V1Pod, the pod that the start and end of the pod is meant to be delayed
@@ -268,7 +268,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             end_time = container_status.state.terminated.finished_at
         return start_time, end_time
 
-    def _find_latest_raised_error_and_stacktrace(self) -> Tuple[str, str]:
+    def _find_latest_raised_error_and_stacktrace(self) -> tuple[str, str]:
         """
         Find the stacktrace in the logs and then return that as a string, find the line that has the error in it and
         also return that.
@@ -336,7 +336,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             job_output = {
                 "status": "Unsuccessful",
                 "output_files": [],
-                "status_message": f"{str(exception)}",
+                "status_message": f"{exception!s}",
                 "stacktrace": "",
             }
         except TypeError as exception:
@@ -345,7 +345,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             job_output = {
                 "status": "Unsuccessful",
                 "output_files": [],
-                "status_message": f"{str(exception)}",
+                "status_message": f"{exception!s}",
                 "stacktrace": "",
             }
         except Exception as exception:  # pylint:disable=broad-exception-caught
@@ -354,7 +354,7 @@ class JobWatcher:  # pylint: disable=too-many-instance-attributes
             job_output = {
                 "status": "Unsuccessful",
                 "output_files": [],
-                "status_message": f"{str(exception)}",
+                "status_message": f"{exception!s}",
                 "stacktrace": "",
             }
 

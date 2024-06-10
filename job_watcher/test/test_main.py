@@ -1,5 +1,3 @@
-# pylint: disable=missing-module-docstring, missing-class-docstring, missing-function-docstring, protected-access,
-# pylint: disable=too-many-instance-attributes
 import os
 import random
 import unittest
@@ -8,7 +6,7 @@ from unittest import mock
 
 class MainTest(unittest.TestCase):
     def setUp(self):
-        self.max_time_to_complete_job = str(random.randint(1, 60 * 60 * 60))
+        self.max_time_to_complete_job = str(random.randint(1, 60 * 60 * 60))  # noqa: S311
         self.container_name = str(mock.MagicMock())
         self.job_name = str(mock.MagicMock())
         self.pod_name = str(mock.MagicMock())
@@ -27,7 +25,7 @@ class MainTest(unittest.TestCase):
     @mock.patch("jobwatcher.main.JobWatcher")
     @mock.patch("jobwatcher.main.load_kubernetes_config")
     def test_main(self, load_kubernetes_config, job_watcher):
-        from jobwatcher.main import main, DB_UPDATER
+        from jobwatcher.main import DB_UPDATER, main
 
         main()
 
