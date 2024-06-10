@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.9
+          python-version: 3.12
 
       - name: Set up cache for Python dependencies
         uses: actions/cache@v4
@@ -46,3 +46,8 @@ jobs:
           git add .
           git commit -m "black auto commit" || true
           git push
+
+      - name: Run mypy
+        run: |
+          mypy --strict job_creator/jobcreator
+          mypy --strict job_watcher/jobwatcher
