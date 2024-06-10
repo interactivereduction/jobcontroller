@@ -3,8 +3,8 @@
 ![License: GPL-3.0](https://img.shields.io/github/license/fiaisis/jobcontroller)
 ![Build: passing](https://img.shields.io/github/actions/workflow/status/fiaisis/jobcontroller/tests.yml?branch=main)
 [![codecov](https://codecov.io/github/fiaisis/jobcontroller/branch/main/graph/badge.svg?token=XR6PCJ1VR8)](https://codecov.io/github/fiaisis/jobcontroller)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/PyCQA/pylint)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-30173d)](https://docs.astral.sh/ruff/)
+[![linting: ruff](https://img.shields.io/badge/linting-ruff-30173d)](https://docs.astral.sh/ruff/)
 
 The software responsible for controlling the creation of Jobs, and notifying the rest of the software about job completion.
 
