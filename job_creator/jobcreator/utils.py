@@ -59,7 +59,7 @@ def load_kubernetes_config() -> None:
             config.load_kube_config()
 
 
-def ensure_ceph_path_exists(ceph_path: Path) -> str:
+def ensure_ceph_path_exists(ceph_path: Path) -> Path:
     """
     Takes a path that is intended to be on ceph and ensures that it will be correct for what we should mount and
     apply output to.
@@ -78,7 +78,7 @@ def ensure_ceph_path_exists(ceph_path: Path) -> str:
             logger.info("Attempting to create ceph path: %s", str(ceph_path))
             ceph_path.mkdir(parents=True, exist_ok=True)
 
-    return str(ceph_path)
+    return ceph_path
 
 
 def create_ceph_mount_path(instrument_name: str, rb_number: str, mount_path: str = "/isis/instrument") -> Path:
@@ -93,7 +93,7 @@ def create_ceph_mount_path(instrument_name: str, rb_number: str, mount_path: str
     ceph_path = create_ceph_path(instrument_name, rb_number)
     ceph_path = ensure_ceph_path_exists(ceph_path)
     # There is an assumption that the ceph_path will have /ceph at the start that needs to be removed
-    ceph_path = ceph_path.replace("/ceph", "")
+    ceph_path = ceph_path.relative_to("/ceph")
     return Path(mount_path) / ceph_path
 
 

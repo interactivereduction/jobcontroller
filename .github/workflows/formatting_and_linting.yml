@@ -6,7 +6,7 @@ permissions:
   contents: write
 
 jobs:
-  ruff:
+  formatting_and_linting:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout project
