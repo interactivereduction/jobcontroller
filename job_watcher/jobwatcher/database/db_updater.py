@@ -6,20 +6,20 @@ via SQLAlchemy via pre-made functions.
 from __future__ import annotations
 
 import textwrap
-from typing import Any, List
+from typing import Any
 
 from sqlalchemy import (  # type: ignore[attr-defined]
-    create_engine,
     Column,
-    Integer,
-    String,
     DateTime,
-    ForeignKey,
-    NullPool,
     Enum,
+    ForeignKey,
+    Integer,
+    NullPool,
+    String,
+    create_engine,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import relationship, sessionmaker, declarative_base, Mapped  # type: ignore[attr-defined]
+from sqlalchemy.orm import Mapped, declarative_base, relationship, sessionmaker  # type: ignore[attr-defined]
 
 from jobwatcher.database.state_enum import State
 from jobwatcher.utils import logger
@@ -43,7 +43,7 @@ class Run(Base):  # type: ignore[valid-type, misc]
     run_end = Column(DateTime)
     good_frames = Column(Integer)
     raw_frames = Column(Integer)
-    reductions: Mapped[List[Reduction]] = relationship("RunReduction", back_populates="run_relationship")
+    reductions: Mapped[list[Reduction]] = relationship("RunReduction", back_populates="run_relationship")
     instrument: Mapped[Instrument] = relationship("Instrument")
 
     def __eq__(self, other: Any) -> bool:
@@ -106,7 +106,7 @@ class Reduction(Base):  # type: ignore[valid-type, misc]
     script: Mapped[Script] = relationship("Script", back_populates="reductions")
     reduction_outputs = Column(String)
     stacktrace = Column(String)
-    run_reduction_relationship: Mapped[List[Run]] = relationship(
+    run_reduction_relationship: Mapped[list[Run]] = relationship(
         "RunReduction", back_populates="reduction_relationship"
     )
 
@@ -191,7 +191,7 @@ class DBUpdater:
         db_reduction_id: int,
         state: State,
         status_message: str,
-        output_files: List[str],
+        output_files: list[str],
         reduction_start: str,
         reduction_end: str,
         stacktrace: str,

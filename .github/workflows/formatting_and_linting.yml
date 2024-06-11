@@ -6,7 +6,7 @@ permissions:
   contents: write
 
 jobs:
-  black:
+  formatting_and_linting:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout project
@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.9
+          python-version: 3.12
 
       - name: Set up cache for Python dependencies
         uses: actions/cache@v4
@@ -31,14 +31,23 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install .[formatting]
 
-      - name: Run black
+      - name: Run ruff formatting
         run: |
-          black --line-length 120 .
+          ruff format .
+
+      - name: Run ruff linting
+        run: |
+          ruff check --fix
 
       - name: Commit changes
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
           git add .
-          git commit -m "black auto commit" || true
+          git commit -m "Formatting and linting commit" || true
           git push
+
+      - name: Run mypy
+        run: |
+          mypy --strict job_creator/jobcreator
+          mypy --strict job_watcher/jobwatcher

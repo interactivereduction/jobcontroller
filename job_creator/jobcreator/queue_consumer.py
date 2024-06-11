@@ -3,9 +3,9 @@ The module is aimed to consume from a station on Memphis using the create_statio
 """
 
 import json
-from typing import Callable, Dict
+from collections.abc import Callable
 
-from pika import PlainCredentials, ConnectionParameters, BlockingConnection  # type: ignore[import-untyped]
+from pika import BlockingConnection, ConnectionParameters, PlainCredentials  # type: ignore[import-untyped]
 
 from jobcreator.utils import logger
 
@@ -18,7 +18,7 @@ class QueueConsumer:
 
     def __init__(
         self,
-        message_callback: Callable[[Dict[str, str]], None],
+        message_callback: Callable[[dict[str, str]], None],
         queue_host: str,
         username: str,
         password: str,
@@ -41,10 +41,14 @@ class QueueConsumer:
         self.connection = BlockingConnection(self.connection_parameters)
         self.channel = self.connection.channel()  # type: ignore[attr-defined]
         self.channel.exchange_declare(  # type: ignore[attr-defined]
-            self.queue_name, exchange_type="direct", durable=True
+            self.queue_name,
+            exchange_type="direct",
+            durable=True,
         )
         self.channel.queue_declare(  # type: ignore[attr-defined]
-            self.queue_name, durable=True, arguments={"x-queue-type": "quorum"}
+            self.queue_name,
+            durable=True,
+            arguments={"x-queue-type": "quorum"},
         )
         self.channel.queue_bind(self.queue_name, self.queue_name, routing_key="")  # type: ignore[attr-defined]
 

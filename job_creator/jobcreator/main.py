@@ -6,13 +6,13 @@ requests from the topicconsumer.
 import os
 import uuid
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
 
 from jobcreator.database.db_updater import DBUpdater, Run
 from jobcreator.job_creator import JobCreator
 from jobcreator.queue_consumer import QueueConsumer
 from jobcreator.script_aquisition import acquire_script
-from jobcreator.utils import logger, create_ceph_mount_path, find_sha256_of_image
+from jobcreator.utils import create_ceph_mount_path, find_sha256_of_image, logger
 
 # Set up the jobcreator environment
 DB_IP = os.environ.get("DB_IP", "")
@@ -22,10 +22,8 @@ DB_UPDATER = DBUpdater(ip=DB_IP, username=DB_USERNAME, password=DB_PASSWORD)
 
 # This is used for ensuring that when on staging we will use an empty dir instead of the ceph production mount
 DEV_MODE: Any = os.environ.get("DEV_MODE", "False")
-if DEV_MODE.lower() != "false":  # pylint: disable=simplifiable-if-statement
-    DEV_MODE = True
-else:
-    DEV_MODE = False
+DEV_MODE = DEV_MODE.lower() != "false"
+
 if DEV_MODE:
     logger.info("Launched in dev mode")
 else:
@@ -58,7 +56,7 @@ MANILA_SHARE_ACCESS_ID = os.environ.get("MANILA_SHARE_ACCESS_ID", "8045701a-0c3e
 MAX_TIME_TO_COMPLETE = int(os.environ.get("MAX_TIME_TO_COMPLETE", 60 * 60 * 6))
 
 
-def process_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
+def process_message(message: dict[str, Any]) -> None:  # pylint: disable=too-many-locals
     """
     Request that the k8s api spawns a job
     :param message: dict, the message is a dictionary containing the needed information for spawning a pod
@@ -79,7 +77,7 @@ def process_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-man
         runner_image = message.get("runner_image", DEFAULT_RUNNER)
         runner_image = find_sha256_of_image(runner_image)
         # Add UUID which will avoid collisions for reruns
-        job_name = f"run-{filename.lower()}-{str(uuid.uuid4().hex)}"
+        job_name = f"run-{filename.lower()}-{uuid.uuid4().hex!s}"
         reduction = DB_UPDATER.add_detected_run(
             instrument_name,
             Run(
@@ -110,7 +108,7 @@ def process_message(message: Dict[str, Any]) -> None:  # pylint: disable=too-man
             ceph_creds_k8s_namespace=CEPH_CREDS_SECRET_NAMESPACE,
             cluster_id=CLUSTER_ID,
             fs_name=FS_NAME,
-            ceph_mount_path=ceph_mount_path,
+            ceph_mount_path=str(ceph_mount_path),
             reduction_id=reduction.id,
             db_ip=DB_IP,
             db_username=DB_USERNAME,

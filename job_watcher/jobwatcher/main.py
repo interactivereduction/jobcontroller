@@ -8,7 +8,6 @@ from jobwatcher.database.db_updater import DBUpdater
 from jobwatcher.job_watcher import JobWatcher
 from jobwatcher.utils import load_kubernetes_config
 
-
 # Defaults to 6 hours
 MAX_TIME_TO_COMPLETE = int(os.environ.get("MAX_TIME_TO_COMPLETE_JOB", 60 * 60 * 6))
 

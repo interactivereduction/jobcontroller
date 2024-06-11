@@ -2,19 +2,21 @@
 Contains the functions for acquiring a script for the reduction workflow
 """
 
-from typing import Tuple
+from http import HTTPStatus
+
 import requests
 
 
-def acquire_script(fia_api_host: str, reduction_id: int, instrument: str) -> Tuple[str, str]:
+def acquire_script(fia_api_host: str, reduction_id: int, instrument: str) -> tuple[str, str]:
     """
     Given the FIA-API host, reduction_id, and instrument, return the script object required for reduction
     :return: Script, the script for the reduction
     """
     response = requests.get(
-        f"http://{fia_api_host}/instrument/{instrument}/script?reduction_id={reduction_id}", timeout=30
+        f"http://{fia_api_host}/instrument/{instrument}/script?reduction_id={reduction_id}",
+        timeout=30,
     )
-    if response.status_code != 200:
+    if response.status_code != HTTPStatus.OK:
         response.raise_for_status()
         # raise_for_status will only raise a httperror for a httperror, this will raise for everything else that isn't
         # a 200 or a script return
