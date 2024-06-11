@@ -134,17 +134,18 @@ def test_update_current_container_info_no_name_provided(job_watcher_maker):
     jw, _, __ = job_watcher_maker
     jw.pod_name = None
 
-    with pytest.raises(ValueError):  # noqa: PT011
+    with pytest.raises(ValueError), mock.patch("jobwatcher.job_watcher.client"):  # noqa: PT011
         jw.update_current_container_info()
 
 
 @pytest.mark.usefixtures("job_watcher_maker")
 def test_update_current_container_info_full_name(job_watcher_maker):
-    jw, client, __ = job_watcher_maker
+    jw, _, __ = job_watcher_maker
     pod_name = str(mock.MagicMock())
     jw.pod_name = pod_name
 
-    jw.update_current_container_info()
+    with mock.patch("jobwatcher.job_watcher.client") as client:
+        jw.update_current_container_info()
 
     client.CoreV1Api.return_value.read_namespaced_pod.assert_called_once_with(name=pod_name, namespace=jw.namespace)
     assert jw.pod == client.CoreV1Api.return_value.read_namespaced_pod.return_value
@@ -152,25 +153,32 @@ def test_update_current_container_info_full_name(job_watcher_maker):
 
 @pytest.mark.usefixtures("job_watcher_maker")
 def test_update_current_container_info_partial_name(job_watcher_maker):
-    jw, client, _find_pod_from_partial_name = job_watcher_maker
+    jw, _, __ = job_watcher_maker
     partial_pod_name = str(mock.MagicMock())
     jw.pod_name = None
-    client.CoreV1Api.return_value.read_namespaced_pod = mock.MagicMock()
 
-    jw.update_current_container_info(partial_pod_name)
+    with (
+        mock.patch("jobwatcher.job_watcher._find_pod_from_partial_name") as _find_pod_from_partial_name,
+        mock.patch("jobwatcher.job_watcher.client"),
+    ):
+        jw.update_current_container_info(partial_pod_name)
 
     assert jw.pod == _find_pod_from_partial_name.return_value
     _find_pod_from_partial_name.assert_called_with(partial_pod_name, namespace=jw.namespace)
-    assert _find_pod_from_partial_name.call_count == 2  # Called twice because called during jw init  # noqa: PLR2004
+    assert _find_pod_from_partial_name.call_count == 1
 
 
 @pytest.mark.usefixtures("job_watcher_maker")
 def test_update_current_container_info_partial_name_no_pod(job_watcher_maker):
-    jw, client, _find_pod_from_partial_name = job_watcher_maker
+    jw, _, __ = job_watcher_maker
     partial_name = str(mock.MagicMock())
-    _find_pod_from_partial_name.return_value = None
 
-    with pytest.raises(ValueError):  # noqa: PT011
+    with (
+        pytest.raises(ValueError),  # noqa: PT011
+        mock.patch(
+            "jobwatcher.job_watcher._find_pod_from_partial_name", return_value=None) as _find_pod_from_partial_name,
+        mock.patch("jobwatcher.job_watcher.client"),
+    ):
         jw.update_current_container_info(partial_name)
 
 
@@ -358,12 +366,13 @@ def test_check_for_pod_stalled_pod_where_pod_is_none(job_watcher_maker):
 
 @pytest.mark.usefixtures("job_watcher_maker")
 def test_check_for_pod_stalled_pod_is_stalled_for_30_minutes(job_watcher_maker):
-    jw, client, _find_pod_from_partial_name = job_watcher_maker
+    jw, _, __ = job_watcher_maker
     jw.pod.metadata.creation_timestamp = datetime.now(UTC) - timedelta(seconds=60 * 35)
     jw.max_time_to_complete = 99999999
-    client.CoreV1Api.return_value.read_namespaced_pod_log.return_value = ""
 
-    assert jw.check_for_pod_stalled() is True
+    with mock.patch("jobwatcher.job_watcher.client") as client:
+        client.CoreV1Api.return_value.read_namespaced_pod_log.return_value = ""
+        assert jw.check_for_pod_stalled() is True
 
     client.CoreV1Api.return_value.read_namespaced_pod_log.assert_called_once_with(
         name=jw.pod.metadata.name,
@@ -388,15 +397,16 @@ def test_check_for_pod_stalled_pod_is_running_fine(job_watcher_maker):
 
 @pytest.mark.usefixtures("job_watcher_maker")
 def test_find_start_and_end_of_pod(job_watcher_maker):
-    jw, client, _find_pod_from_partial_name = job_watcher_maker
+    jw, _, __ = job_watcher_maker
     pod = mock.MagicMock()
     jw.get_container_status = mock.MagicMock()
     jw.get_container_status.return_value.state.terminated = None
 
-    assert jw._find_start_and_end_of_pod(pod) == (
-        client.CoreV1Api.return_value.read_namespaced_pod.return_value.status.start_time,
-        None,
-    )
+    with mock.patch("jobwatcher.job_watcher.client") as client:
+        assert jw._find_start_and_end_of_pod(pod) == (
+            client.CoreV1Api.return_value.read_namespaced_pod.return_value.status.start_time,
+            None,
+        )
 
     client.CoreV1Api.return_value.read_namespaced_pod.assert_called_once_with(pod.metadata.name, jw.namespace)
 
@@ -407,10 +417,11 @@ def test_find_start_and_end_of_pod_terminated(job_watcher_maker):
     pod = mock.MagicMock()
     jw.get_container_status = mock.MagicMock()
 
-    assert jw._find_start_and_end_of_pod(pod) == (
-        client.CoreV1Api.return_value.read_namespaced_pod.return_value.status.start_time,
-        jw.get_container_status.return_value.state.terminated.finished_at,
-    )
+    with mock.patch("jobwatcher.job_watcher.client") as client:
+        assert jw._find_start_and_end_of_pod(pod) == (
+            client.CoreV1Api.return_value.read_namespaced_pod.return_value.status.start_time,
+            jw.get_container_status.return_value.state.terminated.finished_at,
+        )
 
     client.CoreV1Api.return_value.read_namespaced_pod.assert_called_once_with(pod.metadata.name, jw.namespace)
 
@@ -461,27 +472,30 @@ def test_process_job_failed_job_is_none(job_watcher_maker):
 
 @pytest.mark.usefixtures("job_watcher_maker")
 def test_process_job_success(job_watcher_maker):
-    jw, client, _find_pod_from_partial_name = job_watcher_maker
+    jw, _, __ = job_watcher_maker
     start = mock.MagicMock()
     end = mock.MagicMock()
     jw._find_start_and_end_of_pod = mock.MagicMock(return_value=(start, end))
-    client.BatchV1Api.return_value.read_namespaced_job.return_value.metadata.annotations.get.return_value = "id"
-    logs = """
-    line 1
-    line 2
-    line 3
+    job_id = mock.MagicMock()
+    jw.job.metadata.annotations.get.return_value = job_id
+    DB_UPDATER.reset_mock()
 
-    {"status": "Successful", "status_message": "status_message", "output_files": "output_file.nxs"}
-    """
-    client.CoreV1Api.return_value.read_namespaced_pod_log.return_value = logs
+    with mock.patch("jobwatcher.job_watcher.client") as client:
+        logs = """
+        line 1
+        line 2
+        line 3
 
-    jw.process_job_success()
+        {"status": "Successful", "status_message": "status_message", "output_files": "output_file.nxs"}
+        """
+        client.CoreV1Api.return_value.read_namespaced_pod_log.return_value = logs
+        jw.process_job_success()
 
     client.CoreV1Api.return_value.read_namespaced_pod_log.assert_called_once_with(
         name=jw.pod.metadata.name, namespace=jw.namespace, container=jw.container_name
     )
     jw.db_updater.update_completed_run.assert_called_once_with(
-        db_reduction_id=client.BatchV1Api.return_value.read_namespaced_job.return_value.metadata.annotations.get.return_value,
+        db_reduction_id=job_id,
         state=State.SUCCESSFUL,
         status_message="status_message",
         output_files="output_file.nxs",
@@ -516,20 +530,23 @@ def test_process_job_success_raise_json_decode_error(job_watcher_maker):
     jw, client, _find_pod_from_partial_name = job_watcher_maker
     start = mock.MagicMock()
     end = mock.MagicMock()
+    job_id = mock.MagicMock()
+    jw.job.metadata.annotations.get.return_value = job_id
     jw._find_start_and_end_of_pod = mock.MagicMock(return_value=(start, end))
+    DB_UPDATER.reset_mock()
 
     def raise_error(name, namespace, container):
         raise JSONDecodeError("", "", 1)
 
-    client.CoreV1Api.return_value.read_namespaced_pod_log = mock.MagicMock(side_effect=raise_error)
-
-    jw.process_job_success()
+    with mock.patch("jobwatcher.job_watcher.client") as client:
+        client.CoreV1Api.return_value.read_namespaced_pod_log = mock.MagicMock(side_effect=raise_error)
+        jw.process_job_success()
 
     client.CoreV1Api.return_value.read_namespaced_pod_log.assert_called_once_with(
         name=jw.pod.metadata.name, namespace=jw.namespace, container=jw.container_name
     )
     jw.db_updater.update_completed_run.assert_called_once_with(
-        db_reduction_id=client.BatchV1Api.return_value.read_namespaced_job.return_value.metadata.annotations.get.return_value,
+        db_reduction_id=job_id,
         state=State.UNSUCCESSFUL,
         status_message=": line 1 column 2 (char 1)",
         output_files=[],
@@ -544,20 +561,23 @@ def test_process_job_success_raise_type_error(job_watcher_maker):
     jw, client, _find_pod_from_partial_name = job_watcher_maker
     start = mock.MagicMock()
     end = mock.MagicMock()
+    job_id = mock.MagicMock()
+    jw.job.metadata.annotations.get.return_value = job_id
     jw._find_start_and_end_of_pod = mock.MagicMock(return_value=(start, end))
+    DB_UPDATER.reset_mock()
 
     def raise_error(name, namespace, container):
         raise TypeError("TypeError!")
 
-    client.CoreV1Api.return_value.read_namespaced_pod_log = mock.MagicMock(side_effect=raise_error)
-
-    jw.process_job_success()
+    with mock.patch("jobwatcher.job_watcher.client") as client:
+        client.CoreV1Api.return_value.read_namespaced_pod_log = mock.MagicMock(side_effect=raise_error)
+        jw.process_job_success()
 
     client.CoreV1Api.return_value.read_namespaced_pod_log.assert_called_once_with(
         name=jw.pod.metadata.name, namespace=jw.namespace, container=jw.container_name
     )
     jw.db_updater.update_completed_run.assert_called_once_with(
-        db_reduction_id=client.BatchV1Api.return_value.read_namespaced_job.return_value.metadata.annotations.get.return_value,
+        db_reduction_id=job_id,
         state=State.UNSUCCESSFUL,
         status_message="TypeError!",
         output_files=[],
@@ -572,20 +592,23 @@ def test_process_job_success_raise_exception(job_watcher_maker):
     jw, client, _find_pod_from_partial_name = job_watcher_maker
     start = mock.MagicMock()
     end = mock.MagicMock()
+    job_id = mock.MagicMock()
+    jw.job.metadata.annotations.get.return_value = job_id
     jw._find_start_and_end_of_pod = mock.MagicMock(return_value=(start, end))
+    DB_UPDATER.reset_mock()
 
     def raise_error(name, namespace, container):
         raise Exception("Exception raised!")
 
-    client.CoreV1Api.return_value.read_namespaced_pod_log = mock.MagicMock(side_effect=raise_error)
-
-    jw.process_job_success()
+    with mock.patch("jobwatcher.job_watcher.client") as client:
+        client.CoreV1Api.return_value.read_namespaced_pod_log = mock.MagicMock(side_effect=raise_error)
+        jw.process_job_success()
 
     client.CoreV1Api.return_value.read_namespaced_pod_log.assert_called_once_with(
         name=jw.pod.metadata.name, namespace=jw.namespace, container=jw.container_name
     )
     jw.db_updater.update_completed_run.assert_called_once_with(
-        db_reduction_id=client.BatchV1Api.return_value.read_namespaced_job.return_value.metadata.annotations.get.return_value,
+        db_reduction_id=job_id,
         state=State.UNSUCCESSFUL,
         status_message="Exception raised!",
         output_files=[],
@@ -596,7 +619,7 @@ def test_process_job_success_raise_exception(job_watcher_maker):
 
 
 @pytest.mark.usefixtures("job_watcher_maker")
-def test_cleanup_job():
+def test_cleanup_job(job_watcher_maker):
     jw, client, _find_pod_from_partial_name = job_watcher_maker
 
     with (
@@ -609,6 +632,7 @@ def test_cleanup_job():
     clean_up_pvcs_for_job.assert_called_once_with(jw.job, jw.namespace)
 
 
+@pytest.mark.usefixtures("job_watcher_maker")
 def test_cleanup_job_where_job_is_none(job_watcher_maker):
     jw, _find_pod_from_partial_name, client = job_watcher_maker
     jw.job = None
@@ -648,12 +672,13 @@ def test_find_latest_raised_error_and_stacktrace_from_reversed_logs():
 
 
 @pytest.mark.usefixtures("job_watcher_maker")
-def test_find_latest_raised_error_and_stacktrace():
+def test_find_latest_raised_error_and_stacktrace(job_watcher_maker):
     jw, client, _find_pod_from_partial_name = job_watcher_maker
 
-    with mock.patch(
-        "jobwatcher.job_watcher._find_latest_raised_error_and_stacktrace_from_reversed_logs"
-    ) as return_raised_error_call:
+    with (
+        mock.patch("jobwatcher.job_watcher._find_latest_raised_error_and_stacktrace_from_reversed_logs")
+         as return_raised_error_call,
+         mock.patch("jobwatcher.job_watcher.client") as client):
         jw._find_latest_raised_error_and_stacktrace()
 
     client.CoreV1Api.return_value.read_namespaced_pod_log.assert_called_once_with(
@@ -671,7 +696,7 @@ def test_find_latest_raised_error_and_stacktrace():
 
 
 @pytest.mark.usefixtures("job_watcher_maker")
-def test_find_latest_raised_error_and_stacktrace_raises_error_on_pod_is_none():
+def test_find_latest_raised_error_and_stacktrace_raises_error_on_pod_is_none(job_watcher_maker):
     jw, client, _find_pod_from_partial_name = job_watcher_maker
     jw.pod = None
 
