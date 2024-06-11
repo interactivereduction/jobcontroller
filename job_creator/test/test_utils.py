@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -45,11 +46,11 @@ def test_not_in_cluster_and_not_in_env_grab_kubeconfig_from_default_location(kub
 
 
 def test_ensure_ceph_path_exists():
-    initial_path = "/tmp/ceph/mari/RBNumber/RB99999999/autoreduced/"  # noqa: S108
+    initial_path = Path("/tmp/ceph/mari/RBNumber/RB99999999/autoreduced/")  # noqa: S108
 
     end_path = ensure_ceph_path_exists(initial_path)
 
-    assert end_path == "/tmp/ceph/mari/RBNumber/unknown/autoreduced"  # noqa: S108
+    assert end_path == Path("/tmp/ceph/mari/RBNumber/unknown/autoreduced")  # noqa: S108
     os.removedirs("/tmp/ceph/mari/RBNumber/unknown/autoreduced")  # noqa: S108
 
 
