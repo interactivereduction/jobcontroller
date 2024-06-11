@@ -12,7 +12,7 @@ PASSWORD = mock.MagicMock()
 QUEUE_NAME = mock.MagicMock()
 
 
-@pytest.fixture()
+@pytest.fixture(autouse=True, scope="module")
 def setup_queue_consumer():
     with (
         mock.patch("jobcreator.queue_consumer.ConnectionParameters") as connection_parameters,
@@ -22,7 +22,6 @@ def setup_queue_consumer():
         return quc, blocking_connection, connection_parameters
 
 
-@pytest.mark.usefixtures("setup_queue_consumer")
 def test_init_creates_credentials_and_connection_parameters(setup_queue_consumer):
     quc, blocking_connection, connection_parameters = setup_queue_consumer
     assert quc.message_callback == MESSAGE_CALLBACK
@@ -38,7 +37,6 @@ def test_init_creates_credentials_and_connection_parameters(setup_queue_consumer
     assert blocking_connection.return_value.channel.return_value == quc.channel
 
 
-@pytest.mark.usefixtures("setup_queue_consumer")
 def test_connect_to_broker(setup_queue_consumer):
     quc, blocking_connection, connection_parameters = setup_queue_consumer
     blocking_connection.assert_called_once_with(quc.connection_parameters)
@@ -51,7 +49,6 @@ def test_connect_to_broker(setup_queue_consumer):
     channel.queue_bind.assert_called_once_with(QUEUE_NAME, QUEUE_NAME, routing_key="")
 
 
-@pytest.mark.usefixtures("setup_queue_consumer")
 def test_message_handler(setup_queue_consumer):
     quc, blocking_connection, connection_parameters = setup_queue_consumer
     message = '{"help": "im stuck"}'
@@ -65,7 +62,6 @@ def test_message_handler(setup_queue_consumer):
     MESSAGE_CALLBACK.assert_called_once_with(msg_obj)
 
 
-@pytest.mark.usefixtures("setup_queue_consumer")
 def test_message_handler_on_json_decode_error(setup_queue_consumer):
     quc, blocking_connection, connection_parameters = setup_queue_consumer
     message = "{}::::::::://1//1/1!!!''''''"
@@ -81,7 +77,6 @@ def test_message_handler_on_json_decode_error(setup_queue_consumer):
     MESSAGE_CALLBACK.assert_not_called()
 
 
-@pytest.mark.usefixtures("setup_queue_consumer")
 def test_start_cons(setup_queue_consumer):
     quc, blocking_connection, connection_parameters = setup_queue_consumer
     quc._message_handler = mock.MagicMock()
@@ -96,7 +91,6 @@ def test_start_cons(setup_queue_consumer):
     quc.channel.basic_ack.assert_called_once_with(header.delivery_tag)
 
 
-@pytest.mark.usefixtures("setup_queue_consumer")
 def test_start_consumer_will_handle_exceptions_as_warnings(setup_queue_consumer):
     quc, blocking_connection, connection_parameters = setup_queue_consumer
 
