@@ -176,7 +176,8 @@ def test_update_current_container_info_partial_name_no_pod(job_watcher_maker):
     with (
         pytest.raises(ValueError),  # noqa: PT011
         mock.patch(
-            "jobwatcher.job_watcher._find_pod_from_partial_name", return_value=None) as _find_pod_from_partial_name,
+            "jobwatcher.job_watcher._find_pod_from_partial_name", return_value=None
+        ) as _find_pod_from_partial_name,
         mock.patch("jobwatcher.job_watcher.client"),
     ):
         jw.update_current_container_info(partial_name)
@@ -676,9 +677,11 @@ def test_find_latest_raised_error_and_stacktrace(job_watcher_maker):
     jw, client, _find_pod_from_partial_name = job_watcher_maker
 
     with (
-        mock.patch("jobwatcher.job_watcher._find_latest_raised_error_and_stacktrace_from_reversed_logs")
-         as return_raised_error_call,
-         mock.patch("jobwatcher.job_watcher.client") as client):
+        mock.patch(
+            "jobwatcher.job_watcher._find_latest_raised_error_and_stacktrace_from_reversed_logs"
+        ) as return_raised_error_call,
+        mock.patch("jobwatcher.job_watcher.client") as client,
+    ):
         jw._find_latest_raised_error_and_stacktrace()
 
     client.CoreV1Api.return_value.read_namespaced_pod_log.assert_called_once_with(
