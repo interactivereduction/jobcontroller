@@ -4,6 +4,7 @@ requests from the topicconsumer.
 """
 
 import os
+import time
 import uuid
 from pathlib import Path
 from typing import Any
@@ -122,6 +123,16 @@ def process_message(message: dict[str, Any]) -> None:  # pylint: disable=too-man
         logger.exception(exception)
 
 
+def write_readiness_probe_file() -> None:
+    """
+    Write the file with the timestamp for the readinessprobe
+    :return: None
+    """
+    path = Path("/tmp/heartbeat")  # noqa: S108
+    with path.open("w", encoding="utf-8") as file:
+        file.write(time.strftime("%Y-%m-%d %H:%M:%S"))
+
+
 def main() -> None:
     """
     This is the function that runs the JobController software suite
@@ -133,7 +144,7 @@ def main() -> None:
         password=CONSUMER_PASSWORD,
         queue_name=QUEUE_NAME,
     )
-    consumer.start_consuming()
+    consumer.start_consuming(write_readiness_probe_file)
 
 
 if __name__ == "__main__":
