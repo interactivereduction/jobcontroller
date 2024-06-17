@@ -77,15 +77,17 @@ def test_message_handler_on_json_decode_error(setup_queue_consumer):
     MESSAGE_CALLBACK.assert_not_called()
 
 
-def test_start_cons(setup_queue_consumer):
+def test_start_consuming(setup_queue_consumer):
     quc, blocking_connection, connection_parameters = setup_queue_consumer
     quc._message_handler = mock.MagicMock()
     header = mock.MagicMock()
     body = mock.MagicMock()
     quc.channel.consume.return_value = [(header, mock.MagicMock(), body)]
+    callback = mock.MagicMock()
 
-    quc.start_consuming(run_once=True)
+    quc.start_consuming(callback, run_once=True)
 
+    callback.assert_called_once_with()
     quc.channel.consume.assert_called_once_with(quc.queue_name)
     quc._message_handler.assert_called_once_with(body.decode.return_value)
     quc.channel.basic_ack.assert_called_once_with(header.delivery_tag)
@@ -102,6 +104,6 @@ def test_start_consumer_will_handle_exceptions_as_warnings(setup_queue_consumer)
     quc.channel.consume.return_value = [(mock.MagicMock(), mock.MagicMock(), body)]
 
     with mock.patch("jobcreator.queue_consumer.logger") as logger:
-        quc.start_consuming(run_once=True)
+        quc.start_consuming(mock.MagicMock(), run_once=True)
 
     logger.warning.assert_called_once_with("Problem processing message: %s", body)

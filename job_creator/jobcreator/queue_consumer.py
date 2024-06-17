@@ -3,6 +3,7 @@ The module is aimed to consume from a station on Memphis using the create_statio
 """
 
 import json
+import time
 from collections.abc import Callable
 
 from pika import BlockingConnection, ConnectionParameters, PlainCredentials  # type: ignore[import-untyped]
@@ -65,9 +66,10 @@ class QueueConsumer:
         except json.JSONDecodeError as exception:
             logger.error("Error attempting to decode JSON: %s", str(exception))
 
-    def start_consuming(self, run_once: bool = False) -> None:
+    def start_consuming(self, callback_func: Callable, run_once: bool = False) -> None:
         """
         The function that will start consuming from a queue, and when the consumer receives a message.
+        :param callback_func: This function is called once per loop
         :param run_once: Should this only run once or run until there is a raised exception or interrupt.
         :return: None
         """
@@ -75,10 +77,17 @@ class QueueConsumer:
         while run:
             if run_once:
                 run = False
-            for header, _, body in self.channel.consume(self.queue_name):  # type: ignore[attr-defined]
+            callback_func()
+            for header, _, body in self.channel.consume(self.queue_name,  # type: ignore[attr-defined]
+                                                        inactivity_timeout=5):
                 try:
                     self._message_handler(body.decode())
-                except Exception:  # pylint: disable=broad-exception-caught
-                    logger.warning("Problem processing message: %s", body)
-                finally:
                     self.channel.basic_ack(header.delivery_tag)  # type: ignore[attr-defined]
+                except AttributeError:
+                    # If the message frame or body is missing attributes required e.g. the delivery tag
+                    pass
+                except Exception:
+                    logger.warning("Problem processing message: %s", body)
+                break
+
+            time.sleep(0.1)
