@@ -11,9 +11,6 @@ from pika import BlockingConnection, ConnectionParameters, PlainCredentials  # t
 
 from jobcreator.utils import logger
 
-if TYPE_CHECKING:
-    from pika.adapters.blocking_connection import BlockingChannel
-
 
 class QueueConsumer:
     """
@@ -22,12 +19,12 @@ class QueueConsumer:
     """
 
     def __init__(
-        self,
-        message_callback: Callable[[dict[str, str]], None],
-        queue_host: str,
-        username: str,
-        password: str,
-        queue_name: str,
+            self,
+            message_callback: Callable[[dict[str, str]], None],
+            queue_host: str,
+            username: str,
+            password: str,
+            queue_name: str,
     ) -> None:
         self.message_callback = message_callback
         self.queue_host = queue_host
@@ -35,7 +32,7 @@ class QueueConsumer:
         credentials = PlainCredentials(username=username, password=password)
         self.connection_parameters = ConnectionParameters(queue_host, 5672, credentials=credentials)
         self.connection = None
-        self.channel: BlockingChannel | None = None
+        self.channel = None
         self.connect_to_broker()
 
     def connect_to_broker(self) -> None:
@@ -82,9 +79,9 @@ class QueueConsumer:
             if run_once:
                 run = False
             callback_func()
-            for header, _, body in self.channel.consume(
-                self.queue_name,  # type: ignore[attr-defined]
-                inactivity_timeout=5,
+            for header, _, body in self.channel.consume(  # type: ignore[attr-defined]
+                    self.queue_name,
+                    inactivity_timeout=5,
             ):
                 try:
                     self._message_handler(body.decode())
