@@ -5,10 +5,14 @@ The module is aimed to consume from a station on Memphis using the create_statio
 import json
 import time
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from pika import BlockingConnection, ConnectionParameters, PlainCredentials  # type: ignore[import-untyped]
 
 from jobcreator.utils import logger
+
+if TYPE_CHECKING:
+    from pika.adapters.blocking_connection import BlockingChannel
 
 
 class QueueConsumer:
@@ -31,7 +35,7 @@ class QueueConsumer:
         credentials = PlainCredentials(username=username, password=password)
         self.connection_parameters = ConnectionParameters(queue_host, 5672, credentials=credentials)
         self.connection = None
-        self.channel = None
+        self.channel: BlockingChannel | None = None
         self.connect_to_broker()
 
     def connect_to_broker(self) -> None:
@@ -66,7 +70,7 @@ class QueueConsumer:
         except json.JSONDecodeError as exception:
             logger.error("Error attempting to decode JSON: %s", str(exception))
 
-    def start_consuming(self, callback_func: Callable, run_once: bool = False) -> None:
+    def start_consuming(self, callback_func: Callable[[], None], run_once: bool = False) -> None:
         """
         The function that will start consuming from a queue, and when the consumer receives a message.
         :param callback_func: This function is called once per loop

@@ -88,7 +88,7 @@ def test_start_consuming(setup_queue_consumer):
     quc.start_consuming(callback, run_once=True)
 
     callback.assert_called_once_with()
-    quc.channel.consume.assert_called_once_with(quc.queue_name)
+    quc.channel.consume.assert_called_once_with(quc.queue_name, inactivity_timeout=5)
     quc._message_handler.assert_called_once_with(body.decode.return_value)
     quc.channel.basic_ack.assert_called_once_with(header.delivery_tag)
 
