@@ -78,8 +78,10 @@ class QueueConsumer:
             if run_once:
                 run = False
             callback_func()
-            for header, _, body in self.channel.consume(self.queue_name,  # type: ignore[attr-defined]
-                                                        inactivity_timeout=5):
+            for header, _, body in self.channel.consume(
+                self.queue_name,  # type: ignore[attr-defined]
+                inactivity_timeout=5,
+            ):
                 try:
                     self._message_handler(body.decode())
                     self.channel.basic_ack(header.delivery_tag)  # type: ignore[attr-defined]

@@ -4,8 +4,8 @@ requests from the topicconsumer.
 """
 
 import os
-import uuid
 import time
+import uuid
 from pathlib import Path
 from typing import Any
 
