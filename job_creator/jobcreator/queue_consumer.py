@@ -5,7 +5,6 @@ The module is aimed to consume from a station on Memphis using the create_statio
 import json
 import time
 from collections.abc import Callable
-from typing import TYPE_CHECKING
 
 from pika import BlockingConnection, ConnectionParameters, PlainCredentials  # type: ignore[import-untyped]
 
@@ -19,12 +18,12 @@ class QueueConsumer:
     """
 
     def __init__(
-            self,
-            message_callback: Callable[[dict[str, str]], None],
-            queue_host: str,
-            username: str,
-            password: str,
-            queue_name: str,
+        self,
+        message_callback: Callable[[dict[str, str]], None],
+        queue_host: str,
+        username: str,
+        password: str,
+        queue_name: str,
     ) -> None:
         self.message_callback = message_callback
         self.queue_host = queue_host
@@ -80,8 +79,8 @@ class QueueConsumer:
                 run = False
             callback_func()
             for header, _, body in self.channel.consume(  # type: ignore[attr-defined]
-                    self.queue_name,
-                    inactivity_timeout=5,
+                self.queue_name,
+                inactivity_timeout=5,
             ):
                 try:
                     self._message_handler(body.decode())
